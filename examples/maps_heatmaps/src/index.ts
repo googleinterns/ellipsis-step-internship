@@ -29,7 +29,7 @@ console.log(firebaseConfig);
 var app = firebase.initializeApp(firebaseConfig);
 var database = app.firestore();
 
-function initMap(): void {
+ function initMap():void{
 
 
   map = new google.maps.Map(document.getElementById("map") as HTMLElement, {
@@ -41,14 +41,17 @@ function initMap(): void {
   let images = database.collection("test");
   images.get().then(querySnapshot => {
     if(!querySnapshot.empty) {
+      
       const image = querySnapshot.docs[0].data() as any;
+      console.log(image);
       map.setCenter(  { lat: image.coordinates.latitude, lng: image.coordinates.longitude });
+      console.log(image);
     }
   });
 
 
   heatmap = new google.maps.visualization.HeatmapLayer({
-    data: getPoints(),
+    data: queryAllDate(),
     map: map
   });
 }
@@ -90,8 +93,8 @@ function changeOpacity() {
 function getPoints() {
   // Create a reference to the cities collection
   //TODO update this to query firestore for image coordinates.
-//return [ new google.maps.LatLng(37.764782, -122.425869),];
-return queryDate('');
+  return [ ];
+//return queryDate('');
 }
 
 function addPoint()
@@ -104,9 +107,7 @@ function addPoint()
 
 // [END maps_layer_heatmap]
 export { initMap };
-console.log('hi');
-//queryByDate(1999);
-//addPoint();
+
 
 
 
@@ -172,6 +173,20 @@ function randomDate()
   return [day,month,year]
 }
 
+// add Single doc into DB
+function addNewImage(label:string,lat: number, lng:number, year: number, month: number, day:number, url:string){
+  let newDoc = database.collection('imagesTal').doc('hi');
+  newDoc.set({
+    year: year,
+    month: month, 
+    day: day,
+    url:url,
+    coordinates: new firebase.firestore.GeoPoint(lat, lng)  })
+  newDoc.collection('labels').doc('hi').set({
+    name: label
+  })
+  }
+
 //add random data into the DB with lon&lan and a random
 function addAllToDatabase()
 {
@@ -187,53 +202,55 @@ function addAllToDatabase()
   }
 }
 
-// add Single doc into DB
-function addNewImage(label:string,lat: number, lng:number, year: number, month: number, day:number, url:string){
-  let newDoc = database.collection('imagesTal').doc('hi');
-  newDoc.set({
-    year: year,
-    month: month, 
-    day: day,
-    url:url,
-    coordinates: new firebase.firestore.GeoPoint(lat, lng)  })
-  newDoc.collection('labels').doc('hi').set({
-    name: label
-  })
-  }
 
+// dosent work
+async function getPointsByDate(year_:number)
+ {
 
-function queryDate(date:number)
-{
-  let images = database.collection("imagesTal");
-  images.get().then(querySnapshot => {
-    if(!querySnapshot.empty) {
-      const image = querySnapshot.query.where('year','==','1999').get();
-      //map.setCenter(  { lat: image.coordinates.latitude, lng: image.coordinates.longitude });
-      console.log(image);
-
-      //testing...
-      
-    }
+  let allpoints : Array<google.maps.LatLng> = []; 
+  const dataRef = database.collection('imagesTal');
+  const snapshot = await dataRef.where('year', '==', 'year_').get();
+  if (snapshot.empty) {
+    console.log('No matching documents.');
+    return;
+  }  
+  
+  snapshot.forEach(doc => {
+    allpoints.push( new google.maps.LatLng(doc.get('coordinates').latitude, doc.get('coordinates').longitude ))
   });
-  return [
-    new google.maps.LatLng(37.782551, -122.445368),
-    new google.maps.LatLng(37.782745, -122.444586),
-    new google.maps.LatLng(37.782842, -122.443688),
-    new google.maps.LatLng(37.782919, -122.442815),
-    new google.maps.LatLng(37.782992, -122.442112),
-    new google.maps.LatLng(37.7831, -122.441461),];
+  return allpoints
+ } 
+
+
+
+//works
+function queryAllDate()
+{
+  let allpoints : Array<google.maps.LatLng> = [];
+
+  let images = database.collection("imagesTal");
+  images.get().then(queryImages => {
+   
+      queryImages.forEach(doc=>
+         
+        allpoints.push( new google.maps.LatLng(doc.get('coordinates').latitude, doc.get('coordinates').longitude )))
+      });
+     return allpoints
+      //testing...
+   
 }
 
- function queryByDate(_year?: number, _month?: number, _day?:number)
+
+ function queryByDate(_year: number, _month: number, _day:number)
 {
-  //const imagesRef = database.collection('imagesTal');
+  heatmap.setValues(queryDate);
+  const imagesRef = database.collection('imagesTal');
 
   // Create a query against the collection
-  //const queryRef =   imagesRef.where('_year','==','year');
-  //if (_year !== void && _month!== void && _day!==void)
-  //  const queryRef = imagesRef.where('year', '==', '_year')
-  //                            .where('month', '==', '_month')
-  //                            .where('day', '==', '_day');
+  const queryRef =   imagesRef.where('year','==','_year')
+                              .where('month', '==', '_month')
+                              .where('day', '==', '_day');
+                              
 
 
 }
