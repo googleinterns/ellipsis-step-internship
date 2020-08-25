@@ -10,9 +10,20 @@
     ></script>
     <link rel="stylesheet" type="text/css" href="./style.css" />
     <script src="./app.js"></script>
+    
   </head>
   <body>
-    <div id="map"></div>
+    <div class="wrapper">
+      <div id="map"></div>
+      <div class="content">
+        <label for="year">Year:</label>
+        <input type="number" id="year" name="year" size="1" min="2010" max="2020">
+        <label for="month">Month:</label>
+        <input type="number" id="month" name="month" size="1" min="1" max="12" >
+        <input type="submit" id="submit" value="Submit">
+        <input type="reset" id="reset" value="Reset">
+     </div>
+    </div>
   </body>
 </html>
 <!-- [END maps_layer_heatmap] -->

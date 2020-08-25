@@ -50,7 +50,7 @@ function initMap(): void {
  
   
   heatmap = new google.maps.visualization.HeatmapLayer({
-    data: setPointsFromDB(database.collection('imagesOfri')),
+    data: getPointsFromDB(getFilteredCollection(['dog', 'giraffe'], 2020, 12)),
     map: map
   });
 
@@ -628,7 +628,7 @@ function addNewImage(label:string,lat: number, lng:number, year: number, month: 
  //addImagesToDB(getCoordinates()); //was used to fill the database
   
  //getting images from the database
- function setPointsFromDB(filteredCollection: firebase.firestore.CollectionReference){
+ function getPointsFromDB(filteredCollection: firebase.firestore.Query){
   let allpoints : Array<google.maps.LatLng> = [];
  filteredCollection.get()
   .then(function(querySnapshot) {
@@ -643,8 +643,8 @@ return allpoints;
 }
 
   
- function getFilteredCollection(label: string[], year?: number, month?: number): firebase.firestore.Query {
-  let filteredCollection: firebase.firestore.Query = database.collectionGroup('labels').where('name','==', label);
+ function getFilteredCollection(labels: string[], year?: number, month?: number): firebase.firestore.Query {
+  let filteredCollection: firebase.firestore.Query = database.collection('imagesOfri').where('labels', 'array-contains-any', labels);
   if (year != undefined) {
     filteredCollection = filteredCollection.where('year', '==', year);
   }
@@ -2160,7 +2160,17 @@ return allpoints;
     ];
   }
  
-
+  // getFilteredCollection(['dog'], 2020, 12).get()
+  // .then(function(querySnapshot) {
+  //     querySnapshot.forEach(function(doc) {
+  //         // doc.data() is never undefined for query doc snapshots
+  //         console.log(doc.id, " => ", doc.data());
+  //     });
+  // })
+  // .catch(function(error) {
+  //     console.log("Error getting documents: ", error);
+  // });
+  // console.log()
 
 // [END maps_layer_heatmap]
 export { initMap };
