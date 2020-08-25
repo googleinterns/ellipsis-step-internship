@@ -31,7 +31,6 @@ var database = app.firestore();
 
 function initMap(): void {
 
-
   map = new google.maps.Map(document.getElementById("map") as HTMLElement, {
     zoom: 13,
     mapTypeId: "satellite"
@@ -46,14 +45,13 @@ function initMap(): void {
     }
   });
 
-
- 
   
   heatmap = new google.maps.visualization.HeatmapLayer({
-    data: getPointsFromDB(getFilteredCollection(['dog', 'giraffe'], 2020, 12)),
+    data: [],
     map: map
   });
-
+  getPointsFromDB(heatmap, getFilteredCollection(['dog', 'giraffe'], 2020))
+  //display the relevant images on the heatmap
 }
 
 function toggleHeatmap() {
@@ -596,8 +594,9 @@ function getPoints() {
   ];
 }
 
+/* adds an image to 'imagesOfri' collection*/
 function addNewImage(label:string,lat: number, lng:number, year: number, month: number, day:number){
-  let newDoc = database.collection('imagesOfri').doc();
+  const newDoc = database.collection('imagesOfri').doc();
   newDoc.set({
     year: year,
     month: month,
@@ -609,7 +608,9 @@ function addNewImage(label:string,lat: number, lng:number, year: number, month: 
     name: label
   })
   }
-  
+
+  /* adds images to 'imagesOfri' collection with randomized information
+  from a set of coordinates*/
  function addImagesToDB(points: Array<Array<number>>){
   points.forEach(element => {
     let latitude  = element[0];
@@ -622,29 +623,32 @@ function addNewImage(label:string,lat: number, lng:number, year: number, month: 
   })
  };
   
+ /* returns a random integer from 0 to max-1*/
  function getRandomNumber(max: number){
   return Math.floor(Math.random() * Math.floor(max));
  }
  //addImagesToDB(getCoordinates()); //was used to fill the database
   
- //getting images from the database
- function getPointsFromDB(filteredCollection: firebase.firestore.Query){
+ /* displays the relevant images on the map
+ given the filtered collection and the heapmap*/
+ function getPointsFromDB(heatmap : google.maps.visualization.HeatmapLayer, filteredCollection: firebase.firestore.Query){
   let allpoints : Array<google.maps.LatLng> = [];
  filteredCollection.get()
-  .then(function(querySnapshot) {
-      querySnapshot.forEach(function(doc) {
+  .then((querySnapshot) => {
+      querySnapshot.forEach((doc) => {
         let coordinates : firebase.firestore.GeoPoint = doc.get('coordinates')
         let lat = coordinates.latitude;
         let lng = coordinates.longitude;
         allpoints.push(new google.maps.LatLng(lat, lng))
     });
+    heatmap.setData(allpoints);
 })
-return allpoints;
 }
 
-  
+  /* returns the filtered collection by the different queries*/
  function getFilteredCollection(labels: string[], year?: number, month?: number): firebase.firestore.Query {
-  let filteredCollection: firebase.firestore.Query = database.collection('imagesOfri').where('labels', 'array-contains-any', labels);
+  let filteredCollection: firebase.firestore.Query = 
+  database.collection('imagesOfri').where('labels', 'array-contains-any', labels);
   if (year != undefined) {
     filteredCollection = filteredCollection.where('year', '==', year);
   }
@@ -653,6 +657,7 @@ return allpoints;
   }
   return filteredCollection;
   }
+
 
   function getCoordinates(){
     return [
@@ -2160,17 +2165,6 @@ return allpoints;
     ];
   }
  
-  // getFilteredCollection(['dog'], 2020, 12).get()
-  // .then(function(querySnapshot) {
-  //     querySnapshot.forEach(function(doc) {
-  //         // doc.data() is never undefined for query doc snapshots
-  //         console.log(doc.id, " => ", doc.data());
-  //     });
-  // })
-  // .catch(function(error) {
-  //     console.log("Error getting documents: ", error);
-  // });
-  // console.log()
 
 // [END maps_layer_heatmap]
 export { initMap };
