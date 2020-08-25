@@ -51,7 +51,10 @@ var database = app.firestore();
 
 
   heatmap = new google.maps.visualization.HeatmapLayer({
-    data: queryAllDate(),
+    //data: getPointsByDate(1999),
+    //data: queryAllDate(),
+    data: getPointsByQeury(queryByDateAndLabel('dog',2000)),
+    //data: getPoints(),
     map: map
   });
 }
@@ -93,16 +96,28 @@ function changeOpacity() {
 function getPoints() {
   // Create a reference to the cities collection
   //TODO update this to query firestore for image coordinates.
-  return [ ];
-//return queryDate('');
+  return [ 
+    new google.maps.LatLng(37.784345, -122.422922),
+    new google.maps.LatLng(37.784389, -122.422926),
+    new google.maps.LatLng(37.784437, -122.422924),
+    new google.maps.LatLng(37.784746, -122.422818),
+    new google.maps.LatLng(37.785436, -122.422959),
+    new google.maps.LatLng(37.78612, -122.423112),
+    new google.maps.LatLng(37.786433, -122.423029),
+    new google.maps.LatLng(37.786631, -122.421213),
+    new google.maps.LatLng(37.786905, -122.44027),
+    new google.maps.LatLng(37.786956, -122.440279),
+    new google.maps.LatLng(37.800224, -122.43352),
+    new google.maps.LatLng(37.800155, -122.434101),
+    new google.maps.LatLng(37.80016, -122.43443),
+    new google.maps.LatLng(37.800378, -122.434527),
+    new google.maps.LatLng(37.800738, -122.434598),
+    new google.maps.LatLng(37.800938, -122.43465),
+    new google.maps.LatLng(37.801024, -122.434889),
+    new google.maps.LatLng(37.800955, -122.435392),
+    new google.maps.LatLng(37.800886, -122.435959),
+  ];
 }
-
-function addPoint()
-{
-  console.log('add');
-  
-}
-
 
 
 // [END maps_layer_heatmap]
@@ -110,13 +125,8 @@ export { initMap };
 
 
 
+//*********************addind info into the DB: ************************** */
 
-
-
-//addind info into the DB: 
-
-
-//addAllToDatabase(); //calls the function that adds all the data
 
 let coord=[
   [37.782551, -122.445368],[37.782745, -122.444586], [37.782842, -122.443688], [37.782919, -122.442815],[37.782992, -122.442112],[37.7831, -122.441461],
@@ -159,9 +169,9 @@ let coord=[
   [37.77009, -122.408904],[37.769657, -122.408103],[37.769132, -122.407276],[37.768564, -122.406469],[37.76798, -122.405745],[37.76738, -122.405299],[37.766604, -122.405297],[37.765838, -122.4052],
   [37.765139, -122.405139],[37.764457, -122.405094],[37.763716, -122.405142],[37.762932, -122.405398],[37.762126, -122.405813],[37.761344, -122.406215],
   [37.760556, -122.406495],[37.759732, -122.406484],[37.75891, -122.406228],[37.758182, -122.405695],[37.757676, -122.405118],[37.757039, -122.404346],
-  [37.756335, -122.403719],[37.755503, -122.403406],[37.754665, -122.403242],[37.753837, -122.403172],[37.752986, -122.403112],[37.751266, -122.403355]]   
+  [37.756335, -122.403719],[37.755503, -122.403406],[37.754665, -122.403242],[37.753837, -122.403172],[37.752986, -122.403112],[37.751266, -122.403355]] ;  
 
-
+//addAllToDatabase();  //calls the function that adds all the data
 
 //generate random date for the info in the DB
 function randomDate()
@@ -175,14 +185,15 @@ function randomDate()
 
 // add Single doc into DB
 function addNewImage(label:string,lat: number, lng:number, year: number, month: number, day:number, url:string){
-  let newDoc = database.collection('imagesTal').doc('hi');
+  let newDoc = database.collection('imagesTal').doc();
   newDoc.set({
     year: year,
     month: month, 
     day: day,
     url:url,
+    label: [label],
     coordinates: new firebase.firestore.GeoPoint(lat, lng)  })
-  newDoc.collection('labels').doc('hi').set({
+  newDoc.collection('labels').doc().set({
     name: label
   })
   }
@@ -191,66 +202,87 @@ function addNewImage(label:string,lat: number, lng:number, year: number, month: 
 function addAllToDatabase()
 {
   let arraydate:number[];
+  let randomnu: number;
   for (var _i = 0; _i < coord.length; _i++) {
     arraydate=randomDate()
-    if (_i%3===0)
+    randomnu= Math.floor(Math.random() * 3)
+    if (randomnu===0)
        addNewImage('dog',coord[_i][0], coord[_i][1],arraydate[2],arraydate[1],arraydate[0],'https://live.staticflickr.com/5284/5338762379_59f7435b93_c.jpg')
-    if (_i%3===1)
+    if (randomnu===1)
       addNewImage('bag',coord[_i][0], coord[_i][1],arraydate[2],arraydate[1],arraydate[0],'https://live.staticflickr.com/65535/49748702651_07ae2b33b4_c.jpg')
-    if (_i%3===2)
+    if (randomnu===2)
       addNewImage('cat',coord[_i][0], coord[_i][1],arraydate[2],arraydate[1],arraydate[0],'https://live.staticflickr.com/3677/13545844805_170ec3746b_c.jpg')
   }
 }
 
 
-// dosent work
-async function getPointsByDate(year_:number)
- {
 
-  let allpoints : Array<google.maps.LatLng> = []; 
-  const dataRef = database.collection('imagesTal');
-  const snapshot = await dataRef.where('year', '==', 'year_').get();
-  if (snapshot.empty) {
-    console.log('No matching documents.');
-    return;
-  }  
-  
-  snapshot.forEach(doc => {
-    allpoints.push( new google.maps.LatLng(doc.get('coordinates').latitude, doc.get('coordinates').longitude ))
-  });
-  return allpoints
- } 
+//******************************qeuring the database********************************************** */
 
 
-
-//works
-function queryAllDate()
+//a function than returns all the coordinates
+function queryAllData():Array<google.maps.LatLng>
 {
   let allpoints : Array<google.maps.LatLng> = [];
-
   let images = database.collection("imagesTal");
-  images.get().then(queryImages => {
-   
-      queryImages.forEach(doc=>
-         
-        allpoints.push( new google.maps.LatLng(doc.get('coordinates').latitude, doc.get('coordinates').longitude )))
-      });
-     return allpoints
-      //testing...
-   
+  images.get().then(
+     queryImages => { queryImages.forEach(
+        doc=> {prinInfoOnObject(doc);
+          allpoints.push( nowlatlon( doc.get('coordinates').latitude, doc.get('coordinates').longitude ))})});
+    return allpoints  
 }
 
-
- function queryByDate(_year: number, _month: number, _day:number)
+//a function than returns all the coordinates in a certain year
+function qeuryByYear(year_:number)
 {
-  heatmap.setValues(queryDate);
-  const imagesRef = database.collection('imagesTal');
+  let allpoints : Array<google.maps.LatLng> = []; 
+  let dataRef:firebase.firestore.Query = database.collection('imagesTal');
+  return dataRef.where('year', '==', year_);
+} 
 
-  // Create a query against the collection
-  const queryRef =   imagesRef.where('year','==','_year')
-                              .where('month', '==', '_month')
-                              .where('day', '==', '_day');
-                              
-
-
+//a function returns a fillter collection that contain coordinates in a certain time from a certain label
+function queryByDateAndLabel(_label:string,_year?: number, _month?: number, _day?:number)
+{
+  let allpoints : Array<google.maps.LatLng> = []; 
+  let dataRef:firebase.firestore.Query = database.collection('imagesTal');
+  dataRef = dataRef.where('label', 'array-contains', _label);
+  if (_year != undefined)
+    dataRef = dataRef.where('year', '==', _year);
+  if (_year != undefined && _month!=undefined)
+    dataRef = dataRef.where('month', '==', _month)
+  if (_year != undefined && _month!=undefined && _day!=undefined)
+    dataRef = dataRef.where('day', '==', _day);
+  return dataRef;
 }
+
+//this function recives a filterd colection and returns all the geo points
+function getPointsByQeury(dataRef :firebase.firestore.Query)
+{
+  let allpoints : Array<google.maps.LatLng> = []; 
+  dataRef.get().then(
+    queryImages => { queryImages.forEach(
+       doc=> {prinInfoOnObject(doc);
+         allpoints.push( nowlatlon( doc.get('coordinates').latitude, doc.get('coordinates').longitude ))})});
+   return allpoints 
+}
+
+//creats new geo point
+function nowlatlon(lat:number,lon:number):google.maps.LatLng
+{
+  return new google.maps.LatLng(lat, lon);
+}
+
+//prints out info on the object in the data base hlps for debuging
+function prinInfoOnObject(doc:firebase.firestore.QueryDocumentSnapshot<firebase.firestore.DocumentData>)
+{
+  console.log(doc.get('label'));
+  console.log(doc.get('year'));
+  console.log(doc.get('month'));
+  console.log(doc.get('day'));
+  console.log(doc.get('coordinates'));
+}
+
+
+
+
+
