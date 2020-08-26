@@ -21,18 +21,9 @@
 
 // Imports
 let map: google.maps.Map, heatmap: google.maps.visualization.HeatmapLayer;
-<<<<<<< HEAD
 import * as firebase from "firebase";
 import firebaseConfig from "../firebase_config";
 import * as queryDB from "./queryDB";
-=======
-import * as firebase from 'firebase';
-import firebaseConfig from '../firebase_config';
-import * as initializeDB from './initiallizeDB';
-import * as queryDB from './queryDB';
-
-
->>>>>>> 4f6ffaf115bdc2617fa15ce75ffdbea7ddf121bc
 
 // Creates the firebase app and gets a reference to firestore.
 console.log(firebaseConfig);
@@ -40,10 +31,6 @@ const app = firebase.initializeApp(firebaseConfig);
 const database = app.firestore();
 
 function initMap(): void {
-<<<<<<< HEAD
-=======
-
->>>>>>> 4f6ffaf115bdc2617fa15ce75ffdbea7ddf121bc
   map = new google.maps.Map(document.getElementById("map") as HTMLElement, {
     zoom: 13,
     mapTypeId: "satellite",
@@ -61,7 +48,6 @@ function initMap(): void {
     }
   });
 
-<<<<<<< HEAD
   heatmap = new google.maps.visualization.HeatmapLayer({
     data: [],
     map: map,
@@ -70,14 +56,6 @@ function initMap(): void {
     heatmap,
     queryDB.getQuiredCollection(["bag", "giraffe"], 1992)
   );
-=======
-  
-  heatmap = new google.maps.visualization.HeatmapLayer({
-    data: [],
-    map: map
-  });
-  queryDB.getPointsFromDB(heatmap, queryDB.getQuiredCollection(['dog', 'giraffe'], 2020))
->>>>>>> 4f6ffaf115bdc2617fa15ce75ffdbea7ddf121bc
   //display the relevant images on the heatmap
 }
 
