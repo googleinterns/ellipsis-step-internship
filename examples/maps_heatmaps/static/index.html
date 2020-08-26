@@ -12,7 +12,17 @@
     <script src="./app.js"></script>
   </head>
   <body>
-    <div id="map"></div>
+    <div class="wrapper">
+      <div id="map"></div>
+      <div class="content">
+        <label for="year">Year:</label>
+        <input type="number" id="year" name="year" min="1990" max="2020">
+        <label for="month">Month:</label>
+        <input type="number" id="month" name="month" min="1" max="12">
+        <input type="submit" value="Submit" onclick="submit()">
+        <input type="reset" value="Reset" onclick="reset()">
+      </div>
+    </div> 
   </body>
 </html>
 <!-- [END maps_layer_heatmap] -->

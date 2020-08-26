@@ -54,10 +54,9 @@ function initMap(): void {
   });
   queryDB.getPointsFromDB(
     heatmap,
-    queryDB.getQuiredCollection(["cat", "giraffe"], 1995)
+    queryDB.getQuiredCollection(["bag", "giraffe"], 1992)
   );
   //display the relevant images on the heatmap
-  queryDB.getGeoPointsFromDB();
 }
 
 function toggleHeatmap() {
