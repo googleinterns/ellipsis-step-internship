@@ -22,7 +22,7 @@
 // Imports
 let map: google.maps.Map, heatmap: google.maps.visualization.HeatmapLayer;
 import * as firebase from "firebase";
-import firebaseConfig from "../firebase_config";
+import firebaseConfig from "./firebase_config";
 import * as queryDB from "./queryDB";
 
 // Creates the firebase app and gets a reference to firestore.
@@ -54,9 +54,10 @@ function initMap(): void {
   });
   queryDB.getPointsFromDB(
     heatmap,
-    queryDB.getQuiredCollection(["bag", "giraffe"], 1992)
+    queryDB.getQuiredCollection(["cat", "giraffe"], 1995)
   );
   //display the relevant images on the heatmap
+  queryDB.getGeoPointsFromDB();
 }
 
 function toggleHeatmap() {
