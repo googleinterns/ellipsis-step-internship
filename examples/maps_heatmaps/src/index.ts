@@ -54,9 +54,13 @@ function initMap(): void {
   });
   queryDB.getPointsFromDB(
     heatmap,
-    queryDB.getQuiredCollection(["bag", "giraffe"], 1992)
+    queryDB.getQuiredCollection(
+      new firebase.firestore.GeoPoint(37.77687, -122.438239),
+      2,
+      ["cat", "dog", "bag"]
+    )
   );
-  //display the relevant images on the heatmap
+  // display the relevant images on the heatmap
 }
 
 function toggleHeatmap() {
@@ -599,7 +603,7 @@ function getPoints() {
   ];
 }
 
-//initializeDB.addImagesToDB(initializeDB.allCoordinates); //was used to fill the database
+// initializeDB.addImagesToDB(initializeDB.allCoordinates); //was used to fill the database
 // [END maps_layer_heatmap]
 export { initMap };
 export { database };
