@@ -60,7 +60,10 @@ function initMap(): void {
       ["cat", "dog", "bag"]
     )
   );
+<<<<<<< HEAD
   // display the relevant images on the heatmap
+=======
+>>>>>>> separate initiallize to test file
 }
 
 function toggleHeatmap() {
