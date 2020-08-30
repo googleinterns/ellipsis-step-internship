@@ -2,6 +2,11 @@ import { database } from "../src/index";
 import * as firebase from "firebase";
 import * as geofirestore from "geofirestore";
 
+/**
+ * initalize the database
+ * to run in the terminal-  npm run initialize-db
+ */
+
 const allCoordinates = [
   [37.782551, -122.445368],
   [37.782745, -122.444586],
