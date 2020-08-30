@@ -1,4 +1,4 @@
-import { database } from "./index";
+import { database } from "../src/index";
 import * as firebase from "firebase";
 import * as geofirestore from "geofirestore";
 
@@ -297,6 +297,8 @@ const allCoordinates = [
   [37.799966, -122.42936],
   [37.800288, -122.42943],
 ];
+
+addImagesToDB(allCoordinates);
 
 /* adds an image to 'images' collection*/
 function addNewImage(

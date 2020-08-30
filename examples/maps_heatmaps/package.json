@@ -6,7 +6,8 @@
     "format": "eslint --fix src/*.ts",
     "lint": "eslint src/*.ts",
     "test": "jest --passWithNoTests src/*",
-    "watch": "webpack --config ./webpack.dev.js --mode development"
+    "watch": "webpack --config ./webpack.dev.js --mode development",
+    "initialize-db": "ts-node-script test/initializeDB.ts"
   },
   "dependencies": {
     "firebase": "^7.19.0",
@@ -33,6 +34,7 @@
     "terser-webpack-plugin": "^4.1.0",
     "ts-jest": "^26.2.0",
     "ts-loader": "^8.0.2",
+    "ts-node": "^9.0.0",
     "typescript": "^3.9.7",
     "webpack": "^4.44.1",
     "webpack-cli": "^3.3.12",
