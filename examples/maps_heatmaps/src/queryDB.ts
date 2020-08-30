@@ -4,13 +4,20 @@ import * as geofirestore from "geofirestore";
 
 /* returns the filtered collection by the different queries*/
 function getQuiredCollection(
+  center: firebase.firestore.GeoPoint,
+  radius: number,
   labels: string[],
   year?: number,
   month?: number,
   day?: number
-): firebase.firestore.Query {
-  let dataRef: firebase.firestore.Query = database
-    .collection("images")
+): geofirestore.GeoQuery {
+  const GeoFirestore = geofirestore.initializeApp(database);
+  const geoCollection = GeoFirestore.collection("images");
+  let dataRef: geofirestore.GeoQuery = geoCollection
+    .near({
+      center: center,
+      radius: radius,
+    })
     .where("labels", "array-contains-any", labels);
   if (year != undefined) dataRef = dataRef.where("year", "==", year);
   if (year != undefined && month != undefined)
@@ -25,12 +32,12 @@ given the filtered collection and the heapmap*/
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 function getPointsFromDB(
   heatmap: google.maps.visualization.HeatmapLayer,
-  dataRef: firebase.firestore.Query
+  dataRef: geofirestore.GeoQuery
 ) {
   const allPoints: Array<google.maps.LatLng> = [];
   dataRef.get().then((querySnapshot) => {
     querySnapshot.forEach((doc) => {
-      const coordinates: firebase.firestore.GeoPoint = doc.get("coordinates");
+      const coordinates: firebase.firestore.GeoPoint = doc.data().g.geopoint;
       const newLatLon = getLatLon(coordinates);
       allPoints.push(newLatLon);
     });
@@ -57,7 +64,7 @@ function getGeoPointsFromDB() {
   geocollection
     .near({
       center: center,
-      radius: 1000000000,
+      radius: 10000,
     })
     .get()
     .then((value) => console.log(value.docs));
