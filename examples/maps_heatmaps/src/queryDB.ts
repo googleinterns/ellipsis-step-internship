@@ -64,7 +64,7 @@ function getGeoPointsFromDB() {
   geocollection
     .near({
       center: center,
-      radius: 10000,
+      radius: 1000000000,
     })
     .get()
     .then((value) => console.log(value.docs));

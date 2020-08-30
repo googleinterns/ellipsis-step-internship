@@ -1,5 +1,6 @@
-import { database } from "./index";
+import { database } from "../src/index";
 import * as firebase from "firebase";
+import * as geofirestore from "geofirestore";
 
 const allCoordinates = [
   [37.782551, -122.445368],
@@ -292,6 +293,8 @@ const allCoordinates = [
   [37.800288, -122.42943],
 ];
 
+addImagesToDB(allCoordinates);
+
 /* adds an image to 'images' collection*/
 function addNewImage(
   url: string,
@@ -302,8 +305,9 @@ function addNewImage(
   month: number,
   day: number
 ) {
-  const newDoc = database.collection("images").doc();
-  newDoc.set({
+  const GeoFirestore = geofirestore.initializeApp(database);
+  const geocollection = GeoFirestore.collection("images");
+  const newDoc = geocollection.add({
     year: year,
     month: month,
     day: day,
@@ -311,9 +315,9 @@ function addNewImage(
     labels: [label],
     url: url,
   });
-  newDoc.collection("labels").doc().set({
-    name: label,
-  });
+  // newDoc.collection("labels").doc().set({
+  //   name: label,
+  // });
 }
 
 /* adds images to 'images' collection with randomized information

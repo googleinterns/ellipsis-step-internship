@@ -60,6 +60,7 @@ function initMap(): void {
       ["cat", "dog", "bag"]
     )
   );
+  // display the relevant images on the heatmap
 }
 
 function toggleHeatmap() {
@@ -602,7 +603,7 @@ function getPoints() {
   ];
 }
 
-//initializeDB.addImagesToDB(initializeDB.allCoordinates); //was used to fill the database
+// initializeDB.addImagesToDB(initializeDB.allCoordinates); //was used to fill the database
 // [END maps_layer_heatmap]
 export { initMap };
 export { database };
