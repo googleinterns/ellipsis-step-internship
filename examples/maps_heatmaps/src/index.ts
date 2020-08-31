@@ -92,7 +92,7 @@ function initMap(): void {
         );
       return dis;
     }
-    return 2;
+    return 2; //check what to make default
   }
   function toRadian(decDeg: number) {
     return decDeg / 57.2958;
