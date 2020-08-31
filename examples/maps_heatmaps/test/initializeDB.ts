@@ -1,4 +1,4 @@
-import { database } from "../src/index";
+import { database } from "../src/index"; 
 import * as firebase from "firebase";
 import * as geofirestore from "geofirestore";
 import fs from "fs";
@@ -8,12 +8,33 @@ import fs from "fs";
  * to run in the terminal-  npm run initialize-db
  */
 
-const allCoordinates = [];
-fs.readFile("./coordinates.txt", function (text) {
-  const textByLine = text.split("\n");
-});
 
-addImagesToDB(allCoordinates);
+/* Reads from a given file and converts to an array of coordinates. */
+function getCoordinatesFromFile() {
+  const allCoordinates: number[][] = new Array<Array<number>>();
+  if (process.argv.length < 3) {
+    console.log("ERROR: not in format - npm run initialize-db fileName.txt");
+  } else {
+    const filename = process.argv[2];
+    fs.readFile(filename, "utf8", function (err, data) {
+      if (err) {
+        console.log(err);
+      } else {
+        const textByLine = data.toString().split("\n");
+        textByLine.forEach((element) => {
+          const inerArray = element.toString().split(",");
+          const lat: number = +inerArray[0];
+          const lon: number = +inerArray[1];
+          const coord: number[] = [lat, lon];
+          allCoordinates.push(coord);
+        });
+      }
+      return allCoordinates;
+    });
+  }
+}
+ 
+//addImagesToDB(getCoordinatesFromFile());
 
 /* adds an image to 'images' collection*/
 function addNewImage(
@@ -65,4 +86,4 @@ function getRandomNumber(max: number) {
   return Math.floor(Math.random() * Math.floor(max));
 }
 
-export { addImagesToDB, allCoordinates };
+export { addImagesToDB };
