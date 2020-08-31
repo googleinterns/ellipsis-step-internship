@@ -17,9 +17,9 @@ import { add } from './index';
 import { expect } from 'chai';
 import 'mocha';
 
-describe('getPoints function', () => {
+describe('add function', () => {
 
-  it('returns array with LatLong objects', () => {
+  it('correctly adds', () => {
     const value1 = 10;
     const value2 = 20;
     const result = add(value1, value2);
