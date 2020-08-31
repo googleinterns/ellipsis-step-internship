@@ -1,4 +1,4 @@
-import { database } from "./index";
+import { database } from "../src/index";
 import * as firebase from "firebase";
 import * as geofirestore from "geofirestore";
 import fs from "fs";
@@ -12,6 +12,8 @@ const allCoordinates = [];
 fs.readFile("./coordinates.txt", function (text) {
   const textByLine = text.split("\n");
 });
+
+addImagesToDB(allCoordinates);
 
 /* adds an image to 'images' collection*/
 function addNewImage(
