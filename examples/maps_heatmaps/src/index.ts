@@ -34,6 +34,10 @@ function initMap(): void {
   map = new google.maps.Map(document.getElementById("map") as HTMLElement, {
     zoom: 13,
     mapTypeId: "satellite",
+    mapTypeControlOptions: {
+      style: google.maps.MapTypeControlStyle.HORIZONTAL_BAR,
+      position: google.maps.ControlPosition.TOP_CENTER,
+    },
   });
 
   // TODO shows how to connect to firestore and read data from there
@@ -52,15 +56,6 @@ function initMap(): void {
     data: [],
     map: map,
   });
-  queryDB.getPointsFromDB(
-    heatmap,
-    queryDB.getQuiredCollection(
-      new firebase.firestore.GeoPoint(37.77687, -122.438239),
-      2,
-      ["cat", "dog", "bag"]
-    )
-  );
-  // display the relevant images on the heatmap
   map.addListener("center_changed", () => mapChanged());
   map.addListener("zoom_changed", () => mapChanged());
   function mapChanged() {
@@ -68,11 +63,12 @@ function initMap(): void {
     const lat = center.lat();
     const lng = center.lng();
     const newCenter = new firebase.firestore.GeoPoint(lat, lng);
-    console.log(newCenter);
-    queryDB.getPointsFromDB(
-      heatmap,
-      queryDB.getQuiredCollection(newCenter, getRadius(), ["cat", "dog", "bag"])
+    const quiredCollection = queryDB.getQuiredCollection(
+      newCenter,
+      getRadius(),
+      ["cat", "dog", "bag"]
     );
+    queryDB.getPointsFromDB(heatmap, quiredCollection);
   }
   function getRadius() {
     const bounds = map.getBounds();
@@ -98,7 +94,7 @@ function initMap(): void {
         );
       return dis;
     }
-    return 2;
+    return 2; //check what to make default
   }
 }
 
