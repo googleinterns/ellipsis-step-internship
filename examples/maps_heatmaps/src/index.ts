@@ -40,8 +40,8 @@ function initMap(): void {
     },
   });
 
-  // TODO shows how to connect to firestore and read data from there
-  const images = database.collection("test");
+  // TODO: decide where to set default center
+  const images = database.collection("images");
   images.get().then((querySnapshot) => {
     if (!querySnapshot.empty) {
       const image = querySnapshot.docs[0].data();
@@ -58,6 +58,7 @@ function initMap(): void {
   });
   map.addListener("center_changed", () => mapChanged());
   map.addListener("zoom_changed", () => mapChanged());
+  //TODO: labels, year and month should be as the client requested, not fixed values
   function mapChanged() {
     const center: google.maps.LatLng = map.getCenter();
     const lat = center.lat();
@@ -70,31 +71,31 @@ function initMap(): void {
     );
     queryDB.getPointsFromDB(heatmap, quiredCollection);
   }
+  //TODO: check what should be the default radius value
   function getRadius() {
     const bounds = map.getBounds();
     if (bounds) {
+      const r = 3963.0; //radius of the earth in miles
       const center = bounds.getCenter();
-      const ne = bounds.getNorthEast();
-
-      // r = radius of the earth in statute miles
-      const r = 3963.0;
-
-      // Convert lat or lng from decimal degrees into radians (divide by 57.2958)
-      const lat1 = center.lat() / 57.2958;
-      const lon1 = center.lng() / 57.2958;
-      const lat2 = ne.lat() / 57.2958;
-      const lon2 = ne.lng() / 57.2958;
-
-      // distance = circle radius from center to Northeast corner of bounds
+      const Northeast = bounds.getNorthEast();
+      const centerLat = toRadian(center.lat());
+      const centerLng = toRadian(center.lng());
+      const NortheastLat = toRadian(Northeast.lat());
+      const NortheastLng = toRadian(Northeast.lng());
       const dis =
         r *
         Math.acos(
-          Math.sin(lat1) * Math.sin(lat2) +
-            Math.cos(lat1) * Math.cos(lat2) * Math.cos(lon2 - lon1)
+          Math.sin(centerLat) * Math.sin(NortheastLat) +
+            Math.cos(centerLat) *
+              Math.cos(NortheastLat) *
+              Math.cos(NortheastLng - centerLng)
         );
       return dis;
     }
-    return 2; //check what to make default
+    return 2;
+  }
+  function toRadian(decDeg: number) {
+    return decDeg / 57.2958;
   }
 }
 
