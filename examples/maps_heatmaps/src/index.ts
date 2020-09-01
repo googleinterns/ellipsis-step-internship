@@ -65,35 +65,23 @@ function initMap(): void {
     const lat = center.lat();
     const lng = center.lng();
     const newCenter = new firebase.firestore.GeoPoint(lat, lng);
+    const bounds = map.getBounds(); //map's current bounderies
+    //TODO: check what should be the default radius value.
+    let newRadius = 2;
+    if (bounds) {
+      newRadius = utils.getRadius(
+        bounds.getCenter().lat(),
+        bounds.getCenter().lng(),
+        bounds.getNorthEast().lat(),
+        bounds.getNorthEast().lng()
+      );
+    }
     const queriedCollection = queryDB.getQueriedCollection(
       newCenter,
-      getRadius(),
+      newRadius,
       ["cat", "dog", "bag"]
     );
     queryDB.updateHeatmapFromQuery(heatmap, queriedCollection);
-  }
-  //TODO: check what should be the default radius value.
-  function getRadius() {
-    const bounds = map.getBounds(); //map's current bounderies
-    if (bounds) {
-      const r = 3963.0; //radius of the earth in miles
-      const center = bounds.getCenter();
-      const Northeast = bounds.getNorthEast();
-      const centerLat = utils.toRadian(center.lat());
-      const centerLng = utils.toRadian(center.lng());
-      const NortheastLat = utils.toRadian(Northeast.lat());
-      const NortheastLng = utils.toRadian(Northeast.lng());
-      const dis =
-        r *
-        Math.acos(
-          Math.sin(centerLat) * Math.sin(NortheastLat) +
-            Math.cos(centerLat) *
-              Math.cos(NortheastLat) *
-              Math.cos(NortheastLng - centerLng)
-        );
-      return dis;
-    }
-    return 2;
   }
 }
 

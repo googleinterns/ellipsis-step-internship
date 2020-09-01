@@ -14,8 +14,31 @@
  * limitations under the License.
  */
 
+/*Calculates the radius of the circle that contains the current map bounderies*/
+function getRadius(
+  centerLat: number,
+  centerLng: number,
+  northEastLat: number,
+  northEastLng: number
+): number {
+  const r = 3963.0; //radius of the earth in miles
+  const centerLatR = toRadian(centerLat);
+  const centerLngR = toRadian(centerLng);
+  const NortheastLatR = toRadian(northEastLat);
+  const NortheastLngR = toRadian(northEastLng);
+  const dis =
+    r *
+    Math.acos(
+      Math.sin(centerLatR) * Math.sin(NortheastLatR) +
+        Math.cos(centerLatR) *
+          Math.cos(NortheastLatR) *
+          Math.cos(NortheastLngR - centerLngR)
+    );
+  return dis;
+}
+
 function toRadian(decDeg: number): number {
   return decDeg / 57.2958;
 }
 
-export { toRadian };
+export { getRadius };
