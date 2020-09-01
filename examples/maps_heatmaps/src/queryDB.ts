@@ -50,4 +50,4 @@ function getLatLon(coordinates: firebase.firestore.GeoPoint) {
   return new google.maps.LatLng(lat, lng);
 }
 
-export { getPointsFromDB, getQuiredCollection };
+export { getPointsFromDB, getQuiredCollection, getLatLon };

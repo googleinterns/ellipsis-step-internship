@@ -26,7 +26,7 @@ module.exports = merge(common, {
     contentBase: path.resolve(__dirname, "public"),
     liveReload: true,
     host: "0.0.0.0",
-    port: 8080,
+    port: 8081,
     historyApiFallback: true,
     writeToDisk: true,
     disableHostCheck: true,

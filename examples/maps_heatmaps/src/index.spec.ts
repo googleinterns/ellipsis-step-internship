@@ -13,17 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { add } from './index';
-import { expect } from 'chai';
-import 'mocha';
+import { add } from "./index";
+import { expect } from "chai";
+import "mocha";
 
-describe('add function', () => {
-
-  it('correctly adds', () => {
+describe("add function", () => {
+  it("correctly adds", () => {
     const value1 = 10;
     const value2 = 20;
     const result = add(value1, value2);
-    expect(result).to.equal(value1+value2);
+    expect(result).to.equal(value1 + value2);
   });
-
 });
