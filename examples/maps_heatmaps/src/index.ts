@@ -23,6 +23,7 @@
 let map: google.maps.Map, heatmap: google.maps.visualization.HeatmapLayer;
 import * as firebase from "firebase";
 import firebaseConfig from "./firebase_config";
+import * as geofirestore from "geofirestore";
 import * as queryDB from "./queryDB";
 
 // Creates the firebase app and gets a reference to firestore.
@@ -136,31 +137,14 @@ function getPoints() {
   // Create a reference to the cities collection
   //TODO update this to query firestore for image coordinates.
   return [
-    new google.maps.LatLng(37.782551, -122.445368),
-    new google.maps.LatLng(37.782745, -122.444586),
-    new google.maps.LatLng(37.782842, -122.443688),
-    new google.maps.LatLng(37.782919, -122.442815),
-    new google.maps.LatLng(37.782992, -122.442112),
-    new google.maps.LatLng(37.7831, -122.441461),
-    new google.maps.LatLng(37.783206, -122.440829),
-    new google.maps.LatLng(37.783273, -122.440324),
-    new google.maps.LatLng(37.783316, -122.440023),
-    new google.maps.LatLng(37.783357, -122.439794),
-    new google.maps.LatLng(37.783371, -122.439687),
-    new google.maps.LatLng(37.783368, -122.439666),
-    new google.maps.LatLng(37.783383, -122.439594),
-    new google.maps.LatLng(37.783508, -122.439525),
-    new google.maps.LatLng(37.783842, -122.439591),
-    new google.maps.LatLng(37.784147, -122.439668),
-    new google.maps.LatLng(37.784206, -122.439686),
-    new google.maps.LatLng(37.784386, -122.43979),
-    new google.maps.LatLng(37.784701, -122.439902),
-    new google.maps.LatLng(37.784965, -122.439938),
-    new google.maps.LatLng(37.78501, -122.439947),
-    new google.maps.LatLng(37.78536, -122.439952),
-    new google.maps.LatLng(37.785715, -122.44003),
-    new google.maps.LatLng(37.786117, -122.440119),
-    new google.maps.LatLng(37.786564, -122.440209),
+    new google.maps.LatLng(37.784345, -122.422922),
+    new google.maps.LatLng(37.784389, -122.422926),
+    new google.maps.LatLng(37.784437, -122.422924),
+    new google.maps.LatLng(37.784746, -122.422818),
+    new google.maps.LatLng(37.785436, -122.422959),
+    new google.maps.LatLng(37.78612, -122.423112),
+    new google.maps.LatLng(37.786433, -122.423029),
+    new google.maps.LatLng(37.786631, -122.421213),
     new google.maps.LatLng(37.786905, -122.44027),
     new google.maps.LatLng(37.786956, -122.440279),
     new google.maps.LatLng(37.800224, -122.43352),
@@ -646,4 +630,5 @@ function add(value1: number, value2: number) {
   return value1 + value2;
 }
 
-export { initMap, add, database };
+export { initMap, add };
+export { database };

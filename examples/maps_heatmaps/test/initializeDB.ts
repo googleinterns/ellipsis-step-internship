@@ -8,6 +8,7 @@ import fs from "fs";
  * to run in the terminal-  npm run initialize-db
  */
 
+/* Reads from a given file and converts to an array of coordinates. */
 function getCoordinatesFromFile() {
   const allCoordinates: number[][] = new Array<Array<number>>();
   if (process.argv.length < 3) {
@@ -31,8 +32,7 @@ function getCoordinatesFromFile() {
     });
   }
 }
-
-//addImagesToDB(allCoordinates);
+//addImagesToDB(getCoordinatesFromFile());
 
 /* adds an image to 'images' collection*/
 function addNewImage(
