@@ -1,11 +1,11 @@
 /*
- * Copyright 2019 Google LLC. All Rights Reserved.
+ * Copyright 2020 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *   https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -24,6 +24,7 @@ let map: google.maps.Map, heatmap: google.maps.visualization.HeatmapLayer;
 import * as firebase from "firebase";
 import firebaseConfig from "./firebase_config";
 import * as queryDB from "./queryDB";
+import * as utils from "./utils";
 
 // Creates the firebase app and gets a reference to firestore.
 console.log(firebaseConfig);
@@ -40,7 +41,7 @@ function initMap(): void {
     },
   });
 
-  // TODO: decide where to set default center
+  // TODO: decide where to set default center.
   const images = database.collection("images");
   images.get().then((querySnapshot) => {
     if (!querySnapshot.empty) {
@@ -58,30 +59,30 @@ function initMap(): void {
   });
   map.addListener("center_changed", () => mapChanged());
   map.addListener("zoom_changed", () => mapChanged());
-  //TODO: labels, year and month should be as the client requested, not fixed values
+  //TODO: labels, year and month should be as the client requested, not fixed values.
   function mapChanged() {
     const center: google.maps.LatLng = map.getCenter();
     const lat = center.lat();
     const lng = center.lng();
     const newCenter = new firebase.firestore.GeoPoint(lat, lng);
-    const quiredCollection = queryDB.getQuiredCollection(
+    const queriedCollection = queryDB.getQueriedCollection(
       newCenter,
       getRadius(),
       ["cat", "dog", "bag"]
     );
-    queryDB.getPointsFromDB(heatmap, quiredCollection);
+    queryDB.updateHeatmapFromQuery(heatmap, queriedCollection);
   }
-  //TODO: check what should be the default radius value
+  //TODO: check what should be the default radius value.
   function getRadius() {
-    const bounds = map.getBounds();
+    const bounds = map.getBounds(); //map's current bounderies
     if (bounds) {
       const r = 3963.0; //radius of the earth in miles
       const center = bounds.getCenter();
       const Northeast = bounds.getNorthEast();
-      const centerLat = toRadian(center.lat());
-      const centerLng = toRadian(center.lng());
-      const NortheastLat = toRadian(Northeast.lat());
-      const NortheastLng = toRadian(Northeast.lng());
+      const centerLat = utils.toRadian(center.lat());
+      const centerLng = utils.toRadian(center.lng());
+      const NortheastLat = utils.toRadian(Northeast.lat());
+      const NortheastLng = utils.toRadian(Northeast.lng());
       const dis =
         r *
         Math.acos(
@@ -93,9 +94,6 @@ function initMap(): void {
       return dis;
     }
     return 2;
-  }
-  function toRadian(decDeg: number) {
-    return decDeg / 57.2958;
   }
 }
 
@@ -639,7 +637,5 @@ function getPoints() {
   ];
 }
 
-// initializeDB.addImagesToDB(initializeDB.allCoordinates); //was used to fill the database
 // [END maps_layer_heatmap]
-export { initMap };
-export { database };
+export { initMap, database };
