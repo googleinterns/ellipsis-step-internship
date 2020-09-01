@@ -641,5 +641,9 @@ function getPoints() {
 
 // initializeDB.addImagesToDB(initializeDB.allCoordinates); //was used to fill the database
 // [END maps_layer_heatmap]
-export { initMap };
-export { database };
+
+function add(value1: number, value2: number) {
+  return value1 + value2;
+}
+
+export { initMap, add, database };
