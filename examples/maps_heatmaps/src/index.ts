@@ -25,7 +25,6 @@ import * as firebase from "firebase";
 import firebaseConfig from "./firebase_config";
 import * as geofirestore from "geofirestore";
 import * as queryDB from "./queryDB";
-import * as utils from "./utils";
 
 // Creates the firebase app and gets a reference to firestore.
 console.log(firebaseConfig);
@@ -70,12 +69,10 @@ function initMap(): void {
     //TODO: check what should be the default radius value.
     let newRadius = 2;
     if (bounds) {
-      newRadius = utils.getRadius(
-        bounds.getCenter().lat(),
-        bounds.getCenter().lng(),
-        bounds.getNorthEast().lat(),
-        bounds.getNorthEast().lng()
-      );
+      newRadius = google.maps.geometry.spherical.computeDistanceBetween(
+        bounds.getCenter(),
+        bounds.getNorthEast()
+      ) * 0.000621371192; //convert to miles
     }
     const queriedCollection = queryDB.getQueriedCollection(
       newCenter,
