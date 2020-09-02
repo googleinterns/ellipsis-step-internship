@@ -1,11 +1,11 @@
 /*
- * Copyright 2019 Google LLC. All Rights Reserved.
+ * Copyright 2020 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *   https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -21,36 +21,68 @@
 
 // Imports
 let map: google.maps.Map, heatmap: google.maps.visualization.HeatmapLayer;
-import * as firebase from 'firebase';
-import firebaseConfig from './firebase_config';
+import * as firebase from "firebase";
+import firebaseConfig from "./firebase_config";
+import * as queryDB from "./queryDB";
+import * as utils from "./utils";
 
 // Creates the firebase app and gets a reference to firestore.
 console.log(firebaseConfig);
-var app = firebase.initializeApp(firebaseConfig);
-var database = app.firestore();
+const app = firebase.initializeApp(firebaseConfig);
+const database = app.firestore();
 
 function initMap(): void {
-
-
   map = new google.maps.Map(document.getElementById("map") as HTMLElement, {
     zoom: 13,
-    mapTypeId: "satellite"
+    mapTypeId: "satellite",
+    mapTypeControlOptions: {
+      style: google.maps.MapTypeControlStyle.HORIZONTAL_BAR,
+      position: google.maps.ControlPosition.TOP_CENTER,
+    },
   });
 
-  // TODO shows how to connect to firestore and read data from there
-  let images = database.collection("test");
-  images.get().then(querySnapshot => {
-    if(!querySnapshot.empty) {
-      const image = querySnapshot.docs[0].data() as any;
-      map.setCenter(  { lat: image.coordinates.latitude, lng: image.coordinates.longitude });
+  // TODO: decide where to set default center.
+  const images = database.collection("images");
+  images.get().then((querySnapshot) => {
+    if (!querySnapshot.empty) {
+      const image = querySnapshot.docs[0].data();
+      map.setCenter({
+        lat: image.coordinates.latitude,
+        lng: image.coordinates.longitude,
+      });
     }
   });
 
-
   heatmap = new google.maps.visualization.HeatmapLayer({
-    data: getPoints(),
-    map: map
+    data: [],
+    map: map,
   });
+  map.addListener("center_changed", () => mapChanged());
+  map.addListener("zoom_changed", () => mapChanged());
+  //TODO: labels, year and month should be as the client requested, not fixed values.
+  function mapChanged() {
+    const center: google.maps.LatLng = map.getCenter();
+    const lat = center.lat();
+    const lng = center.lng();
+    const newCenter = new firebase.firestore.GeoPoint(lat, lng);
+    const bounds = map.getBounds(); //map's current bounderies
+    //TODO: check what should be the default radius value.
+    let newRadius = 2;
+    if (bounds) {
+      newRadius = utils.getRadius(
+        bounds.getCenter().lat(),
+        bounds.getCenter().lng(),
+        bounds.getNorthEast().lat(),
+        bounds.getNorthEast().lng()
+      );
+    }
+    const queriedCollection = queryDB.getQueriedCollection(
+      newCenter,
+      newRadius,
+      ["cat", "dog", "bag"]
+    );
+    queryDB.updateHeatmapFromQuery(heatmap, queriedCollection);
+  }
 }
 
 function toggleHeatmap() {
@@ -72,7 +104,7 @@ function changeGradient() {
     "rgba(63, 0, 91, 1)",
     "rgba(127, 0, 63, 1)",
     "rgba(191, 0, 31, 1)",
-    "rgba(255, 0, 0, 1)"
+    "rgba(255, 0, 0, 1)",
   ];
   heatmap.set("gradient", heatmap.get("gradient") ? null : gradient);
 }
@@ -589,8 +621,9 @@ function getPoints() {
     new google.maps.LatLng(37.754665, -122.403242),
     new google.maps.LatLng(37.753837, -122.403172),
     new google.maps.LatLng(37.752986, -122.403112),
-    new google.maps.LatLng(37.751266, -122.403355)
+    new google.maps.LatLng(37.751266, -122.403355),
   ];
 }
+
 // [END maps_layer_heatmap]
-export { initMap };
+export { initMap, database };
