@@ -23,7 +23,7 @@ describe("toRadian function", () => {
     const result = toRadian(value1);
     expect(result).to.equal(value1 / 57.2958);
   });
-  it("correctly converts from 0", () => {
+  it("correctly converts 0", () => {
     const value1 = 0;
     const result = toRadian(value1);
     expect(result).to.equal(value1 / 57.2958);
