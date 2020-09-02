@@ -1,9 +1,29 @@
+/*
+ * Copyright 2020 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 import { database } from "./index";
 import * as firebase from "firebase";
 import * as geofirestore from "geofirestore";
 
-/* returns the filtered collection by the different queries*/
-function getQuiredCollection(
+/* @param center The center of the current map, 
+   @param radius The radius of the circle that contains the current map bounderies
+   @param labels The labels the client queries by
+   @param year, month, day The date the client queries by
+   @return The filtered collection by the different queries*/
+function getQueriedCollection(
   center: firebase.firestore.GeoPoint,
   radius: number,
   labels: string[],
@@ -27,9 +47,9 @@ function getQuiredCollection(
   return dataRef;
 }
 
-/* displays the relevant images on the map
-given the filtered collection and the heapmap*/
-function getPointsFromDB(
+/* Displays the relevant images on the map
+given the filtered collection and the heapmap. */
+function updateHeatmapFromQuery(
   heatmap: google.maps.visualization.HeatmapLayer,
   dataRef: geofirestore.GeoQuery
 ): void {
@@ -50,4 +70,4 @@ function getLatLon(coordinates: firebase.firestore.GeoPoint) {
   return new google.maps.LatLng(lat, lng);
 }
 
-export { getPointsFromDB, getQuiredCollection };
+export { updateHeatmapFromQuery, getQueriedCollection };
