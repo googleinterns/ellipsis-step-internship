@@ -19,7 +19,7 @@ import { expect } from "chai";
 import "mocha";
 import firebase from "firebase";
 
-describe("get coordinates by qeury", () => {
+describe("check function getQueriedCollection", () => {
   const lat = 37.780501;
   const lon = -122.391281;
   const center = new firebase.firestore.GeoPoint(lat, lon);
@@ -79,7 +79,7 @@ describe("get coordinates by qeury", () => {
   });
   it("test by center and radius", () => {
     queryDB
-      .getQueriedCollection(center, radius, label, year, month, day)
+      .getQueriedCollection(center, radius, label)
       .get()
       .then((querySnapshot) => {
         querySnapshot.forEach((doc) => {
