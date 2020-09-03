@@ -28,8 +28,8 @@ describe("check function getQueriedCollection", () => {
   const month = 4;
   const day = 20;
   const label = ["cat"];
-  it("test by date", () => {
-    queryDB
+  it("test by date", async () => {
+    await queryDB
       .getQueriedCollection(center, radius, label, year, month, day)
       .get()
       .then((querySnapshot) => {
@@ -40,8 +40,8 @@ describe("check function getQueriedCollection", () => {
         });
       });
   });
-  it("test by label", () => {
-    queryDB
+  it("test by label", async () => {
+    await queryDB
       .getQueriedCollection(center, radius, label)
       .get()
       .then((querySnapshot) => {
@@ -50,8 +50,8 @@ describe("check function getQueriedCollection", () => {
         });
       });
   });
-  it("test by date and label", () => {
-    queryDB
+  it("test by date and label", async () => {
+    await queryDB
       .getQueriedCollection(center, radius, label, year, month, day)
       .get()
       .then((querySnapshot) => {
@@ -63,9 +63,9 @@ describe("check function getQueriedCollection", () => {
         });
       });
   });
-  it("test by several labels", () => {
+  it("test by several labels", async () => {
     const labels = ["cat", "bag"];
-    queryDB
+    await queryDB
       .getQueriedCollection(center, radius, labels, year, month, day)
       .get()
       .then((querySnapshot) => {
@@ -77,29 +77,14 @@ describe("check function getQueriedCollection", () => {
         });
       });
   });
-  it("test by center and radius", () => {
-    queryDB
+  it("test by center and radius", async () => {
+    await queryDB
       .getQueriedCollection(center, radius, label)
       .get()
       .then((querySnapshot) => {
         querySnapshot.forEach((doc) => {
           expect(doc.distance).to.be.at.least(0);
           expect(doc.distance).to.be.at.most(radius);
-        });
-      });
-  });
-  it("test by all arguments", () => {
-    queryDB
-      .getQueriedCollection(center, radius, label, year, month, day)
-      .get()
-      .then((querySnapshot) => {
-        querySnapshot.forEach((doc) => {
-          expect(doc.distance).to.be.at.least(0);
-          expect(doc.distance).to.be.at.most(radius);
-          expect(doc.data().labels).to.include.members(label);
-          expect(doc.data().year).to.equal(2015);
-          expect(doc.data().month).to.equal(4);
-          expect(doc.data().day).to.equal(20);
         });
       });
   });

@@ -6,16 +6,14 @@
     "format": "eslint --fix src/*.ts",
     "lint": "eslint src/*.ts",
     "test": "mocha -r ts-node/register src/**/*.spec.ts",
-    "watch": "webpack --config ./webpack.dev.js --mode development"
+    "watch": "webpack --config ./webpack.dev.js --mode development",
+    "initialize-db": "ts-node-script test/initializeDB.ts"
   },
   "dependencies": {
     "firebase": "^7.19.0",
     "geofirestore": "^4.3.0",
     "webpack-merge": "^5.1.2",
-    "@types/googlemaps": "^3.39.13",
-    "test": "jest --passWithNoTests src/*",
-    "watch": "webpack --config ./webpack.dev.js --mode development",
-    "initialize-db": "ts-node-script test/initializeDB.ts"
+    "@types/googlemaps": "^3.39.13"
   },
   "devDependencies": {
     "@babel/core": "^7.11.0",
