@@ -19,7 +19,7 @@ const HtmlWebpackPlugin = require("html-webpack-plugin");
 const HtmlReplaceWebpackPlugin = require("html-replace-webpack-plugin");
 
 module.exports = {
-  entry: ["./src/index.ts"],
+  entry: ["./src/index.tsx"],
   module: {
     rules: [
       {
@@ -28,14 +28,14 @@ module.exports = {
         use: ["babel-loader"]
       },
       {
-        test: /\.ts?$/,
+        test: /\.tsx?$/,
         use: "ts-loader",
         exclude: /node_modules/
       }
     ]
   },
   resolve: {
-    extensions: [".ts", ".js"]
+    extensions: [".ts", ".tsx", ".js"]
   },
   output: {
     path: `${__dirname}/public`,

@@ -25,9 +25,15 @@ import * as firebase from "firebase";
 import firebaseConfig from "./firebase_config";
 import * as geofirestore from "geofirestore";
 import * as queryDB from "./queryDB";
+import React from "react";
+import ReactDOM from "react-dom";
+
+import ExampleCompnent from "./sidepanel";
 
 // Creates the firebase app and gets a reference to firestore.
 console.log(firebaseConfig);
+ReactDOM.render(<ExampleCompnent />, document.querySelector("#root"));
+
 const app = firebase.initializeApp(firebaseConfig);
 const database = app.firestore();
 
