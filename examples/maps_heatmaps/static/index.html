@@ -8,11 +8,13 @@
       src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&callback=initMap&libraries=visualization&v=weekly"
       defer
     ></script>
+    <script src="https://maps.googleapis.com/maps/api/js?v=3&sensor=false&libraries=geometry"></script>
     <link rel="stylesheet" type="text/css" href="./style.css" />
-    <script src="./app.js"></script>
   </head>
   <body>
-    <div id="map"></div>
+      <div id="map"></div>
+      <div id="root"></div>
+      <script src="./app.js"></script>
   </body>
 </html>
 <!-- [END maps_layer_heatmap] -->

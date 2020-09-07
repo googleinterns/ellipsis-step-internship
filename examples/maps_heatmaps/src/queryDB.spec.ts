@@ -1,87 +1,91 @@
+/*
+ * Copyright 2020 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 import * as queryDB from "./queryDB";
-import { database } from "./index";
 import { expect } from "chai";
 import "mocha";
 import firebase from "firebase";
-import * as geofirestore from "geofirestore";
 
-/*
-describe("add new lat lon", () => {
-  it("correctly creating new lat lon", () => {
-    const lat = 37;
-    const lon = -120;
-    const coordinates: firebase.firestore.GeoPoint = new firebase.firestore.GeoPoint(
-      lat,
-      lon
-    );
-    const result = queryDB.getLatLon(coordinates);
-    expect(result).to.equal(new google.maps.LatLng(lat, lon));
+describe("check function getQueriedCollection", () => {
+  const lat = 37.780501;
+  const lon = -122.391281;
+  const center = new firebase.firestore.GeoPoint(lat, lon);
+  const radius = 100;
+  const year = 2015;
+  const month = 4;
+  const day = 20;
+  const label = ["cat"];
+  it("test by date", async () => {
+    await queryDB
+      .getQueriedCollection(center, radius, label, year, month, day)
+      .get()
+      .then((querySnapshot) => {
+        querySnapshot.forEach((doc) => {
+          expect(doc.data().year).to.equal(2015);
+          expect(doc.data().month).to.equal(4);
+          expect(doc.data().day).to.equal(20);
+        });
+      });
   });
-});
-*/
-
-describe("get coordinates by qeury", () => {
-  it("get by all arguments", () => {
-    const lat = 37.780501;
-    const lon = -122.391281;
-    const center = new firebase.firestore.GeoPoint(lat, lon);
-    const radius = 100;
-    const year = 2015;
-    const month = 4;
-    const day = 20;
-    const label = ["cat"];
-    const result: geofirestore.GeoQuery = queryDB.getQuiredCollection(
-      center,
-      radius,
-      label,
-      year,
-      month,
-      day
-    );
-    const GeoFirestore = geofirestore.initializeApp(database);
-    const geoCollection = GeoFirestore.collection("images");
-    const wontedOutput: geofirestore.GeoQuery = geoCollection
-      .near({
-        center: center,
-        radius: radius,
-      })
-      .where("labels", "array-contains-any", label)
-      .where("year", "==", year)
-      .where("month", "==", month)
-      .where("day", "==", day);
-    expect(result).to.equal(wontedOutput);
+  it("test by label", async () => {
+    await queryDB
+      .getQueriedCollection(center, radius, label)
+      .get()
+      .then((querySnapshot) => {
+        querySnapshot.forEach((doc) => {
+          expect(doc.data().labels).to.contain(label[0]);
+        });
+      });
   });
-});
-
-describe("get coordinates by qeury1", () => {
-  it("get by all arguments1", () => {
-    const lat = 37.780501;
-    const lon = -122.391281;
-    const center = new firebase.firestore.GeoPoint(lat, lon);
-    const radius = 100;
-    const year = 2015;
-    const month = 4;
-    const day = 20;
-    const label = ["cat"];
-    const result: geofirestore.GeoQuery = queryDB.getQuiredCollection(
-      center,
-      radius,
-      label,
-      year,
-      month,
-      day
-    );
-    const GeoFirestore = geofirestore.initializeApp(database);
-    const geoCollection = GeoFirestore.collection("images");
-    const wontedOutput: geofirestore.GeoQuery = geoCollection
-      .near({
-        center: center,
-        radius: radius,
-      })
-      .where("labels", "array-contains-any", label)
-      .where("year", "==", year)
-      .where("month", "==", month)
-      .where("day", "==", day);
-    expect(result).to.equal(wontedOutput);
+  it("test by date and label", async () => {
+    await queryDB
+      .getQueriedCollection(center, radius, label, year, month, day)
+      .get()
+      .then((querySnapshot) => {
+        querySnapshot.forEach((doc) => {
+          expect(doc.data().labels).to.contain(label[0]);
+          expect(doc.data().year).to.equal(2015);
+          expect(doc.data().month).to.equal(4);
+          expect(doc.data().day).to.equal(20);
+        });
+      });
+  });
+  it("test by several labels", async () => {
+    const labels = ["cat", "bag"];
+    await queryDB
+      .getQueriedCollection(center, radius, labels, year, month, day)
+      .get()
+      .then((querySnapshot) => {
+        querySnapshot.forEach((doc) => {
+          expect(labels).to.include.members(doc.data().labels);
+          expect(doc.data().year).to.equal(2015);
+          expect(doc.data().month).to.equal(4);
+          expect(doc.data().day).to.equal(20);
+        });
+      });
+  });
+  it("test by center and radius", async () => {
+    await queryDB
+      .getQueriedCollection(center, radius, label)
+      .get()
+      .then((querySnapshot) => {
+        querySnapshot.forEach((doc) => {
+          expect(doc.distance).to.be.at.least(0);
+          expect(doc.distance).to.be.at.most(radius);
+        });
+      });
   });
 });

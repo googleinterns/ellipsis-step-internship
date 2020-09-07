@@ -16,7 +16,8 @@
     "allowSyntheticDefaultImports": true,
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
-    "isolatedModules": true
+    "isolatedModules": true,
+    "jsx": "react"
   },
   "include": ["src"],
   "exclude": ["node_modules", "**/*.spec.ts"]
