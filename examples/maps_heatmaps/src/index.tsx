@@ -28,14 +28,29 @@ import * as queryDB from "./queryDB";
 import React from "react";
 import ReactDOM from "react-dom";
 
-import ExampleCompnent from "./sidepanel";
+import SidePanel from "./sidepanel";
 
 // Creates the firebase app and gets a reference to firestore.
 console.log(firebaseConfig);
-ReactDOM.render(<ExampleCompnent />, document.querySelector("#root"));
 
 const app = firebase.initializeApp(firebaseConfig);
 const database = app.firestore();
+getLabelTags();
+
+function getLabelTags() {
+  const labels = database.collection("LabelTags");
+  const labelTags: Array<Record<string, string>> = [];
+  labels.get().then((querySnapshot) => {
+    querySnapshot.forEach((doc) => {
+      const name = doc.data().name;
+      labelTags.push({ value: name, label: name });
+    });
+    ReactDOM.render(
+      <SidePanel labels={labelTags} />,
+      document.querySelector("#root")
+    );
+  });
+}
 
 function initMap(): void {
   map = new google.maps.Map(document.getElementById("map") as HTMLElement, {
