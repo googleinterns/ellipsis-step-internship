@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { database } from "../src/index";
+import { database } from "../src/declareDatabase";
 import * as firebase from "firebase";
 import * as geofirestore from "geofirestore";
 import fs from "fs";
