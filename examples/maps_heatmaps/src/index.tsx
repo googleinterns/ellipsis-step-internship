@@ -24,7 +24,9 @@ let map: google.maps.Map, heatmap: google.maps.visualization.HeatmapLayer;
 import * as firebase from "firebase";
 import firebaseConfig from "./firebase_config";
 import * as geofirestore from "geofirestore";
+import { database } from "./declareDatabase";
 import * as queryDB from "./queryDB";
+import { setFirstTwentyMarkers } from "./clickInfoWindow";
 import React from "react";
 import ReactDOM from "react-dom";
 
@@ -32,12 +34,10 @@ import ExampleCompnent from "./sidepanel";
 
 // Creates the firebase app and gets a reference to firestore.
 console.log(firebaseConfig);
-ReactDOM.render(<ExampleCompnent />, document.querySelector("#root"));
+if (typeof document !== "undefined")
+  ReactDOM.render(<ExampleCompnent />, document.querySelector("#root"));
 
-const app = firebase.initializeApp(firebaseConfig);
-const database = app.firestore();
-
-function initMap(): void {
+async function initMap() {
   map = new google.maps.Map(document.getElementById("map") as HTMLElement, {
     zoom: 13,
     mapTypeId: "satellite",
@@ -63,10 +63,10 @@ function initMap(): void {
     data: [],
     map: map,
   });
-  map.addListener("center_changed", () => mapChanged());
-  map.addListener("zoom_changed", () => mapChanged());
+  map.addListener("center_changed", async () => await mapChanged());
+  map.addListener("zoom_changed", async () => await mapChanged());
   //TODO: labels, year and month should be as the client requested, not fixed values.
-  function mapChanged() {
+  async function mapChanged() {
     const center: google.maps.LatLng = map.getCenter();
     const lat = center.lat();
     const lng = center.lng();
@@ -87,6 +87,7 @@ function initMap(): void {
       ["cat", "dog", "bag"]
     );
     queryDB.updateHeatmapFromQuery(heatmap, queriedCollection);
+    await setFirstTwentyMarkers(newCenter, newRadius);
   }
 }
 
@@ -124,4 +125,4 @@ function changeOpacity() {
 
 // [END maps_layer_heatmap]
 
-export { initMap, database };
+export { initMap, database, map };

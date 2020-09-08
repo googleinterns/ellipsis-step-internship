@@ -15,6 +15,7 @@
  */
 
 import { database } from "./index";
+import { map } from "./index";
 import * as firebase from "firebase";
 import * as geofirestore from "geofirestore";
 
@@ -59,6 +60,7 @@ function updateHeatmapFromQuery(
       const coordinates: firebase.firestore.GeoPoint = doc.data().g.geopoint;
       const newLatLon = getLatLon(coordinates);
       allPoints.push(newLatLon);
+      const label = doc.data().labels[0];
     });
     heatmap.setData(allPoints);
   });
