@@ -24,9 +24,12 @@ jobs:
       uses: actions/setup-node@v1
       with:
         node-version: ${{ matrix.node-version }}
-    - run: npm ci
+    - name: CI
+      run: npm ci
       working-directory: examples/maps_heatmap
-    - run: npm run build --if-present
+    - name: Build
+      run: npm run build --if-present
       working-directory: examples/maps_heatmap
-    - run: npm test
+    - name: Test
+      run: npm test
       working-directory: examples/maps_heatmap
