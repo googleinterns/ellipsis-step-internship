@@ -43,7 +43,6 @@ class SidePanel extends React.Component<
           </div>
         }
         open={this.state.sidebarOpen}
-        children={this.state.openButton}
         onSetOpen={this.onSetSidebarOpen}
         styles={{
           overlay: {
@@ -58,7 +57,9 @@ class SidePanel extends React.Component<
             zIndex: "5",
           },
         }}
-      />
+      >
+        <div>{this.state.openButton}</div>
+      </Sidebar>
     );
   }
 }
