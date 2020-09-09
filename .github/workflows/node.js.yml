@@ -13,7 +13,10 @@ jobs:
   build:
 
     runs-on: ubuntu-latest
-
+    defaults:
+      run:
+        working-directory: examples/maps_heatmap
+        
     strategy:
       matrix:
         node-version: [10.x, 12.x, 14.x]
@@ -24,12 +27,6 @@ jobs:
       uses: actions/setup-node@v1
       with:
         node-version: ${{ matrix.node-version }}
-    - name: CI
-      run: npm ci
-      working-directory: examples/maps_heatmap
-    - name: Build
-      run: npm run build --if-present
-      working-directory: examples/maps_heatmap
-    - name: Test
-      run: npm test
-      working-directory: examples/maps_heatmap
+    - run: npm ci      
+    - run: npm run build --if-present      
+    - run: npm test
