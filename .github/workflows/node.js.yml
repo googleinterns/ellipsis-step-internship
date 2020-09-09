@@ -11,11 +11,10 @@ on:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: examples/maps_heatmap
+        working-directory: examples/maps_heatmaps
         
     strategy:
       matrix:
