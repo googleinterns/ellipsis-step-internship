@@ -22,20 +22,8 @@
 // Imports
 let map: google.maps.Map, heatmap: google.maps.visualization.HeatmapLayer;
 import * as firebase from "firebase";
-import firebaseConfig from "./firebase_config";
-import * as geofirestore from "geofirestore";
+import { database } from "./declareDatabase";
 import * as queryDB from "./queryDB";
-import React from "react";
-import ReactDOM from "react-dom";
-
-import ExampleCompnent from "./sidepanel";
-
-// Creates the firebase app and gets a reference to firestore.
-console.log(firebaseConfig);
-ReactDOM.render(<ExampleCompnent />, document.querySelector("#root"));
-
-const app = firebase.initializeApp(firebaseConfig);
-const database = app.firestore();
 
 function initMap(): void {
   map = new google.maps.Map(document.getElementById("map") as HTMLElement, {
@@ -88,38 +76,6 @@ function initMap(): void {
     );
     queryDB.updateHeatmapFromQuery(heatmap, queriedCollection);
   }
-}
-
-function toggleHeatmap() {
-  heatmap.setMap(heatmap.getMap() ? null : map);
-}
-
-function changeGradient() {
-  const gradient = [
-    "rgba(0, 255, 255, 0)",
-    "rgba(0, 255, 255, 1)",
-    "rgba(0, 191, 255, 1)",
-    "rgba(0, 127, 255, 1)",
-    "rgba(0, 63, 255, 1)",
-    "rgba(0, 0, 255, 1)",
-    "rgba(0, 0, 223, 1)",
-    "rgba(0, 0, 191, 1)",
-    "rgba(0, 0, 159, 1)",
-    "rgba(0, 0, 127, 1)",
-    "rgba(63, 0, 91, 1)",
-    "rgba(127, 0, 63, 1)",
-    "rgba(191, 0, 31, 1)",
-    "rgba(255, 0, 0, 1)",
-  ];
-  heatmap.set("gradient", heatmap.get("gradient") ? null : gradient);
-}
-
-function changeRadius() {
-  heatmap.set("radius", heatmap.get("radius") ? null : 20);
-}
-
-function changeOpacity() {
-  heatmap.set("opacity", heatmap.get("opacity") ? null : 0.2);
 }
 
 // [END maps_layer_heatmap]
