@@ -31,8 +31,10 @@ jobs:
     - name: Verify build
       run: npm run build --if-present      
       env:
-        GOOGLE_MAPS_API_KEY: None
+        GOOGLE_MAPS_API_KEY: ${{ secrets.GOOGLE_MAPS_API_KEY }}
+        FIRESTORE_API_KEY: ${{ secrets.FIRESTORE_API_KEY }}                
     - name: Run tests
       run: npm test
       env:
-        GOOGLE_MAPS_API_KEY: None      
+        GOOGLE_MAPS_API_KEY: ${{ secrets.GOOGLE_MAPS_API_KEY }}      
+        FIRESTORE_API_KEY: ${{ secrets.FIRESTORE_API_KEY }}                

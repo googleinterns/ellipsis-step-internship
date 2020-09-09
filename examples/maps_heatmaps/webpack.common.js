@@ -56,7 +56,11 @@ module.exports = {
       {
         pattern: "YOUR_API_KEY",
         replacement: process.env.GOOGLE_MAPS_API_KEY
-      }
+      },
+      {
+        pattern: 'YOUR_FIRESTORE_API_KEY',
+        replacement: process.env.FIRESTORE_API_KEY
+      },
     ])
   ]
   
