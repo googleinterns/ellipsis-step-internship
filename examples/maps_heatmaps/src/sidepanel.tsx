@@ -32,29 +32,32 @@ class SidePanel extends React.Component<
 
   render(): JSX.Element {
     return (
-      <div>
-        <Sidebar
-          sidebar={
-            <div>
-              <QueriesForm labels={this.props.labels} />
-              <button onClick={() => this.onSetSidebarOpen(false)}>
-                Close sidebar
-              </button>
-            </div>
-          }
-          open={this.state.sidebarOpen}
-          onSetOpen={this.onSetSidebarOpen}
-          styles={{
-            sidebar: {
-              backgroundColor: "rgba(255, 255, 255, 0.9)",
-              width: "250px",
-              zIndex: "5",
-            },
-          }}
-        >
-          {this.state.openButton}
-        </Sidebar>
-      </div>
+      <Sidebar
+        sidebar={
+          <div>
+            <button onClick={() => this.onSetSidebarOpen(false)}>
+              Close sidebar
+            </button>
+            <QueriesForm data={this.props.labels} />
+          </div>
+        }
+        open={this.state.sidebarOpen}
+        children={this.state.openButton}
+        onSetOpen={this.onSetSidebarOpen}
+        styles={{
+          overlay: {
+            width: "255px",
+          },
+          root: {
+            width: "255px",
+          },
+          sidebar: {
+            backgroundColor: "rgba(255, 255, 255, 0.9)",
+            width: "255px",
+            zIndex: "5",
+          },
+        }}
+      />
     );
   }
 }

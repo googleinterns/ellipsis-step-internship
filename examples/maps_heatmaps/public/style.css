@@ -3,7 +3,12 @@
        #map {
         height: 100%;
         width: 100%;
-        z-index: 3;
+      }
+
+      button {
+        padding: 5px 10px 6px;
+        font-weight: bold;
+      
       }
       
       /* Optional: Makes the sample page fill the window. */

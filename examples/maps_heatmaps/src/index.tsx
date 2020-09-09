@@ -21,6 +21,10 @@
 
 // Imports
 let map: google.maps.Map, heatmap: google.maps.visualization.HeatmapLayer;
+let selectedLabels: string[] = [];
+let selectedYear: number | undefined;
+let selectedMonth: number | undefined;
+
 import * as firebase from "firebase";
 import firebaseConfig from "./firebase_config";
 import * as geofirestore from "geofirestore";
@@ -38,9 +42,9 @@ const database = app.firestore();
 getLabelTags();
 
 function getLabelTags() {
-  const labels = database.collection("LabelTags");
+  const labelsRef = database.collection("LabelTags");
   const labelTags: Array<Record<string, string>> = [];
-  labels.get().then((querySnapshot) => {
+  labelsRef.get().then((querySnapshot) => {
     querySnapshot.forEach((doc) => {
       const name = doc.data().name;
       labelTags.push({ value: name, label: name });
@@ -49,6 +53,7 @@ function getLabelTags() {
       <SidePanel labels={labelTags} />,
       document.querySelector("#root")
     );
+    selectedLabels = labelTags.map((x: Record<string, string>) => x.label);
   });
 }
 
@@ -81,28 +86,40 @@ function initMap(): void {
   map.addListener("center_changed", () => mapChanged());
   map.addListener("zoom_changed", () => mapChanged());
   //TODO: labels, year and month should be as the client requested, not fixed values.
-  function mapChanged() {
-    const center: google.maps.LatLng = map.getCenter();
-    const lat = center.lat();
-    const lng = center.lng();
-    const newCenter = new firebase.firestore.GeoPoint(lat, lng);
-    const bounds = map.getBounds(); //map's current bounderies
-    //TODO: check what should be the default radius value.
-    let newRadius = 2;
-    if (bounds) {
-      const meterRadius = google.maps.geometry.spherical.computeDistanceBetween(
-        bounds.getCenter(),
-        bounds.getNorthEast()
-      );
-      newRadius = meterRadius * 0.000621371192; //convert to miles
-    }
-    const queriedCollection = queryDB.getQueriedCollection(
-      newCenter,
-      newRadius,
-      ["cat", "dog", "bag"]
+}
+function mapChanged() {
+  const center: google.maps.LatLng = map.getCenter();
+  const lat = center.lat();
+  const lng = center.lng();
+  const newCenter = new firebase.firestore.GeoPoint(lat, lng);
+  const bounds = map.getBounds(); //map's current bounderies
+  //TODO: check what should be the default radius value.
+  let newRadius = 2;
+  if (bounds) {
+    const meterRadius = google.maps.geometry.spherical.computeDistanceBetween(
+      bounds.getCenter(),
+      bounds.getNorthEast()
     );
-    queryDB.updateHeatmapFromQuery(heatmap, queriedCollection);
+    newRadius = meterRadius * 0.000621371192; //convert to miles
   }
+  const queriedCollection = queryDB.getQueriedCollection(
+    newCenter,
+    newRadius,
+    selectedLabels,
+    selectedYear,
+    selectedMonth
+  );
+  queryDB.updateHeatmapFromQuery(heatmap, queriedCollection);
+}
+function queriesChanged(selectedQueries: {
+  labels: string[];
+  year: number | undefined;
+  month: number | undefined;
+}): void {
+  selectedLabels = selectedQueries.labels;
+  selectedYear = selectedQueries.year;
+  selectedMonth = selectedQueries.month;
+  mapChanged();
 }
 
 function toggleHeatmap() {
@@ -139,4 +156,4 @@ function changeOpacity() {
 
 // [END maps_layer_heatmap]
 
-export { initMap, database };
+export { initMap, database, queriesChanged };

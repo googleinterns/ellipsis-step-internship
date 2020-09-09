@@ -1,48 +1,65 @@
 import React from "react";
 import Select from "react-select";
+import { queriesChanged } from "../index";
 
 class QueriesForm extends React.Component<
-  { labels: Array<Record<string, string>> },
+  { data: Array<Record<string, string>> },
   {
-    selectedLabels: string[] | null; //TODO: make default labels or not allow to submit without choosing at leat one label.
+    labels: string[];
     year: number | undefined;
     month: number | undefined;
   }
 > {
-  constructor(props: { labels: Array<Record<string, string>> }) {
+  constructor(props: { data: Array<Record<string, string>> }) {
     super(props);
     this.state = {
-      selectedLabels: null,
+      labels: this.props.data.map((x: Record<string, string>) => x.label),
       year: undefined,
       month: undefined,
     };
   }
 
-  onSubmit = (): void => {
-    alert(
-      "submitted " +
-        this.state.year +
-        " " +
-        this.state.month +
-        " " +
-        this.state.selectedLabels
-    );
+  onSubmit = (event: any): void => {
+    event.preventDefault();
+    console.log(this.state.labels);
+    if (this.state.labels.length == 0) {
+      //TODO: verify that if labels were not chosen, it will show all labels.
+      alert("Select labels before submitting");
+    }
+    queriesChanged(this.state);
   };
 
-  onYearChange = (event: any): void => {
-    this.setState({ year: event.target.value });
+  onYearChange = (selectedOption: any): void => {
+    this.setState({ year: selectedOption.value });
   };
-  onMonthChange = (event: any): void => {
-    this.setState({ month: event.target.value });
+  onMonthChange = (selectedOption: any): void => {
+    this.setState({ month: selectedOption.value });
   };
-
   onLabelChange = (selectedOption: any): void => {
-    this.setState({
-      selectedLabels: selectedOption.map(
-        (x: Record<string, string>) => x.value
-      ),
-    });
+    if (selectedOption) {
+      this.setState({
+        labels: selectedOption.map((x: Record<string, string>) => x.label),
+      });
+    }
   };
+  getYears() {
+    const years: Array<Record<string, number | undefined | string>> = [
+      { value: undefined, label: "Select all" },
+    ];
+    for (let i = 1990; i <= 2020; i++) {
+      years.push({ value: i, label: i });
+    }
+    return years;
+  }
+  getMonths() {
+    const months: Array<Record<string, number | undefined | string>> = [
+      { value: undefined, label: "Select all" },
+    ];
+    for (let i = 1; i <= 12; i++) {
+      months.push({ value: i, label: i });
+    }
+    return months;
+  }
 
   render(): JSX.Element {
     return (
@@ -52,32 +69,28 @@ class QueriesForm extends React.Component<
           <Select
             isSearchable={true}
             isMulti={true}
-            options={this.props.labels}
+            options={this.props.data}
             onChange={this.onLabelChange}
           />
         </div>
         <div className="formRow">
           <label>Year:</label>
-          <input
-            type="number"
-            id="year"
-            min="1990"
-            max="2020"
+          <Select
+            isSearchable={true}
+            options={this.getYears()}
             onChange={this.onYearChange}
           />
         </div>
 
         <div className="formRow">
           <label>Month:</label>
-          <input
-            type="number"
-            id="month"
-            min="1"
-            max="12"
+          <Select
+            isSearchable={true}
+            options={this.getMonths()}
             onChange={this.onMonthChange}
           />
         </div>
-        <input type="submit" value="Submit" />
+        <input id="submit" type="submit" value="Submit" />
       </form>
     );
   }
