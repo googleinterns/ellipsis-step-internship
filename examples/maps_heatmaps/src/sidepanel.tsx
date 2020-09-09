@@ -1,7 +1,6 @@
 import React from "react";
 import Sidebar from "react-sidebar";
 import QueriesForm from "./components/queriesForm";
-import ImagesHolder from "./components/imagesHolder";
 
 class SidePanel extends React.Component<
   { labels: Array<Record<string, string>> },
@@ -40,13 +39,7 @@ class SidePanel extends React.Component<
               Close sidebar
             </button>
             <QueriesForm data={this.props.labels} />
-            <ImagesHolder
-              id="images-sidepanel"
-              data={[
-                "https://live.staticflickr.com/3677/13545844805_170ec3746b_c.jpg",
-                "https://live.staticflickr.com/3677/13545844805_170ec3746b_c.jpg",
-              ]}
-            />
+            <div id="images-holder"></div>
           </div>
         }
         open={this.state.sidebarOpen}

@@ -116,21 +116,15 @@ async function getTwentyImages(
 ): Promise<void> {
   const dataref = (await queriedCollection.get()).docs;
   const jump = Math.ceil(dataref.length / 10);
-  const imagesURL: string[] = [];
-  for (let i = 0; i < dataref.length; i = i + jump) {
-    const docData = dataref[i].data();
-    // addMarkerWithListener(
-    //   convertGeopointTolatlon(dataref[i].data().g.geopoint),
-    //   dataref[i].data().labels[0],
-    //   map
-    // );
-    imagesURL.push(docData.url);
-  }
-  const elementById = document.getElementById("images-sidepanel");
+  const elementById = document.getElementById("images-holder");
   if (elementById != null) {
-    let elementData = elementById.data;
-    if (elementData != null) {
-      elementData = imagesURL;
+    elementById.innerHTML = "";
+    for (let i = 0; i < dataref.length; i = i + jump) {
+      const docData = dataref[i].data();
+      const imageElement = document.createElement("img");
+      imageElement.className = "sidepanel-image";
+      imageElement.src = docData.url;
+      elementById.appendChild(imageElement);
     }
   }
 }
