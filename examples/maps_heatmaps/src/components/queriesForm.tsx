@@ -19,27 +19,36 @@ class QueriesForm extends React.Component<
     };
   }
 
-  onSubmit = (event: any): void => {
-    event.preventDefault();
-    console.log(this.state.labels);
-    if (this.state.labels.length == 0) {
-      //TODO: verify that if labels were not chosen, it will show all labels.
-      alert("Select labels before submitting");
-    }
-    queriesChanged(this.state);
-  };
-
   onYearChange = (selectedOption: any): void => {
-    this.setState({ year: selectedOption.value });
+    this.setState({ year: selectedOption.value }, () => {
+      queriesChanged(this.state);
+    });
   };
   onMonthChange = (selectedOption: any): void => {
-    this.setState({ month: selectedOption.value });
+    this.setState({ month: selectedOption.value }, () => {
+      queriesChanged(this.state);
+    });
+    queriesChanged(this.state);
   };
   onLabelChange = (selectedOption: any): void => {
-    if (selectedOption) {
-      this.setState({
-        labels: selectedOption.map((x: Record<string, string>) => x.label),
-      });
+    if (selectedOption && selectedOption.length > 0) {
+      this.setState(
+        {
+          labels: selectedOption.map((x: Record<string, string>) => x.label),
+        },
+        () => {
+          queriesChanged(this.state);
+        }
+      );
+    } else {
+      this.setState(
+        {
+          labels: this.props.data.map((x: Record<string, string>) => x.label),
+        },
+        () => {
+          queriesChanged(this.state);
+        }
+      );
     }
   };
   getYears() {
@@ -63,14 +72,14 @@ class QueriesForm extends React.Component<
 
   render(): JSX.Element {
     return (
-      <form className="queriesForm" onSubmit={this.onSubmit}>
+      <form className="queriesForm">
         <div className="formRow">
           <label>Labels:</label>
           <Select
             isSearchable={true}
             isMulti={true}
             options={this.props.data}
-            onChange={this.onLabelChange}
+            onChange={(e) => this.onLabelChange(e)}
           />
         </div>
         <div className="formRow">
@@ -90,7 +99,6 @@ class QueriesForm extends React.Component<
             onChange={this.onMonthChange}
           />
         </div>
-        <input id="submit" type="submit" value="Submit" />
       </form>
     );
   }

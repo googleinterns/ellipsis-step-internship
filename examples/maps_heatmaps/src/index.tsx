@@ -85,9 +85,8 @@ function initMap(): void {
   });
   map.addListener("center_changed", () => mapChanged());
   map.addListener("zoom_changed", () => mapChanged());
-  //TODO: labels, year and month should be as the client requested, not fixed values.
 }
-function mapChanged() {
+async function mapChanged() {
   const center: google.maps.LatLng = map.getCenter();
   const lat = center.lat();
   const lng = center.lng();
@@ -109,8 +108,33 @@ function mapChanged() {
     selectedYear,
     selectedMonth
   );
+  await getTwentyImages(queriedCollection);
   queryDB.updateHeatmapFromQuery(heatmap, queriedCollection);
 }
+async function getTwentyImages(
+  queriedCollection: geofirestore.GeoQuery
+): Promise<void> {
+  const dataref = (await queriedCollection.get()).docs;
+  const jump = Math.ceil(dataref.length / 10);
+  const imagesURL: string[] = [];
+  for (let i = 0; i < dataref.length; i = i + jump) {
+    const docData = dataref[i].data();
+    // addMarkerWithListener(
+    //   convertGeopointTolatlon(dataref[i].data().g.geopoint),
+    //   dataref[i].data().labels[0],
+    //   map
+    // );
+    imagesURL.push(docData.url);
+  }
+  const elementById = document.getElementById("images-sidepanel");
+  if (elementById != null) {
+    let elementData = elementById.data;
+    if (elementData != null) {
+      elementData = imagesURL;
+    }
+  }
+}
+
 function queriesChanged(selectedQueries: {
   labels: string[];
   year: number | undefined;
