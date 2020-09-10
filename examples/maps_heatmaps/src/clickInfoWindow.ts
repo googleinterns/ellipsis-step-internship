@@ -19,7 +19,8 @@ import { getQueriedCollection } from "./queryDB";
 import * as firebase from "firebase";
 import { GeoFirestoreTypes } from "geofirestore";
 
-let lastInfoWindow: google.maps.InfoWindow | null = new google.maps.InfoWindow();
+//TODO: run mocha tests on the browser.
+//let lastInfoWindow: google.maps.InfoWindow | null;
 let markers: Array<google.maps.Marker> = [];
 
 /* querys for 20 random docs in the database in order to place markers on them. */
@@ -29,10 +30,11 @@ async function setFirstTwentyMarkers(
   center: firebase.firestore.GeoPoint,
   radius: number
 ): Promise<void> {
+  let lastInfoWindow: google.maps.InfoWindow | null = new google.maps.InfoWindow();
   const dataref = await (
     await getQueriedCollection(center, radius, ["cat", "dog", "bag"]).get()
   ).docs;
-  eraseAllMarkers();
+  eraseAllMarkers(lastInfoWindow);
   const jump = Math.ceil(dataref.length / 10);
   for (let i = 0; i < dataref.length; i = i + jump) {
     addMarkerWithListener(
@@ -40,6 +42,42 @@ async function setFirstTwentyMarkers(
       dataref[i].data().labels[0],
       map
     );
+  }
+
+  //TODO: after runing mocha tests on the browser, remove this function out of setFirstTwentyMarkers.
+  function addMarkerWithListener(
+    myLatlng: google.maps.LatLng,
+    mylabel: string,
+    map: google.maps.Map
+  ) {
+    const InfoWindow: google.maps.InfoWindow = new google.maps.InfoWindow();
+    const marker = new google.maps.Marker({
+      position: myLatlng,
+      map: map,
+    });
+    markers.push(marker);
+    google.maps.event.addListener(marker, "click", async () => {
+      const center = convertLatlngToGeopoint(marker.getPosition());
+      if (center !== undefined) {
+        const dataref = await (
+          await getQueriedCollection(center, 0, ["cat", "dog", "bag"]).get()
+        ).docs[0];
+        InfoWindow.setContent(
+          getInfoWindowContent(
+            getLabels(dataref.data()),
+            getUrl(dataref.data()),
+            getDate(dataref.data()),
+            getAttribution(dataref.data())
+          )
+        );
+        if (lastInfoWindow !== null) {
+          console.log("in close");
+          lastInfoWindow.close();
+        }
+        InfoWindow.open(map, marker);
+        lastInfoWindow = InfoWindow;
+      }
+    });
   }
 }
 
@@ -49,7 +87,8 @@ async function setFirstTwentyMarkers(
 function addMarkerWithListener(
   myLatlng: google.maps.LatLng,
   mylabel: string,
-  map: google.maps.Map
+  map: google.maps.Map,
+  lastInfoWindow: google.maps.InfoWindow | null
 ) {
   const InfoWindow: google.maps.InfoWindow = new google.maps.InfoWindow();
   const marker = new google.maps.Marker({
@@ -161,7 +200,7 @@ function convertGeopointTolatlon(center: firebase.firestore.GeoPoint) {
   return latlon;
 }
 
-function eraseAllMarkers(): void {
+function eraseAllMarkers(lastInfoWindow: google.maps.InfoWindow | null): void {
   markers.forEach((marker) => {
     marker.setMap(null);
   });
