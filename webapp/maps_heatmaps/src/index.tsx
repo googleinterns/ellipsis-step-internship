@@ -78,7 +78,13 @@ async function initMap() {
       ["dog", "bag"]
     );
     queryDB.updateHeatmapFromQuery(heatmap, queriedCollection);
-    await setFirstTwentyMarkers(newCenter, newRadius);
+    //TODO: setfirsttwentymarkers by field that where submitted.
+    await setFirstTwentyMarkers(
+      newCenter,
+      newRadius,
+      ["cat", "dog", "bag"],
+      1999
+    );
   }
 }
 

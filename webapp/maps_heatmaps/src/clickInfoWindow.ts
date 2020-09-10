@@ -20,7 +20,6 @@ import * as firebase from "firebase";
 import { GeoFirestoreTypes } from "geofirestore";
 
 //TODO: run mocha tests on the browser.
-//let lastInfoWindow: google.maps.InfoWindow | null;
 let markers: Array<google.maps.Marker> = [];
 
 /* querys for 20 random docs in the database in order to place markers on them. */
@@ -28,19 +27,24 @@ let markers: Array<google.maps.Marker> = [];
 //TODO: use this function to show images on the side pannel-so they will correlate (relocate to a different file)
 async function setFirstTwentyMarkers(
   center: firebase.firestore.GeoPoint,
-  radius: number
+  radius: number,
+  labels: string[],
+  year?: number,
+  month?: number
 ): Promise<void> {
   let lastInfoWindow: google.maps.InfoWindow | null = new google.maps.InfoWindow();
   const dataref = await (
-    await getQueriedCollection(center, radius, ["cat", "dog", "bag"]).get()
+    await getQueriedCollection(center, radius, labels, year, month).get()
   ).docs;
-  eraseAllMarkers(lastInfoWindow);
+  eraseAllMarkers();
   const jump = Math.ceil(dataref.length / 10);
   for (let i = 0; i < dataref.length; i = i + jump) {
     addMarkerWithListener(
+      map,
       convertGeopointTolatlon(dataref[i].data().g.geopoint),
-      dataref[i].data().labels[0],
-      map
+      dataref[i].data().labels,
+      year,
+      month
     );
   }
 
@@ -49,13 +53,15 @@ async function setFirstTwentyMarkers(
    when clicking on the marker an infoWindow will appear 
    with all the information on this location from the database. */
   function addMarkerWithListener(
-    myLatlng: google.maps.LatLng,
-    mylabel: string,
-    map: google.maps.Map
+    map: google.maps.Map,
+    latlng: google.maps.LatLng,
+    labels: string[],
+    year?: number,
+    month?: number
   ) {
     const InfoWindow: google.maps.InfoWindow = new google.maps.InfoWindow();
     const marker = new google.maps.Marker({
-      position: myLatlng,
+      position: latlng,
       map: map,
     });
     markers.push(marker);
@@ -63,7 +69,7 @@ async function setFirstTwentyMarkers(
       const center = convertLatlngToGeopoint(marker.getPosition());
       if (center !== undefined) {
         const dataref = await (
-          await getQueriedCollection(center, 0, ["cat", "dog", "bag"]).get()
+          await getQueriedCollection(center, 0, labels, year, month).get()
         ).docs[0];
         InfoWindow.setContent(
           getInfoWindowContent(
@@ -73,10 +79,7 @@ async function setFirstTwentyMarkers(
             getAttribution(dataref.data())
           )
         );
-        if (lastInfoWindow !== null) {
-          console.log("in close");
-          lastInfoWindow.close();
-        }
+        if (lastInfoWindow !== null) lastInfoWindow.close();
         InfoWindow.open(map, marker);
         lastInfoWindow = InfoWindow;
       }
@@ -136,6 +139,7 @@ function getUrl(dataref: GeoFirestoreTypes.GeoDocumentData) {
   return content;
 }
 
+//TODO: add field attribute to database and extract attribute field in this function.
 function getAttribution(dataref: GeoFirestoreTypes.GeoDocumentData) {
   const content = "<b>Attribution: </b>uploader of the image_______ <br/>";
   return content;
@@ -164,7 +168,7 @@ function convertGeopointTolatlon(center: firebase.firestore.GeoPoint) {
   return latlon;
 }
 
-function eraseAllMarkers(lastInfoWindow: google.maps.InfoWindow | null): void {
+function eraseAllMarkers(): void {
   markers.forEach((marker) => {
     marker.setMap(null);
   });
