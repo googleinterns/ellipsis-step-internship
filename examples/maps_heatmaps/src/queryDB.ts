@@ -61,7 +61,6 @@ function updateHeatmapFromQuery(
       allPoints.push(newLatLon);
     });
     heatmap.setData(allPoints);
-    console.log(allPoints.length);
   });
 }
 
