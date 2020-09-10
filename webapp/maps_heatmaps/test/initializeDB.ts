@@ -1,15 +1,28 @@
-import { database } from "../src/index";
+/*
+ * Copyright 2020 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+import { database } from "../src/declareDatabase";
 import * as firebase from "firebase";
 import * as geofirestore from "geofirestore";
 import fs from "fs";
 
-/**
- * initalize the database
- * to run in the terminal-  npm run initialize-db
- */
+initializeDB();
 
-/* Reads from a given file and converts to an array of coordinates. */
-function getCoordinatesFromFile() {
+/* Reads from a given file and stores in the database. */
+function initializeDB() {
   const allCoordinates: number[][] = new Array<Array<number>>();
   if (process.argv.length < 3) {
     console.log("ERROR: not in format - npm run initialize-db fileName.txt");
@@ -23,19 +36,22 @@ function getCoordinatesFromFile() {
         textByLine.forEach((element) => {
           const inerArray = element.toString().split(",");
           const lat: number = +inerArray[0];
-          const lon: number = +inerArray[1];
-          const coord: number[] = [lat, lon];
+          const lng: number = +inerArray[1];
+          const coord: number[] = [lat, lng];
           allCoordinates.push(coord);
         });
       }
-      return allCoordinates;
+      addImagesToDB(allCoordinates);
     });
   }
 }
 
-//addImagesToDB(getCoordinatesFromFile());
-
-/* adds an image to 'images' collection*/
+/* @param url The source of the image
+   @param label The label found in the image
+   @param lat, lng The coordinates of the image
+   @param year, month, day The date the image was taken
+Adds an image to 'images' collection.*/
+//TODO: add subcollection of labels to each image.
 function addNewImage(
   url: string,
   label: string,
@@ -47,7 +63,7 @@ function addNewImage(
 ) {
   const GeoFirestore = geofirestore.initializeApp(database);
   const geocollection = GeoFirestore.collection("images");
-  const newDoc = geocollection.add({
+  geocollection.add({
     year: year,
     month: month,
     day: day,
@@ -55,14 +71,11 @@ function addNewImage(
     labels: [label],
     url: url,
   });
-  // newDoc.collection("labels").doc().set({
-  //   name: label,
-  // });
 }
 
-/* adds images to 'images' collection with randomized information
- from a set of coordinates*/
-function addImagesToDB(points: Array<Array<number>>) {
+/* Adds images to 'images' collection with randomized information
+ from a set of coordinates.*/
+function addImagesToDB(points: Array<Array<number>>): void {
   points.forEach((element) => {
     const latitude = element[0];
     const longitude = element[1];
@@ -80,7 +93,7 @@ function addImagesToDB(points: Array<Array<number>>) {
   });
 }
 
-/* returns a random integer from 0 to max-1*/
+/* Returns a random integer from 0 to max-1. */
 function getRandomNumber(max: number) {
   return Math.floor(Math.random() * Math.floor(max));
 }
