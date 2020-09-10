@@ -1,6 +1,6 @@
 import React from "react";
 import Sidebar from "react-sidebar";
-import QueriesForm from "./components/queriesForm";
+import QueriesForm from "./queriesForm";
 
 class SidePanel extends React.Component<
   { labels: Array<Record<string, string>> },

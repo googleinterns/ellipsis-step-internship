@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { database } from "../src/index";
+import { database } from "../src/declareDatabase";
 import * as firebase from "firebase";
 import * as geofirestore from "geofirestore";
 import fs from "fs";
@@ -75,7 +75,7 @@ function addNewImage(
 
 /* Adds images to 'images' collection with randomized information
  from a set of coordinates.*/
-function addImagesToDB(points: Array<Array<number>>) {
+function addImagesToDB(points: Array<Array<number>>): void {
   points.forEach((element) => {
     const latitude = element[0];
     const longitude = element[1];

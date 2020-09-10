@@ -26,19 +26,14 @@ let selectedYear: number | undefined;
 let selectedMonth: number | undefined;
 
 import * as firebase from "firebase";
-import firebaseConfig from "./firebase_config";
 import * as geofirestore from "geofirestore";
+import { database } from "./declareDatabase";
 import * as queryDB from "./queryDB";
 import React from "react";
 import ReactDOM from "react-dom";
 
-import SidePanel from "./sidepanel";
+import SidePanel from "./components/sidepanel";
 
-// Creates the firebase app and gets a reference to firestore.
-console.log(firebaseConfig);
-
-const app = firebase.initializeApp(firebaseConfig);
-const database = app.firestore();
 getLabelTags();
 
 function getLabelTags() {
