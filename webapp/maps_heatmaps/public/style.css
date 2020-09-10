@@ -54,52 +54,13 @@
       .querisForm {
         padding: 10px;
       }
-    
+  .Sidebar {
+    position: fixed;
+  }  
 
-      /* MultiSelecet Start */
-      .multiSelectContainer {
-        flex-direction: column;
-        display: flex;
-      }
-      .chosenLabelsBar {
-        padding: 6px 5px;
-        background-color: #fff;
-        border: 1px solid #ccc;
-        overflow-y: scroll;
-        display: flex;
-      }
+  #fixed-sidebar {
+    background-color: rgba(255, 255, 255);
+    position: sticky;
+    top:0; left:0;
 
-      .chosenLabel {
-        flex-grow: 1;
-        font-size: 12px;
-        border-radius: 20px;
-        margin: 0 5px;
-        padding: 6px 8px;
-        background-color: #ccc;
-        color: #fff;
-        width: fit-content;
-      }
-
-      .chosenLabel:first-of-type {
-        margin: 0;
-      }
-
-      .lablesList {
-        border: 1px solid #ccc;
-        background-color: #fff;
-        border-top: none;
-        box-shadow: 0px 12px 20px -12px rgba(0,0,0,0.75);
-        max-height: 200px;
-        overflow-y: scroll;
-      }
-      .label {
-        padding: 4px;
-        margin: 5px 0;
-        cursor: pointer;
-        transition: .2s;
-      }
-      .label:hover {
-        background-color: #ccc;
-        color: #fff;
-      }      
-      /* MultiSelecet End */
+  }

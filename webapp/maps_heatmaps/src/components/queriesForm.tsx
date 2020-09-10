@@ -18,19 +18,8 @@ class QueriesForm extends React.Component<
       month: undefined,
     };
   }
-
-  onYearChange = (selectedOption: any): void => {
-    this.setState({ year: selectedOption.value }, () => {
-      queriesChanged(this.state);
-    });
-  };
-  onMonthChange = (selectedOption: any): void => {
-    this.setState({ month: selectedOption.value }, () => {
-      queriesChanged(this.state);
-    });
-    queriesChanged(this.state);
-  };
   onLabelChange = (selectedOption: any): void => {
+    //At least one label was chosen.
     if (selectedOption && selectedOption.length > 0) {
       this.setState(
         {
@@ -40,6 +29,8 @@ class QueriesForm extends React.Component<
           queriesChanged(this.state);
         }
       );
+      //No labels chosen. Show all labels.
+      //TODO: fill label select field with all labels.
     } else {
       this.setState(
         {
@@ -51,6 +42,27 @@ class QueriesForm extends React.Component<
       );
     }
   };
+  disableMonth = true; //Created to enable/disable month query according to year.
+  onYearChange = (selectedOption: any): void => {
+    this.setState({ year: selectedOption.value }, () => {
+      queriesChanged(this.state);
+    });
+    //Enable choosing month only if year is chosen.
+    //TODO: Change month-field to default when disables.
+    if (selectedOption.value != undefined) {
+      this.disableMonth = false;
+    } else {
+      this.disableMonth = true;
+    }
+  };
+  onMonthChange = (selectedOption: any): void => {
+    this.setState({ month: selectedOption.value }, () => {
+      queriesChanged(this.state);
+    });
+    queriesChanged(this.state);
+  };
+  /*Creates year-options for select.*/
+  //TODO: add dinamic years from database.
   getYears() {
     const years: Array<Record<string, number | undefined | string>> = [
       { value: undefined, label: "Select all" },
@@ -60,6 +72,7 @@ class QueriesForm extends React.Component<
     }
     return years;
   }
+  /*Creates month-options for select.*/
   getMonths() {
     const months: Array<Record<string, number | undefined | string>> = [
       { value: undefined, label: "Select all" },
@@ -94,6 +107,7 @@ class QueriesForm extends React.Component<
         <div className="formRow">
           <label>Month:</label>
           <Select
+            isDisabled={this.disableMonth}
             isSearchable={true}
             options={this.getMonths()}
             onChange={this.onMonthChange}

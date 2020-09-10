@@ -18,6 +18,7 @@ class SidePanel extends React.Component<
   onSetSidebarOpen(open: boolean): void {
     this.setState({ sidebarOpen: open });
     if (open) {
+      //Does not show open sidebar button when open.
       this.setState({ openButton: null });
     } else {
       this.setState({
@@ -34,11 +35,13 @@ class SidePanel extends React.Component<
     return (
       <Sidebar
         sidebar={
-          <div>
-            <button onClick={() => this.onSetSidebarOpen(false)}>
-              Close sidebar
-            </button>
-            <QueriesForm data={this.props.labels} />
+          <div onScroll={(e) => e.preventDefault()}>
+            <div id="fixed-sidebar">
+              <button onClick={() => this.onSetSidebarOpen(false)}>
+                Close sidebar
+              </button>
+              <QueriesForm data={this.props.labels} />
+            </div>
             <div id="images-holder"></div>
           </div>
         }
@@ -55,6 +58,7 @@ class SidePanel extends React.Component<
             backgroundColor: "rgba(255, 255, 255, 0.9)",
             width: "255px",
             zIndex: "5",
+            position: "fixed",
           },
         }}
       >
