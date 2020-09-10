@@ -75,7 +75,7 @@ function addNewImage(
 
 /* Adds images to 'images' collection with randomized information
  from a set of coordinates.*/
-function addImagesToDB(points: Array<Array<number>>) {
+function addImagesToDB(points: Array<Array<number>>): void {
   points.forEach((element) => {
     const latitude = element[0];
     const longitude = element[1];
