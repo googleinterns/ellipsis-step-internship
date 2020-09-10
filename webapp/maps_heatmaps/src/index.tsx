@@ -72,7 +72,7 @@ function initMap(): void {
     const queriedCollection = queryDB.getQueriedCollection(
       newCenter,
       newRadius,
-      ["cat", "dog", "bag"]
+      ["dog", "bag"]
     );
     queryDB.updateHeatmapFromQuery(heatmap, queriedCollection);
   }
