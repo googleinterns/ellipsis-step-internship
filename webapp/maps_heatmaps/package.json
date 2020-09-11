@@ -3,8 +3,8 @@
   "scripts": {
     "build": "webpack --config ./webpack.prod.js --mode production",
     "dev": "webpack-dev-server --config ./webpack.dev.js",
-    "format": "eslint --fix src/*.ts",
-    "lint": "eslint src/*.ts",
+    "format": "eslint --fix src/**/*.ts*",
+    "lint": "eslint src/**/*.ts*",
     "test": "mocha -r ts-node/register src/**/*.spec.ts",
     "watch": "webpack --config ./webpack.dev.js --mode development",
     "initialize-db": "ts-node-script test/initializeDB.ts"
