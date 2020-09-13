@@ -69,20 +69,23 @@ class SidePanel extends React.Component<
         }
         open={this.state.sidebarOpen}
         onSetOpen={this.onSetSidebarOpen}
-        styles={{
-          overlay: {
-            width: "255px",
-          },
-          root: {
-            width: "255px",
-          },
-          sidebar: {
-            backgroundColor: "rgba(255, 255, 255, 0.9)",
-            width: "255px",
-            zIndex: "5",
-            position: "fixed",
-          },
-        }}
+        sidebarClassName="sidebarStyle"
+        overlayClassName="overlayStyle"
+        rootClassName="rootStyle"
+        // styles={{
+        //   overlay: {
+        //     width: "255px",
+        //   },
+        //   root: {
+        //     width: "255px",
+        //   },
+        //   sidebar: {
+        //     backgroundColor: "rgba(255, 255, 255, 0.9)",
+        //     width: "255px",
+        //     zIndex: "5",
+        //     position: "fixed",
+        //   },
+        // }}
       >
         <div>{this.state.openButton}</div>
       </Sidebar>
