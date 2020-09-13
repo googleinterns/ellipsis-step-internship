@@ -57,6 +57,18 @@
   .Sidebar {
     position: fixed;
   }  
+  .rootStyle {
+    width: 255px
+  }
+  .overlayStyle {
+    width: 255px
+  }
+  .sidebarStyle {
+    background-color: rgba(255, 255, 255, 0.9);
+    width: 255px;
+    z-index: 5;
+    position: fixed;
+  }
 
   #fixed-sidebar {
     background-color: rgba(255, 255, 255);
