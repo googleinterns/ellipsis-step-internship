@@ -35,7 +35,7 @@ class SidePanel extends React.Component<
     return (
       <Sidebar
         sidebar={
-          <div onScroll={(e) => e.preventDefault()}>
+          <div>
             <div id="fixed-sidebar">
               <button onClick={() => this.onSetSidebarOpen(false)}>
                 Close sidebar
