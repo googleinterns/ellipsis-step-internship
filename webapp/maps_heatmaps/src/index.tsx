@@ -107,21 +107,29 @@ async function mapChanged() {
     selectedYear,
     selectedMonth
   );
+  updateNumOfResults(queriedCollection);
   updateTwentyImages(queriedCollection);
   queryDB.updateHeatmapFromQuery(heatmap, queriedCollection);
+}
+async function updateNumOfResults(queriedCollection: geofirestore.GeoQuery) {
+  const numOfResults = (await queriedCollection.get()).docs.length;
+  const elementById = document.getElementById("num-of-results");
+  if (elementById != null) {
+    elementById.innerHTML = numOfResults + " images found";
+  }
 }
 /*After any queries change, the images in the side bar should be
 updated according to the new queried collection. */
 async function updateTwentyImages(
   queriedCollection: geofirestore.GeoQuery
 ): Promise<void> {
-  const dataref = (await queriedCollection.get()).docs;
-  const jump = Math.ceil(dataref.length / 10);
+  const dataRef = (await queriedCollection.get()).docs;
+  const jump = Math.ceil(dataRef.length / 10);
   const elementById = document.getElementById("images-holder");
   if (elementById != null) {
     elementById.innerHTML = "";
-    for (let i = 0; i < dataref.length; i = i + jump) {
-      const docData = dataref[i].data();
+    for (let i = 0; i < dataRef.length; i = i + jump) {
+      const docData = dataRef[i].data();
       const imageElement = document.createElement("img");
       imageElement.className = "sidepanel-image";
       imageElement.src = docData.url;

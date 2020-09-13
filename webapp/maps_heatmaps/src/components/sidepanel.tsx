@@ -63,6 +63,7 @@ class SidePanel extends React.Component<
                 Close sidebar
               </button>
               <QueriesForm data={this.props.labels} />
+              <h4 id="num-of-results"></h4>
             </div>
             <div id="images-holder"></div>
           </div>
