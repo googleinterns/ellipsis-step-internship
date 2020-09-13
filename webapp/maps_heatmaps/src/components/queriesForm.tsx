@@ -1,16 +1,36 @@
+/*
+ * Copyright 2020 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 import React from "react";
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import Select from "react-select";
 import { queriesChanged } from "../index";
 
+/*Component that holds and controls the label, year and month queries.
+The component uses react-select component for each query,
+and it updates the map with any change. */
 class QueriesForm extends React.Component<
-  { data: Array<Record<string, string>> },
+  { data: Array<{ value: string; label: string }> },
   {
     labels: string[];
     year: number | undefined;
     month: number | undefined;
   }
 > {
-  constructor(props: { data: Array<Record<string, string>> }) {
+  constructor(props: { data: Array<{ value: string; label: string }> }) {
     super(props);
     this.state = {
       labels: this.props.data.map((x: Record<string, string>) => x.label),
@@ -30,7 +50,7 @@ class QueriesForm extends React.Component<
         }
       );
       //No labels chosen. Show all labels.
-      //TODO: fill label select field with all labels.
+      //TODO: fill label-select field with all labels.
     } else {
       this.setState(
         {
@@ -43,12 +63,13 @@ class QueriesForm extends React.Component<
     }
   };
   disableMonth = true; //Created to enable/disable month query according to year.
+
   onYearChange = (selectedOption: any): void => {
     this.setState({ year: selectedOption.value }, () => {
       queriesChanged(this.state);
     });
     //Enable choosing month only if year is chosen.
-    //TODO: Change month-field to default when disables.
+    //TODO: Change month-field to default when disabled.
     if (selectedOption.value != undefined) {
       this.disableMonth = false;
     } else {
@@ -59,11 +80,11 @@ class QueriesForm extends React.Component<
     this.setState({ month: selectedOption.value }, () => {
       queriesChanged(this.state);
     });
-    queriesChanged(this.state);
   };
+
   /*Creates year-options for select.*/
-  //TODO: add dinamic years from database.
-  getYears() {
+  //TODO: add dynamic years from database.
+  getYears(): Array<Record<string, number | undefined | string>> {
     const years: Array<Record<string, number | undefined | string>> = [
       { value: undefined, label: "Select all" },
     ];
@@ -73,7 +94,7 @@ class QueriesForm extends React.Component<
     return years;
   }
   /*Creates month-options for select.*/
-  getMonths() {
+  getMonths(): Array<Record<string, number | undefined | string>> {
     const months: Array<Record<string, number | undefined | string>> = [
       { value: undefined, label: "Select all" },
     ];

@@ -29,27 +29,29 @@ import * as firebase from "firebase";
 import * as geofirestore from "geofirestore";
 import { database } from "./declareDatabase";
 import * as queryDB from "./queryDB";
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import React from "react";
 import ReactDOM from "react-dom";
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import SidePanel from "./components/sidepanel";
 
 getLabelTags();
 
-function getLabelTags() {
-  const labelsRef = database.collection("LabelTags");
-  const labelTags: Array<Record<string, string>> = [];
-  labelsRef.get().then((querySnapshot) => {
-    querySnapshot.forEach((doc) => {
-      const name = doc.data().name;
-      labelTags.push({ value: name, label: name });
-    });
-    ReactDOM.render(
-      <SidePanel labels={labelTags} />,
-      document.querySelector("#root")
-    );
-    selectedLabels = labelTags.map((x: Record<string, string>) => x.label);
+/*Gets all the different labels from the label Collection in firestore data base
+ and adds them as options for label querying."*/
+async function getLabelTags() {
+  const labelsRef = (await database.collection("LabelTags").get()).docs;
+  const labelTags: Array<{ value: string; label: string }> = [];
+  labelsRef.forEach((doc) => {
+    const name = doc.data().name;
+    labelTags.push({ value: name, label: name });
   });
+  ReactDOM.render(
+    <SidePanel labels={labelTags} />,
+    document.querySelector("#root")
+  );
+  selectedLabels = labelTags.map((x: Record<string, string>) => x.label);
 }
 
 function initMap(): void {
@@ -81,6 +83,8 @@ function initMap(): void {
   map.addListener("center_changed", () => mapChanged());
   map.addListener("zoom_changed", () => mapChanged());
 }
+/* Updates the map and the sidepanel after any change of the
+center/zoom of the current map or of the different queries.*/
 async function mapChanged() {
   const center: google.maps.LatLng = map.getCenter();
   const lat = center.lat();
@@ -103,10 +107,12 @@ async function mapChanged() {
     selectedYear,
     selectedMonth
   );
-  await getTwentyImages(queriedCollection);
+  updateTwentyImages(queriedCollection);
   queryDB.updateHeatmapFromQuery(heatmap, queriedCollection);
 }
-async function getTwentyImages(
+/*After any queries change, the images in the side bar should be
+updated according to the new queried collection. */
+async function updateTwentyImages(
   queriedCollection: geofirestore.GeoQuery
 ): Promise<void> {
   const dataref = (await queriedCollection.get()).docs;
@@ -123,7 +129,9 @@ async function getTwentyImages(
     }
   }
 }
-
+/* Updates the global queries variables according to 
+the client's inputs on the side panel. 
+Changes the map according to the new variables. */
 function queriesChanged(selectedQueries: {
   labels: string[];
   year: number | undefined;
@@ -134,39 +142,6 @@ function queriesChanged(selectedQueries: {
   selectedMonth = selectedQueries.month;
   mapChanged();
 }
-
-function toggleHeatmap() {
-  heatmap.setMap(heatmap.getMap() ? null : map);
-}
-
-function changeGradient() {
-  const gradient = [
-    "rgba(0, 255, 255, 0)",
-    "rgba(0, 255, 255, 1)",
-    "rgba(0, 191, 255, 1)",
-    "rgba(0, 127, 255, 1)",
-    "rgba(0, 63, 255, 1)",
-    "rgba(0, 0, 255, 1)",
-    "rgba(0, 0, 223, 1)",
-    "rgba(0, 0, 191, 1)",
-    "rgba(0, 0, 159, 1)",
-    "rgba(0, 0, 127, 1)",
-    "rgba(63, 0, 91, 1)",
-    "rgba(127, 0, 63, 1)",
-    "rgba(191, 0, 31, 1)",
-    "rgba(255, 0, 0, 1)",
-  ];
-  heatmap.set("gradient", heatmap.get("gradient") ? null : gradient);
-}
-
-function changeRadius() {
-  heatmap.set("radius", heatmap.get("radius") ? null : 20);
-}
-
-function changeOpacity() {
-  heatmap.set("opacity", heatmap.get("opacity") ? null : 0.2);
-}
-
 // [END maps_layer_heatmap]
 
 export { initMap, database, queriesChanged };
