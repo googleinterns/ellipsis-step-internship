@@ -26,6 +26,7 @@ import InfoWindowContent from "./components/infoWindowContent";
 
 //TODO: run mocha tests on the browser.
 let markers: Array<google.maps.Marker> = [];
+let infoWindow: google.maps.InfoWindow | null = null;
 
 //TODO: use this function to show images on the side panel-so they will correlate (relocate to a different file)
 //TODO: after runing mocha tests on the browser, remove this function out of setFirstTwentyMarkers.
@@ -42,7 +43,9 @@ function addMarkerWithListener(
     position: latlng,
     map: map,
   });
-  const infoWindow: google.maps.InfoWindow | null = new google.maps.InfoWindow();
+  if (infoWindow === null) {
+    infoWindow = new google.maps.InfoWindow();
+  }
   markers.push(marker);
   google.maps.event.addListener(marker, "click", async () => {
     const center = convertLatLngToGeopoint(marker.getPosition());
@@ -50,24 +53,27 @@ function addMarkerWithListener(
       const dataref = await (
         await getQueriedCollection(center, 0, labels, datetime).get()
       ).docs[0];
-      infoWindow.setContent(
-        ReactDOMServer.renderToString(
-          <InfoWindowContent
-            labels={dataref.data().labels}
-            url={dataref.data().url}
-            dateTime={
-              (datetime = {
-                year: dataref.data().year,
-                month: dataref.data().month,
-                day: dataref.data().day,
-              })
-            }
-            //TODO: add attribution field to the database.
-            attribution={""}
-          />
-        )
-      );
-      infoWindow.open(map, marker);
+      if (infoWindow !== null) {
+        infoWindow.close();
+        infoWindow.setContent(
+          ReactDOMServer.renderToString(
+            <InfoWindowContent
+              labels={dataref.data().labels}
+              url={dataref.data().url}
+              dateTime={
+                (datetime = {
+                  year: dataref.data().year,
+                  month: dataref.data().month,
+                  day: dataref.data().day,
+                })
+              }
+              //TODO: add attribution field to the database.
+              attribution={""}
+            />
+          )
+        );
+        infoWindow.open(map, marker);
+      }
     }
   });
 }
