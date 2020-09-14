@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/* eslint-disable @typescript-eslint/explicit-module-boundary-types */
 
 // [START maps_layer_heatmap]
 // This example requires the Visualization library. Include the libraries=visualization
@@ -22,11 +23,10 @@
 // Imports
 let map: google.maps.Map, heatmap: google.maps.visualization.HeatmapLayer;
 import * as firebase from "firebase";
-import firebaseConfig from "./firebase_config";
-import * as geofirestore from "geofirestore";
 import { database } from "./declareDatabase";
 import * as queryDB from "./queryDB";
 import { setFirstTwentyMarkers } from "./clickInfoWindow";
+import { DateTime } from "./interface";
 
 async function initMap() {
   map = new google.maps.Map(document.getElementById("map") as HTMLElement, {
@@ -75,15 +75,17 @@ async function initMap() {
     const queriedCollection = queryDB.getQueriedCollection(
       newCenter,
       newRadius,
-      ["dog", "bag"]
+      ["dog", "bag"],
+      {}
     );
     queryDB.updateHeatmapFromQuery(heatmap, queriedCollection);
     //TODO: setfirsttwentymarkers by field that where submitted.
+    const date: DateTime = { year: 1999 };
     await setFirstTwentyMarkers(
       newCenter,
       newRadius,
       ["cat", "dog", "bag"],
-      1999
+      date
     );
   }
 }

@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-import * as firebase from "firebase";
-import firebaseConfig from "./firebase_config";
+interface DateTime {
+  year?: number;
+  month?: number;
+  day?: number;
+}
 
-const app = firebase.initializeApp(firebaseConfig);
-const database = app.firestore();
-
-export { database };
+export type { DateTime };
