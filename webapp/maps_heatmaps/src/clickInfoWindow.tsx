@@ -26,6 +26,7 @@ import InfoWindowContent from "./components/infoWindowContent";
 
 //TODO: run mocha tests on the browser.
 let markers: Array<google.maps.Marker> = [];
+let infoWindow: google.maps.InfoWindow | null = null;
 
 /* Queries for 20 random dataPoints in the database in order to place markers on them. */
 //TODO: make the function more random by having all makers equally separated on the map.
@@ -39,7 +40,6 @@ async function setFirstTwentyMarkers(
   labels: string[],
   datetime: DateTime
 ): Promise<void> {
-  const infoWindow: google.maps.InfoWindow | null = new google.maps.InfoWindow();
   const dataref = await (
     await getQueriedCollection(center, radius, labels, datetime).get()
   ).docs;
@@ -53,52 +53,54 @@ async function setFirstTwentyMarkers(
       datetime
     );
   }
+}
 
-  //TODO: after runing mocha tests on the browser, remove this function out of setFirstTwentyMarkers.
-  /* Placing a marker with a click event in a given location. 
+/* Placing a marker with a click event in a given location. 
    When clicking on the marker an infoWindow will appear 
    with all the information on this location from the database. */
-  function addMarkerWithListener(
-    map: google.maps.Map,
-    latlng: google.maps.LatLng,
-    labels: string[],
-    datetime: DateTime
-  ) {
-    const marker = new google.maps.Marker({
-      position: latlng,
-      map: map,
-    });
-    markers.push(marker);
-    google.maps.event.addListener(marker, "click", async () => {
-      const center = convertLatLngToGeopoint(marker.getPosition());
-      if (center !== undefined) {
-        const dataref = await (
-          await getQueriedCollection(center, 0, labels, datetime).get()
-        ).docs[0];
-        if (infoWindow !== null) {
-          infoWindow.close();
-          infoWindow.setContent(
-            ReactDOMServer.renderToString(
-              <InfoWindowContent
-                labels={dataref.data().labels}
-                url={dataref.data().url}
-                dateTime={
-                  (datetime = {
-                    year: dataref.data().year,
-                    month: dataref.data().month,
-                    day: dataref.data().day,
-                  })
-                }
-                //TODO: add attribution field to the database.
-                attribution={""}
-              />
-            )
-          );
-          infoWindow.open(map, marker);
-        }
-      }
-    });
+function addMarkerWithListener(
+  map: google.maps.Map,
+  latlng: google.maps.LatLng,
+  labels: string[],
+  datetime: DateTime
+) {
+  const marker = new google.maps.Marker({
+    position: latlng,
+    map: map,
+  });
+  if (infoWindow === null) {
+    infoWindow = new google.maps.InfoWindow();
   }
+  markers.push(marker);
+  google.maps.event.addListener(marker, "click", async () => {
+    const center = convertLatLngToGeopoint(marker.getPosition());
+    if (center !== undefined) {
+      const dataref = await (
+        await getQueriedCollection(center, 0, labels, datetime).get()
+      ).docs[0];
+      if (infoWindow !== null) {
+        infoWindow.close();
+        infoWindow.setContent(
+          ReactDOMServer.renderToString(
+            <InfoWindowContent
+              labels={dataref.data().labels}
+              url={dataref.data().url}
+              dateTime={
+                (datetime = {
+                  year: dataref.data().year,
+                  month: dataref.data().month,
+                  day: dataref.data().day,
+                })
+              }
+              //TODO: add attribution field to the database.
+              attribution={""}
+            />
+          )
+        );
+        infoWindow.open(map, marker);
+      }
+    }
+  });
 }
 
 /* This function converts from a google.maps.LatLng to a firebase.firestore.GeoPoint.*/

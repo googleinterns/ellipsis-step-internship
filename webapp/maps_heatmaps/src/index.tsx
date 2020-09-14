@@ -54,8 +54,8 @@ async function initMap() {
     data: [],
     map: map,
   });
-  map.addListener("center_changed", async () => await mapChanged());
-  map.addListener("zoom_changed", async () => await mapChanged());
+  map.addListener("center_changed", () => mapChanged());
+  map.addListener("zoom_changed", () => mapChanged());
   //TODO: labels, year and month should be as the client requested, not fixed values.
   async function mapChanged() {
     const center: google.maps.LatLng = map.getCenter();
