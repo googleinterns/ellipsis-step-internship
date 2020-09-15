@@ -41,6 +41,7 @@ import { DateTime } from "./interface";
 let map: google.maps.Map, heatmap: google.maps.visualization.HeatmapLayer;
 let selectedLabels: string[] = [];
 let selectedDate: DateTime = {};
+let timeOfLastRequest: number = Date.now();
 getLabelTags();
 
 /*Gets all the different labels from the label Collection in firestore data base
@@ -91,6 +92,8 @@ async function initMap() {
 /* Updates the map and the sidepanel after any change of the
 center/zoom of the current map or of the different queries.*/
 async function mapChanged() {
+  const timeOfRequest = Date.now();
+  timeOfLastRequest = timeOfRequest;
   const center: google.maps.LatLng = map.getCenter();
   const lat = center.lat();
   const lng = center.lng();
@@ -105,15 +108,19 @@ async function mapChanged() {
     );
     newRadius = meterRadius * 0.000621371192; //convert to miles
   }
-  const queriedCollection = queryDB.getQueriedCollection(
-    newCenter,
-    newRadius,
-    selectedLabels,
-    selectedDate
-  );
-  updateNumOfResults(queriedCollection);
-  updateTwentyImages(queriedCollection);
-  queryDB.updateHeatmapFromQuery(heatmap, queriedCollection);
+  if (timeOfLastRequest === timeOfRequest) {
+    const queriedCollection = queryDB.getQueriedCollection(
+      newCenter,
+      newRadius,
+      selectedLabels,
+      selectedDate
+    );
+    if (timeOfLastRequest === timeOfRequest) {
+      updateNumOfResults(queriedCollection);
+      updateTwentyImages(queriedCollection);
+      queryDB.updateHeatmapFromQuery(heatmap, queriedCollection);
+    }
+  }
 }
 async function updateNumOfResults(queriedCollection: geofirestore.GeoQuery) {
   const numOfResults = (await queriedCollection.get()).docs.length;
