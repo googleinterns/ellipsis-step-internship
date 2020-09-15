@@ -140,6 +140,7 @@ async function updateTwentyImages(
       imageElement.src = docData.url;
       elementById.appendChild(imageElement);
       await addMarkerWithListener(
+        imageElement,
         map,
         convertGeopointToLatLon(docData.g.geopoint),
         docData.labels,

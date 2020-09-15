@@ -34,6 +34,7 @@ let infoWindow: google.maps.InfoWindow | null = null;
    When clicking on the marker an infoWindow will appear 
    with all the information on this location from the database. */
 function addMarkerWithListener(
+  image: HTMLImageElement,
   map: google.maps.Map,
   latlng: google.maps.LatLng,
   labels: string[],
@@ -47,35 +48,47 @@ function addMarkerWithListener(
     infoWindow = new google.maps.InfoWindow();
   }
   markers.push(marker);
-  google.maps.event.addListener(marker, "click", async () => {
-    const center = convertLatLngToGeopoint(marker.getPosition());
-    if (center !== undefined) {
-      const dataref = await (
-        await getQueriedCollection(center, 0, labels, datetime).get()
-      ).docs[0];
-      if (infoWindow !== null) {
-        infoWindow.close();
-        infoWindow.setContent(
-          ReactDOMServer.renderToString(
-            <InfoWindowContent
-              labels={dataref.data().labels}
-              url={dataref.data().url}
-              dateTime={
-                (datetime = {
-                  year: dataref.data().year,
-                  month: dataref.data().month,
-                  day: dataref.data().day,
-                })
-              }
-              //TODO: add attribution field to the database.
-              attribution={""}
-            />
-          )
-        );
-        infoWindow.open(map, marker);
-      }
+  image.addEventListener("click", async () =>
+    openInfoWindow(infoWindow, marker, labels, datetime)
+  );
+  google.maps.event.addListener(marker, "click", async () =>
+    openInfoWindow(infoWindow, marker, labels, datetime)
+  );
+}
+
+async function openInfoWindow(
+  infoWindow: google.maps.InfoWindow | null,
+  marker: google.maps.Marker,
+  labels: string[],
+  dateTime: DateTime
+) {
+  const center = convertLatLngToGeopoint(marker.getPosition());
+  if (center !== undefined) {
+    const dataref = await (
+      await getQueriedCollection(center, 0, labels, dateTime).get()
+    ).docs[0];
+    if (infoWindow !== null) {
+      infoWindow.close();
+      infoWindow.setContent(
+        ReactDOMServer.renderToString(
+          <InfoWindowContent
+            labels={dataref.data().labels}
+            url={dataref.data().url}
+            dateTime={
+              (dateTime = {
+                year: dataref.data().year,
+                month: dataref.data().month,
+                day: dataref.data().day,
+              })
+            }
+            //TODO: add attribution field to the database.
+            attribution={""}
+          />
+        )
+      );
+      infoWindow.open(map, marker);
     }
-  });
+  }
 }
 
 /* This function converts from a google.maps.LatLng to a firebase.firestore.GeoPoint.*/
