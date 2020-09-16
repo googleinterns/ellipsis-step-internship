@@ -15,6 +15,7 @@
  */
 
 import * as queryDB from "./queryDB";
+import * as geohash from "ngeohash";
 import { expect } from "chai";
 import "mocha";
 import firebase from "firebase";
@@ -87,5 +88,50 @@ describe("check function getQueriedCollection", () => {
           expect(doc.distance).to.be.at.most(radius);
         });
       });
+  });
+});
+
+describe("convert latlon to geohash function", () => {
+  it("correctly converts", () => {
+    const lat = 70.2995;
+    const lng = -27.9993;
+    const result = geohash.encode(lat, lng, 12);
+    expect(result).to.equal("gkkpfves308e");
+  });
+  it("correctly converts", () => {
+    const lat = -70.2995;
+    const lng = 27.9993;
+    const result = geohash.encode(lat, lng, 12);
+    expect(result).to.equal("heebj4k7wzrk");
+  });
+  it("correctly converts", () => {
+    const lat = -120.9734865;
+    const lng = 37.675654;
+    const result = geohash.encode(lat, lng, 12);
+    expect(result).to.equal("hb4b1248425b");
+  });
+  it("correctly converts", () => {
+    const lat = 120.9734865;
+    const lng = 37.675654;
+    const result = geohash.encode(lat, lng, 12);
+    expect(result).to.equal("uzfzcrfxfrgz");
+  });
+  it("correctly converts", () => {
+    const lat = -120.9734865;
+    const lng = -37.675654;
+    const result = geohash.encode(lat, lng, 12);
+    expect(result).to.equal("50j0n8j2j8h0");
+  });
+  it("correctly converts", () => {
+    const lat = 0.0;
+    const lng = 0.0;
+    const result = geohash.encode(lat, lng, 12);
+    expect(result).to.equal("s00000000000");
+  });
+  it("correctly converts", () => {
+    const lat = 120.0;
+    const lng = 0.0;
+    const result = geohash.encode(lat, lng, 12);
+    expect(result).to.equal("upbpbpbpbpbp");
   });
 });
