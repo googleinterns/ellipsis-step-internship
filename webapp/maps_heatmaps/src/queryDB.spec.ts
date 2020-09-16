@@ -18,19 +18,18 @@ import * as queryDB from "./queryDB";
 import { expect } from "chai";
 import "mocha";
 import firebase from "firebase";
+import { DateTime } from "./interface";
 
 describe("check function getQueriedCollection", () => {
   const lat = 37.780501;
   const lon = -122.391281;
   const center = new firebase.firestore.GeoPoint(lat, lon);
   const radius = 100;
-  const year = 2015;
-  const month = 4;
-  const day = 20;
+  const datetime: DateTime = { year: 2015, month: 4, day: 20 };
   const label = ["cat"];
   it("test by date", async () => {
     await queryDB
-      .getQueriedCollection(center, radius, label, year, month, day)
+      .getQueriedCollection(center, radius, label, datetime)
       .get()
       .then((querySnapshot) => {
         querySnapshot.forEach((doc) => {
@@ -42,7 +41,7 @@ describe("check function getQueriedCollection", () => {
   });
   it("test by label", async () => {
     await queryDB
-      .getQueriedCollection(center, radius, label)
+      .getQueriedCollection(center, radius, label, {})
       .get()
       .then((querySnapshot) => {
         querySnapshot.forEach((doc) => {
@@ -52,7 +51,7 @@ describe("check function getQueriedCollection", () => {
   });
   it("test by date and label", async () => {
     await queryDB
-      .getQueriedCollection(center, radius, label, year, month, day)
+      .getQueriedCollection(center, radius, label, datetime)
       .get()
       .then((querySnapshot) => {
         querySnapshot.forEach((doc) => {
@@ -66,7 +65,7 @@ describe("check function getQueriedCollection", () => {
   it("test by several labels", async () => {
     const labels = ["cat", "bag"];
     await queryDB
-      .getQueriedCollection(center, radius, labels, year, month, day)
+      .getQueriedCollection(center, radius, labels, datetime)
       .get()
       .then((querySnapshot) => {
         querySnapshot.forEach((doc) => {
@@ -79,7 +78,7 @@ describe("check function getQueriedCollection", () => {
   });
   it("test by center and radius", async () => {
     await queryDB
-      .getQueriedCollection(center, radius, label)
+      .getQueriedCollection(center, radius, label, {})
       .get()
       .then((querySnapshot) => {
         querySnapshot.forEach((doc) => {

@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/* eslint-disable @typescript-eslint/explicit-module-boundary-types */
 
 // [START maps_layer_heatmap]
 // This example requires the Visualization library. Include the libraries=visualization
@@ -20,11 +21,6 @@
 // <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&libraries=visualization">
 
 // Imports
-let map: google.maps.Map, heatmap: google.maps.visualization.HeatmapLayer;
-let selectedLabels: string[] = [];
-let selectedYear: number | undefined;
-let selectedMonth: number | undefined;
-
 import * as firebase from "firebase";
 import * as geofirestore from "geofirestore";
 import { database } from "./declareDatabase";
@@ -35,8 +31,17 @@ import ReactDOM from "react-dom";
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import SidePanel from "./components/sidepanel";
+import {
+  eraseAllMarkers,
+  convertGeopointToLatLon,
+  addMarkerWithListener,
+} from "./clickInfoWindow";
+import { DateTime } from "./interface";
 
-getLabelTags();
+let map: google.maps.Map, heatmap: google.maps.visualization.HeatmapLayer;
+let selectedLabels: string[] = [];
+let selectedDate: DateTime = {};
+let timeOfLastRequest: number = Date.now();
 
 /*Gets all the different labels from the label Collection in firestore data base
  and adds them as options for label querying."*/
@@ -54,7 +59,7 @@ async function getLabelTags() {
   selectedLabels = labelTags.map((x: Record<string, string>) => x.label);
 }
 
-function initMap(): void {
+function initMap() {
   map = new google.maps.Map(document.getElementById("map") as HTMLElement, {
     zoom: 13,
     mapTypeId: "satellite",
@@ -64,6 +69,7 @@ function initMap(): void {
     },
   });
 
+  getLabelTags();
   // TODO: decide where to set default center.
   const images = database.collection("images");
   images.get().then((querySnapshot) => {
@@ -86,6 +92,8 @@ function initMap(): void {
 /* Updates the map and the sidepanel after any change of the
 center/zoom of the current map or of the different queries.*/
 async function mapChanged() {
+  const timeOfRequest = Date.now();
+  timeOfLastRequest = timeOfRequest;
   const center: google.maps.LatLng = map.getCenter();
   const lat = center.lat();
   const lng = center.lng();
@@ -100,16 +108,19 @@ async function mapChanged() {
     );
     newRadius = meterRadius * 0.000621371192; //convert to miles
   }
-  const queriedCollection = queryDB.getQueriedCollection(
-    newCenter,
-    newRadius,
-    selectedLabels,
-    selectedYear,
-    selectedMonth
-  );
-  updateNumOfResults(queriedCollection);
-  updateTwentyImages(queriedCollection);
-  queryDB.updateHeatmapFromQuery(heatmap, queriedCollection);
+  if (timeOfLastRequest === timeOfRequest) {
+    const queriedCollection = queryDB.getQueriedCollection(
+      newCenter,
+      newRadius,
+      selectedLabels,
+      selectedDate
+    );
+    if (timeOfLastRequest === timeOfRequest) {
+      updateNumOfResults(queriedCollection);
+      updateTwentyImagesAndMarkers(queriedCollection);
+      queryDB.updateHeatmapFromQuery(heatmap, queriedCollection);
+    }
+  }
 }
 async function updateNumOfResults(queriedCollection: geofirestore.GeoQuery) {
   const numOfResults = (await queriedCollection.get()).docs.length;
@@ -118,15 +129,23 @@ async function updateNumOfResults(queriedCollection: geofirestore.GeoQuery) {
     elementById.innerHTML = numOfResults + " images found";
   }
 }
+
+/* Queries for 20 random dataPoints in the database in order to place markers on them. */
+//TODO: make the function more random by having all makers equally separated on the map.
+//We can do this by:
+//1. Having a random field and ordering by it.
+//2. Dividing the map into sections and in each section query for a datapoint.
+//TODO: use this function to show images on the side panel-so they will correlate (relocate to a different file)
 /*After any queries change, the images in the side bar should be
 updated according to the new queried collection. */
-async function updateTwentyImages(
+async function updateTwentyImagesAndMarkers(
   queriedCollection: geofirestore.GeoQuery
 ): Promise<void> {
   const dataRef = (await queriedCollection.get()).docs;
   const jump = Math.ceil(dataRef.length / 10);
   const elementById = document.getElementById("images-holder");
   if (elementById != null) {
+    eraseAllMarkers();
     elementById.innerHTML = "";
     for (let i = 0; i < dataRef.length; i = i + jump) {
       const docData = dataRef[i].data();
@@ -134,6 +153,12 @@ async function updateTwentyImages(
       imageElement.className = "sidepanel-image";
       imageElement.src = docData.url;
       elementById.appendChild(imageElement);
+      await addMarkerWithListener(
+        map,
+        convertGeopointToLatLon(docData.g.geopoint),
+        docData.labels,
+        selectedDate
+      );
     }
   }
 }
@@ -146,10 +171,9 @@ function queriesChanged(selectedQueries: {
   month: number | undefined;
 }): void {
   selectedLabels = selectedQueries.labels;
-  selectedYear = selectedQueries.year;
-  selectedMonth = selectedQueries.month;
+  selectedDate = { year: selectedQueries.year, month: selectedQueries.month };
   mapChanged();
 }
 // [END maps_layer_heatmap]
 
-export { initMap, database, queriesChanged };
+export { initMap, database, queriesChanged, map };

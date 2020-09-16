@@ -17,6 +17,7 @@
 import { database } from "./index";
 import * as firebase from "firebase";
 import * as geofirestore from "geofirestore";
+import { DateTime } from "./interface";
 
 /* @param center The center of the current map, 
    @param radius The radius of the circle that contains the current map bounderies
@@ -27,9 +28,7 @@ function getQueriedCollection(
   center: firebase.firestore.GeoPoint,
   radius: number,
   labels: string[],
-  year?: number,
-  month?: number,
-  day?: number
+  datetime: DateTime
 ): geofirestore.GeoQuery {
   const GeoFirestore = geofirestore.initializeApp(database);
   const geoCollection = GeoFirestore.collection("images");
@@ -39,11 +38,16 @@ function getQueriedCollection(
       radius: radius,
     })
     .where("labels", "array-contains-any", labels);
-  if (year != undefined) dataRef = dataRef.where("year", "==", year);
-  if (year != undefined && month != undefined)
-    dataRef = dataRef.where("month", "==", month);
-  if (year != undefined && month != undefined && day != undefined)
-    dataRef = dataRef.where("day", "==", day);
+  if (datetime.year != undefined)
+    dataRef = dataRef.where("year", "==", datetime.year);
+  if (datetime.year != undefined && datetime.month != undefined)
+    dataRef = dataRef.where("month", "==", datetime.month);
+  if (
+    datetime.year != undefined &&
+    datetime.month != undefined &&
+    datetime.day != undefined
+  )
+    dataRef = dataRef.where("day", "==", datetime.day);
   return dataRef;
 }
 
