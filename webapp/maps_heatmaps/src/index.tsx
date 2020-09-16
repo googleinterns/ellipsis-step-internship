@@ -60,7 +60,7 @@ async function getLabelTags() {
   selectedLabels = labelTags.map((x: Record<string, string>) => x.label);
 }
 
-async function initMap() {
+function initMap() {
   map = new google.maps.Map(document.getElementById("map") as HTMLElement, {
     zoom: 13,
     mapTypeId: "satellite",
@@ -70,6 +70,7 @@ async function initMap() {
     },
   });
 
+  getLabelTags();
   // TODO: decide where to set default center.
   const images = database.collection("images");
   images.get().then((querySnapshot) => {
@@ -117,7 +118,7 @@ async function mapChanged() {
     );
     if (timeOfLastRequest === timeOfRequest) {
       updateNumOfResults(queriedCollection);
-      updateTwentyImages(queriedCollection);
+      updateTwentyImagesAndMarkers(queriedCollection);
       queryDB.updateHeatmapFromQuery(heatmap, queriedCollection);
     }
   }
@@ -129,9 +130,16 @@ async function updateNumOfResults(queriedCollection: geofirestore.GeoQuery) {
     elementById.innerHTML = numOfResults + " images found";
   }
 }
+
+/* Queries for 20 random dataPoints in the database in order to place markers on them. */
+//TODO: make the function more random by having all makers equally separated on the map.
+//We can do this by:
+//1. Having a random field and ordering by it.
+//2. Dividing the map into sections and in each section query for a datapoint.
+//TODO: use this function to show images on the side panel-so they will correlate (relocate to a different file)
 /*After any queries change, the images in the side bar should be
 updated according to the new queried collection. */
-async function updateTwentyImages(
+async function updateTwentyImagesAndMarkers(
   queriedCollection: geofirestore.GeoQuery
 ): Promise<void> {
   const dataRef = (await queriedCollection.get()).docs;
