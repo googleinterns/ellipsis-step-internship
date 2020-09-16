@@ -2,6 +2,17 @@
        * element that contains the map. */
        #map {
         height: 100%;
+        width: 100%;
+      }
+
+      button {
+        padding: 5px 10px 6px;
+        font-weight: bold;
+      
+      }
+      .sidepanel-image {
+        max-width: 100%;
+        max-height: 100%;
       }
       
       /* Optional: Makes the sample page fill the window. */
@@ -10,6 +21,7 @@
         height: 100%;
         margin: 0;
         padding: 0;
+        font-family: 'Roboto', sans-serif;;
       }
       
       #floating-panel {
@@ -38,3 +50,35 @@
       }
       
       /* [END maps_layer_heatmap] */
+
+      .querisForm {
+        padding: 10px;
+      }
+  .Sidebar {
+    position: fixed;
+  }  
+  .rootStyle {
+    width: 255px
+  }
+  .overlayStyle {
+    width: 255px
+  }
+  .sidebarStyle {
+    background-color: rgba(255, 255, 255, 0.9);
+    width: 255px;
+    z-index: 5;
+    position: fixed;
+  }
+
+  #num-of-results{
+    text-align: center;
+    font-family: "Roboto", "sans-serif";
+    background-color: #fff;
+  }
+
+  #fixed-sidebar {
+    background-color: rgba(255, 255, 255);
+    position: sticky;
+    top:0; left:0;
+
+  }

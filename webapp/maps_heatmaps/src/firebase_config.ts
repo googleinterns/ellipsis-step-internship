@@ -6,6 +6,6 @@ const firebaseConfig = {
   storageBucket: "step-project-ellispis.appspot.com",
   messagingSenderId: "680174020350",
   appId: "1:680174020350:web:15715ef3d50f91087067af",
-  measurementId: "G-TGBJH1SGKH"
+  measurementId: "G-TGBJH1SGKH",
 };
 export default firebaseConfig;
