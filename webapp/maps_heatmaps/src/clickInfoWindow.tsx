@@ -28,33 +28,6 @@ import InfoWindowContent from "./components/infoWindowContent";
 let markers: Array<google.maps.Marker> = [];
 let infoWindow: google.maps.InfoWindow | null = null;
 
-/* Queries for 20 random dataPoints in the database in order to place markers on them. */
-//TODO: make the function more random by having all makers equally separated on the map.
-//We can do this by:
-//1. Having a random field and ordering by it.
-//2. Dividing the map into sections and in each section query for a datapoint.
-//TODO: use this function to show images on the side panel-so they will correlate (relocate to a different file)
-async function setFirstTwentyMarkers(
-  center: firebase.firestore.GeoPoint,
-  radius: number,
-  labels: string[],
-  datetime: DateTime
-): Promise<void> {
-  const dataref = await (
-    await getQueriedCollection(center, radius, labels, datetime).get()
-  ).docs;
-  eraseAllMarkers();
-  const jump = Math.ceil(dataref.length / 10);
-  for (let i = 0; i < dataref.length; i = i + jump) {
-    addMarkerWithListener(
-      map,
-      convertGeopointToLatLon(dataref[i].data().g.geopoint),
-      dataref[i].data().labels,
-      datetime
-    );
-  }
-}
-
 /* Placing a marker with a click event in a given location. 
    When clicking on the marker an infoWindow will appear 
    with all the information on this location from the database. */
@@ -120,7 +93,9 @@ function convertLatLngToGeopoint(
 }
 
 /* This function converts from a firebase.firestore.GeoPoint to a google.maps.LatLng.*/
-function convertGeopointToLatLon(center: firebase.firestore.GeoPoint) {
+function convertGeopointToLatLon(
+  center: firebase.firestore.GeoPoint
+): google.maps.LatLng {
   const geoPoint = center;
   const lat = geoPoint.latitude;
   const lng = geoPoint.longitude;
@@ -135,4 +110,4 @@ function eraseAllMarkers(): void {
   markers = [];
 }
 
-export { setFirstTwentyMarkers };
+export { eraseAllMarkers, convertGeopointToLatLon, addMarkerWithListener };

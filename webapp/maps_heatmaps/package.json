@@ -3,19 +3,23 @@
   "scripts": {
     "build": "webpack --config ./webpack.prod.js --mode production",
     "dev": "webpack-dev-server --config ./webpack.dev.js",
-    "format": "eslint --fix src/*.ts*",
-    "lint": "eslint src/*.ts*",
+    "format": "eslint --fix src/**/*.ts*",
+    "lint": "eslint src/**/*.ts*",
     "test": "mocha -r ts-node/register src/**/*.spec.ts",
     "watch": "webpack --config ./webpack.dev.js --mode development",
     "initialize-db": "ts-node-script test/initializeDB.ts"
   },
   "dependencies": {
+    "@types/googlemaps": "^3.39.13",
+    "@types/react-select": "^3.0.19",
+    "@types/react-sidebar": "^3.0.0",
     "firebase": "^7.19.0",
     "geofirestore": "^4.3.0",
-    "webpack-merge": "^5.1.2",
     "react": "^16.12.0",
     "react-dom": "^16.12.0",
-    "@types/googlemaps": "^3.39.13"
+    "react-select": "^3.1.0",
+    "react-sidebar": "^3.0.2",
+    "webpack-merge": "^5.1.2"
   },
   "devDependencies": {
     "@babel/core": "^7.11.0",
@@ -24,9 +28,9 @@
     "@types/chai": "^4.2.12",
     "@types/jest": "^26.0.9",
     "@types/mocha": "^8.0.3",
-    "@types/webpack-env": "^1.15.2",
     "@types/react": "^16.8.24",
     "@types/react-dom": "^16.0.5",
+    "@types/webpack-env": "^1.15.2",
     "@typescript-eslint/eslint-plugin": "^3.9.0",
     "@typescript-eslint/parser": "^3.9.0",
     "babel-loader": "^8.1.0",
@@ -38,7 +42,9 @@
     "html-webpack-plugin": "^4.3.0",
     "jest": "^26.4.0",
     "mocha": "^8.1.3",
+    "multiselect-react-dropdown": "^1.5.7",
     "prettier": "^2.0.5",
+    "react-pro-sidebar": "^0.4.4",
     "terser-webpack-plugin": "^4.1.0",
     "ts-jest": "^26.2.0",
     "ts-loader": "^8.0.2",
