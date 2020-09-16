@@ -48,7 +48,7 @@ class InfoWindowContent extends React.Component<{
     );
   }
 
-  getUrl() {
+  getImage() {
     return <img className="fit-image" src={this.props.url} />;
   }
 
@@ -75,7 +75,7 @@ class InfoWindowContent extends React.Component<{
   render(): JSX.Element {
     return (
       <>
-        <div className="map-info-window"> {this.getUrl()} </div>
+        <div className="map-info-window"> {this.getImage()} </div>
         <div>
           <p className="fit-text">
             {this.getLabels()} <br />
