@@ -117,7 +117,7 @@ async function mapChanged() {
     );
     if (timeOfLastRequest === timeOfRequest) {
       updateNumOfResults(queriedCollection);
-      updateTwentyImages(queriedCollection);
+      updateTwentyImagesAndMarkers(queriedCollection);
       queryDB.updateHeatmapFromQuery(heatmap, queriedCollection);
     }
   }
@@ -131,7 +131,7 @@ async function updateNumOfResults(queriedCollection: geofirestore.GeoQuery) {
 }
 /*After any queries change, the images in the side bar should be
 updated according to the new queried collection. */
-async function updateTwentyImages(
+async function updateTwentyImagesAndMarkers(
   queriedCollection: geofirestore.GeoQuery
 ): Promise<void> {
   const dataRef = (await queriedCollection.get()).docs;
