@@ -36,8 +36,6 @@ import ReactDOM from "react-dom";
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import SidePanel from "./components/sidepanel";
 
-getLabelTags();
-
 /*Gets all the different labels from the label Collection in firestore data base
  and adds them as options for label querying."*/
 async function getLabelTags() {
@@ -63,7 +61,7 @@ function initMap(): void {
       position: google.maps.ControlPosition.TOP_CENTER,
     },
   });
-
+  getLabelTags();
   // TODO: decide where to set default center.
   const images = database.collection("images");
   images.get().then((querySnapshot) => {
