@@ -37,4 +37,11 @@ jobs:
       run: npm test
       env:
         GOOGLE_MAPS_API_KEY: ${{ secrets.GOOGLE_MAPS_API_KEY }}      
-        FIRESTORE_API_KEY: ${{ secrets.FIRESTORE_API_KEY }}                
+        FIRESTORE_API_KEY: ${{ secrets.FIRESTORE_API_KEY }}  
+
+    - name: Run linters
+      run: npm run lint
+      uses: wearerequired/lint-action@v1
+      env:
+        GOOGLE_MAPS_API_KEY: ${{ secrets.GOOGLE_MAPS_API_KEY }}      
+        FIRESTORE_API_KEY: ${{ secrets.FIRESTORE_API_KEY }}               
