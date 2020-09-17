@@ -19,6 +19,7 @@ import { map } from "./index";
 import { getQueriedCollection } from "./queryDB";
 import * as firebase from "firebase";
 import { DateTime } from "./interface";
+import { convertLatLngToGeopoint } from "./utils";
 
 import React from "react";
 import ReactDOMServer from "react-dom/server";
@@ -91,33 +92,6 @@ async function openInfoWindow(
   }
 }
 
-/* This function converts from a google.maps.LatLng to a firebase.firestore.GeoPoint.*/
-function convertLatLngToGeopoint(
-  position: google.maps.LatLng | null | undefined
-) {
-  const latlng = position;
-  if (latlng !== undefined && latlng !== null) {
-    const lat = latlng.lat();
-    const lng = latlng.lng();
-    if (lat !== undefined && lng !== undefined) {
-      const geoPoint = new firebase.firestore.GeoPoint(lat, lng);
-      return geoPoint;
-    }
-  }
-  return undefined;
-}
-
-/* This function converts from a firebase.firestore.GeoPoint to a google.maps.LatLng.*/
-function convertGeopointToLatLon(
-  center: firebase.firestore.GeoPoint
-): google.maps.LatLng {
-  const geoPoint = center;
-  const lat = geoPoint.latitude;
-  const lng = geoPoint.longitude;
-  const latlon = new google.maps.LatLng(lat, lng);
-  return latlon;
-}
-
 function eraseAllMarkers(): void {
   markers.forEach((marker) => {
     marker.setMap(null);
@@ -125,4 +99,4 @@ function eraseAllMarkers(): void {
   markers = [];
 }
 
-export { eraseAllMarkers, convertGeopointToLatLon, addMarkerWithListener };
+export { eraseAllMarkers, addMarkerWithListener };
