@@ -10,7 +10,6 @@ on:
     branches: [ master ]
 
 jobs:
-
   build:
     runs-on: ubuntu-latest
     defaults:
@@ -38,10 +37,4 @@ jobs:
       run: npm test
       env:
         GOOGLE_MAPS_API_KEY: ${{ secrets.GOOGLE_MAPS_API_KEY }}      
-        FIRESTORE_API_KEY: ${{ secrets.FIRESTORE_API_KEY }}   
-    - name: Run linters
-        uses: wearerequired/lint-action@v1
-        with:
-          eslint: true
-          prettier: true
-                       
+        FIRESTORE_API_KEY: ${{ secrets.FIRESTORE_API_KEY }}                
