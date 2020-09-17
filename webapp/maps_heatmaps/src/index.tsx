@@ -42,7 +42,6 @@ let map: google.maps.Map, heatmap: google.maps.visualization.HeatmapLayer;
 let selectedLabels: string[] = [];
 let selectedDate: DateTime = {};
 let timeOfLastRequest: number = Date.now();
-getLabelTags();
 
 /*Gets all the different labels from the label Collection in firestore data base
  and adds them as options for label querying."*/
@@ -69,7 +68,6 @@ function initMap() {
       position: google.maps.ControlPosition.TOP_CENTER,
     },
   });
-
   getLabelTags();
   // TODO: decide where to set default center.
   const images = database.collection("images");
