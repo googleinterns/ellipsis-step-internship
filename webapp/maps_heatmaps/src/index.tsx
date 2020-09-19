@@ -23,12 +23,15 @@
 // Imports
 import * as firebase from "firebase";
 import * as geofirestore from "geofirestore";
+import {geoQueryGet,toGeoPoint} from "geofirestore-core";
+
 import { database } from "./declareDatabase";
 import * as queryDB from "./queryDB";
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import React from "react";
 import ReactDOM from "react-dom";
 
+console.log(toGeoPoint(0,0));
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import SidePanel from "./components/sidepanel";
 import {
