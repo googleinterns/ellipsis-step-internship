@@ -19,6 +19,7 @@ import * as firebase from "firebase";
 import { DateTime } from "../src/interface";
 import fs from "fs";
 import * as geokit from "geokit";
+import { hash } from "geokit";
 
 initializeDB();
 
@@ -62,23 +63,21 @@ function addNewImage(
   attribution: string,
   random: number
 ) {
-  //const GeoFirestore = geofirestore.initializeApp(database);
-  //const geocollection = GeoFirestore.collection("imagesTal");
-
+  const hash = geokit.hash({ lat: lat, lng: lng }, 12);
   database.collection("Images").add({
     date: date,
     coordinates: new firebase.firestore.GeoPoint(lat, lng),
     hashmap: {
-      hash1: geokit.hash({ lat: lat, lng: lng }, 1),
-      hash2: geokit.hash({ lat: lat, lng: lng }, 2),
-      hash3: geokit.hash({ lat: lat, lng: lng }, 3),
-      hash4: geokit.hash({ lat: lat, lng: lng }, 4),
-      hash5: geokit.hash({ lat: lat, lng: lng }, 5),
-      hash6: geokit.hash({ lat: lat, lng: lng }, 6),
-      hash7: geokit.hash({ lat: lat, lng: lng }, 7),
-      hash8: geokit.hash({ lat: lat, lng: lng }, 8),
-      hash9: geokit.hash({ lat: lat, lng: lng }, 9),
-      hash10: geokit.hash({ lat: lat, lng: lng }, 10),
+      hash1: hash.substring(0, 1),
+      hash2: hash.substring(0, 2),
+      hash3: hash.substring(0, 3),
+      hash4: hash.substring(0, 4),
+      hash5: hash.substring(0, 5),
+      hash6: hash.substring(0, 6),
+      hash7: hash.substring(0, 7),
+      hash8: hash.substring(0, 8),
+      hash9: hash.substring(0, 9),
+      hash10: hash.substring(0, 10),
     },
     labels: [label],
     url: url,
