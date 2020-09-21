@@ -36,6 +36,7 @@ import {
   convertLatLngToGeopoint,
   convertGeopointToLatLon,
   getRadius,
+  toLatLngLiteral,
 } from "./utils";
 import { DateTime } from "./interface";
 import { getGeohashBoxes } from "./geoquery";
@@ -101,7 +102,13 @@ async function mapChanged() {
   const lng = center.lng();
   const newCenter = new firebase.firestore.GeoPoint(lat, lng);
   const bounds = map.getBounds(); //map's current bounderies
-  getGeohashBoxes(bounds);
+  if (bounds != null) {
+    getGeohashBoxes(
+      toLatLngLiteral(bounds.getNorthEast()),
+      toLatLngLiteral(bounds.getCenter()),
+      toLatLngLiteral(bounds.getSouthWest())
+    );
+  }
   //TODO: check what should be the default radius value.
   const newRadius = getRadius(bounds);
   if (timeOfLastRequest === timeOfRequest) {

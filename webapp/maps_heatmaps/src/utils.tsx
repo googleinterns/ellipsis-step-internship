@@ -16,6 +16,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
 import * as firebase from "firebase";
+import { validateCoordinates } from "geokit";
 
 /* This function converts from a google.maps.LatLng to a firebase.firestore.GeoPoint.*/
 export function convertLatLngToGeopoint(
@@ -56,4 +57,8 @@ export function getRadius(
     newRadius = meterRadius * 0.000621371192; //convert to miles
   }
   return newRadius;
+}
+
+export function toLatLngLiteral(coords: google.maps.LatLng) {
+  return { lat: coords.lat(), lng: coords.lng() };
 }
