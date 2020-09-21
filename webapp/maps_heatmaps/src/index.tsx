@@ -38,6 +38,8 @@ import {
   getRadius,
 } from "./utils";
 import { DateTime } from "./interface";
+import { getGeohashBoxes } from "./geoquery";
+console.log("hi");
 
 let map: google.maps.Map, heatmap: google.maps.visualization.HeatmapLayer;
 let selectedLabels: string[] = [];
@@ -99,6 +101,7 @@ async function mapChanged() {
   const lng = center.lng();
   const newCenter = new firebase.firestore.GeoPoint(lat, lng);
   const bounds = map.getBounds(); //map's current bounderies
+  getGeohashBoxes(bounds);
   //TODO: check what should be the default radius value.
   const newRadius = getRadius(bounds);
   if (timeOfLastRequest === timeOfRequest) {

@@ -16,6 +16,7 @@
     "@types/react-sidebar": "^3.0.0",
     "firebase": "^7.19.0",
     "geofirestore": "^4.3.0",
+    "geokit": "^1.1.0",
     "ngeohash": "^0.6.3",
     "react": "^16.12.0",
     "react-dom": "^16.12.0",
