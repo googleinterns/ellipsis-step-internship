@@ -44,7 +44,9 @@ export function convertGeopointToLatLon(
   return latlon;
 }
 
-export function getRadius(bounds: google.maps.LatLngBounds | null | undefined) {
+export function getRadius(
+  bounds: google.maps.LatLngBounds | null | undefined
+): number {
   let newRadius = 2;
   if (bounds) {
     const meterRadius = google.maps.geometry.spherical.computeDistanceBetween(

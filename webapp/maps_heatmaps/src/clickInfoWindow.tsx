@@ -29,8 +29,6 @@ import InfoWindowContent from "./components/infoWindowContent";
 let markers: Array<google.maps.Marker> = [];
 let infoWindow: google.maps.InfoWindow | null = null;
 
-//TODO: use this function to show images on the side panel-so they will correlate (relocate to a different file)
-//TODO: after runing mocha tests on the browser, remove this function out of setFirstTwentyMarkers.
 /* Placing a marker with a click event in a given location. 
    When clicking on the marker an infoWindow will appear 
    with all the information on this location from the database. */

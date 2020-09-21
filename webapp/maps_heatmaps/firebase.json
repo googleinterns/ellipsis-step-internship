@@ -1,4 +1,5 @@
 {
+  "docsting": "explanation for this file in https://firebase.google.com/docs/cli#the_firebasejson_file",
   "hosting": {
     "public": "public",
     "ignore": [

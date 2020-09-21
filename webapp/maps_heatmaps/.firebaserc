@@ -1,4 +1,6 @@
-{
+/* Explantion for this file in https://firebase.google.com/docs/cli#project_aliases */
+ 
+ {
   "projects": {
     "default": "step-project-ellispis"
   }
