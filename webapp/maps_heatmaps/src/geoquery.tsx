@@ -20,13 +20,19 @@ let rectangles: google.maps.Rectangle[] = [];
 
 function removeDuplicates(hashs: string[]) {
   const newHashs: string[] = [];
+  let subString = false;
   hashs.map((hash) => {
-    if (!newHashs.includes(hash)) {
-      newHashs.push(hash);
-    }
-    newHashs.forEach((hash1, index) => {
-      if (hash1.startsWith(hash)) newHashs[index] = hash;
+    newHashs.forEach((hash1, index1) => {
+      if (hash1.startsWith(hash)) {
+        newHashs[index1] = hash;
+        subString = true;
+      }
+      if (hash.startsWith(hash1)) subString = true;
     });
+    if (!subString) {
+      newHashs.push(hash);
+      subString = false;
+    }
   });
   console.log(Array.from(new Set(newHashs)));
   return Array.from(new Set(newHashs));
