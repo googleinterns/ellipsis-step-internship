@@ -19,6 +19,7 @@ import { map } from "./index";
 import { getQueriedCollection } from "./queryDB";
 import * as firebase from "firebase";
 import { DateTime } from "./interface";
+import { convertLatLngToGeopoint } from "./utils";
 
 import React from "react";
 import ReactDOMServer from "react-dom/server";
@@ -32,11 +33,12 @@ let infoWindow: google.maps.InfoWindow | null = null;
    When clicking on the marker an infoWindow will appear 
    with all the information on this location from the database. */
 function addMarkerWithListener(
+  image: HTMLImageElement,
   map: google.maps.Map,
   latlng: google.maps.LatLng,
   labels: string[],
   datetime: DateTime
-) {
+): void {
   const marker = new google.maps.Marker({
     position: latlng,
     map: map,
@@ -45,62 +47,47 @@ function addMarkerWithListener(
     infoWindow = new google.maps.InfoWindow();
   }
   markers.push(marker);
-  google.maps.event.addListener(marker, "click", async () => {
-    const center = convertLatLngToGeopoint(marker.getPosition());
-    if (center !== undefined) {
-      const dataref = await (
-        await getQueriedCollection(center, 0, labels, datetime).get()
-      ).docs[0];
-      if (infoWindow !== null) {
-        infoWindow.close();
-        infoWindow.setContent(
-          ReactDOMServer.renderToString(
-            <InfoWindowContent
-              labels={dataref.data().labels}
-              url={dataref.data().url}
-              dateTime={
-                (datetime = {
-                  year: dataref.data().year,
-                  month: dataref.data().month,
-                  day: dataref.data().day,
-                })
-              }
-              //TODO: add attribution field to the database.
-              attribution={""}
-            />
-          )
-        );
-        infoWindow.open(map, marker);
-      }
-    }
-  });
+  image.addEventListener("click", async () =>
+    openInfoWindow(infoWindow, marker, labels, datetime)
+  );
+  google.maps.event.addListener(marker, "click", async () =>
+    openInfoWindow(infoWindow, marker, labels, datetime)
+  );
 }
 
-/* This function converts from a google.maps.LatLng to a firebase.firestore.GeoPoint.*/
-function convertLatLngToGeopoint(
-  position: google.maps.LatLng | null | undefined
+async function openInfoWindow(
+  infoWindow: google.maps.InfoWindow | null,
+  marker: google.maps.Marker,
+  labels: string[],
+  dateTime: DateTime
 ) {
-  const latlng = position;
-  if (latlng !== undefined && latlng !== null) {
-    const lat = latlng.lat();
-    const lng = latlng.lng();
-    if (lat !== undefined && lng !== undefined) {
-      const geoPoint = new firebase.firestore.GeoPoint(lat, lng);
-      return geoPoint;
+  const center = convertLatLngToGeopoint(marker.getPosition());
+  if (center !== undefined) {
+    const dataref = await (
+      await getQueriedCollection(center, 0, labels, dateTime).get()
+    ).docs[0];
+    if (infoWindow !== null) {
+      infoWindow.close();
+      infoWindow.setContent(
+        ReactDOMServer.renderToString(
+          <InfoWindowContent
+            labels={dataref.data().labels}
+            url={dataref.data().url}
+            dateTime={
+              (dateTime = {
+                year: dataref.data().year,
+                month: dataref.data().month,
+                day: dataref.data().day,
+              })
+            }
+            //TODO: add attribution field to the database.
+            attribution={""}
+          />
+        )
+      );
+      infoWindow.open(map, marker);
     }
   }
-  return undefined;
-}
-
-/* This function converts from a firebase.firestore.GeoPoint to a google.maps.LatLng.*/
-function convertGeopointToLatLon(
-  center: firebase.firestore.GeoPoint
-): google.maps.LatLng {
-  const geoPoint = center;
-  const lat = geoPoint.latitude;
-  const lng = geoPoint.longitude;
-  const latlon = new google.maps.LatLng(lat, lng);
-  return latlon;
 }
 
 function eraseAllMarkers(): void {
@@ -110,4 +97,4 @@ function eraseAllMarkers(): void {
   markers = [];
 }
 
-export { eraseAllMarkers, convertGeopointToLatLon, addMarkerWithListener };
+export { eraseAllMarkers, addMarkerWithListener };

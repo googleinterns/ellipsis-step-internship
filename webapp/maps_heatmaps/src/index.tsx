@@ -31,11 +31,12 @@ import ReactDOM from "react-dom";
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import SidePanel from "./components/sidepanel";
+import { eraseAllMarkers, addMarkerWithListener } from "./clickInfoWindow";
 import {
-  eraseAllMarkers,
+  convertLatLngToGeopoint,
   convertGeopointToLatLon,
-  addMarkerWithListener,
-} from "./clickInfoWindow";
+  getRadius,
+} from "./utils";
 import { DateTime } from "./interface";
 
 let map: google.maps.Map, heatmap: google.maps.visualization.HeatmapLayer;
@@ -68,7 +69,6 @@ function initMap() {
       position: google.maps.ControlPosition.TOP_CENTER,
     },
   });
-
   getLabelTags();
   // TODO: decide where to set default center.
   const images = database.collection("images");
@@ -100,14 +100,7 @@ async function mapChanged() {
   const newCenter = new firebase.firestore.GeoPoint(lat, lng);
   const bounds = map.getBounds(); //map's current bounderies
   //TODO: check what should be the default radius value.
-  let newRadius = 2;
-  if (bounds) {
-    const meterRadius = google.maps.geometry.spherical.computeDistanceBetween(
-      bounds.getCenter(),
-      bounds.getNorthEast()
-    );
-    newRadius = meterRadius * 0.000621371192; //convert to miles
-  }
+  const newRadius = getRadius(bounds);
   if (timeOfLastRequest === timeOfRequest) {
     const queriedCollection = queryDB.getQueriedCollection(
       newCenter,
@@ -154,6 +147,7 @@ async function updateTwentyImagesAndMarkers(
       imageElement.src = docData.url;
       elementById.appendChild(imageElement);
       await addMarkerWithListener(
+        imageElement,
         map,
         convertGeopointToLatLon(docData.g.geopoint),
         docData.labels,

@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-import * as queryDB from "./queryDB";
+import * as queryDB from "../src/queryDB";
 import { expect } from "chai";
 import "mocha";
 import firebase from "firebase";
-import { DateTime } from "./interface";
+import { DateTime } from "../src/interface";
 
 describe("check function getQueriedCollection", () => {
   const lat = 37.780501;
