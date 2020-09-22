@@ -19,7 +19,6 @@ import { expect } from "chai";
 import { hash } from "geokit";
 import "mocha";
 
-<<<<<<< HEAD
 describe("query by geohash of bounderies", () => {
   it("contains all random points", () => {
     const northEast = { lat: 37.826683863620005, lng: -122.33592020593264 };
@@ -35,11 +34,8 @@ describe("query by geohash of bounderies", () => {
       const newGeohash = hash(getRandomCoords(maxLat, minLat, maxLng, minLng));
       expect(geohashList).to.include(newGeohash.substring(0, geohashPrecision));
     }
-=======
-/*("query by geohash of bounderies", () => {
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
-  it("containsop all random points", () => {});
-});*/
+  });
+});
 
 describe("check function removeDuplicates", () => {
   // eslint-disable-next-line @typescript-eslint/no-empty-function
@@ -58,7 +54,6 @@ describe("check function removeDuplicates", () => {
   it("case 3- array contains duplicates and substrings", () => {
     const result = geoquery.removeDuplicates(["ab", "abc", "aaa", "aa", "abc"]);
     expect(result).to.eql(["ab", "aa"]);
->>>>>>> a1f9c455ca20e0e1fe84ea9d6b42b9f88ed1e9a2
   });
 });
 

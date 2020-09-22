@@ -1,3 +1,4 @@
+import { firestore } from "firebase";
 /*
  * Copyright 2020 Google LLC
  *
@@ -81,3 +82,14 @@ class SidePanel extends React.Component<
 }
 
 export default SidePanel;
+
+export function addImageToSidePanel(
+  docData: firebase.firestore.DocumentData,
+  elementById: HTMLElement
+): HTMLImageElement {
+  const imageElement = document.createElement("img");
+  imageElement.className = "sidepanel-image";
+  imageElement.src = docData.url;
+  elementById.appendChild(imageElement);
+  return imageElement;
+}
