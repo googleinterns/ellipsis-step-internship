@@ -34,7 +34,7 @@ function removeDuplicates(hashs: string[]) {
       subString = false;
     }
   });
-  console.log(Array.from(new Set(newHashs)));
+  //console.log(Array.from(new Set(newHashs)));
   return Array.from(new Set(newHashs));
 }
 
@@ -108,6 +108,9 @@ function getGeohashBoxes(
   center: { lat: number; lng: number },
   southWest: { lat: number; lng: number }
 ): string[] {
+  console.log(northEast.lat + " " + northEast.lng);
+  console.log(center.lat + " " + center.lng);
+  console.log(southWest.lat + " " + southWest.lng);
   let geohashList: string[] = [];
   const northWest = { lat: northEast.lat, lng: southWest.lng };
   const southEast = { lat: southWest.lat, lng: northEast.lng };
@@ -121,7 +124,7 @@ function getGeohashBoxes(
     getCommonGeohash(northEast, northCenter, northWest),
     getCommonGeohash(southEast, southCenter, southWest)
   );
-  console.log(geohashList);
+  //console.log(geohashList);
   return removeDuplicates(geohashList);
 }
 
@@ -133,15 +136,18 @@ function getCommonGeohash(
   const cornerAHash = hash(cornerA);
   const middleHash = hash(middle);
   const cornerBHash = hash(cornerB);
-  console.log(cornerAHash + " " + cornerBHash + " " + middleHash);
+  //console.log(cornerAHash + " " + cornerBHash + " " + middleHash);
   const commonPrefixLenA = getLongestCommonPrefixLen(cornerAHash, middleHash);
   const commonPrefixLenB = getLongestCommonPrefixLen(cornerBHash, middleHash);
-  const maxDiff = Math.max(commonPrefixLenA, commonPrefixLenB);
-  console.log(commonPrefixLenA, commonPrefixLenB, maxDiff);
-  console.log(
-    cornerAHash.substring(0, maxDiff) + " " + cornerBHash.substring(0, maxDiff)
-  );
-  return [cornerAHash.substring(0, maxDiff), cornerBHash.substring(0, maxDiff)];
+  const commonPrefixMaxLen = Math.max(commonPrefixLenA, commonPrefixLenB);
+  //console.log(commonPrefixLenA, commonPrefixLenB, maxDiff);
+  // console.log(
+  //   cornerAHash.substring(0, maxDiff) + " " + cornerBHash.substring(0, maxDiff)
+  // );
+  return [
+    cornerAHash.substring(0, commonPrefixMaxLen),
+    cornerBHash.substring(0, commonPrefixMaxLen),
+  ];
 }
 
 function getLongestCommonPrefixLen(hash1: string, hash2: string): number {
