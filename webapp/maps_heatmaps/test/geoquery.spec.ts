@@ -18,7 +18,27 @@ import * as geoquery from "../src/geoquery";
 import { expect } from "chai";
 import "mocha";
 
-describe("query by geohash of bounderies", () => {
+/*("query by geohash of bounderies", () => {
   // eslint-disable-next-line @typescript-eslint/no-empty-function
-  it("contains all random points", () => {});
+  it("containsop all random points", () => {});
+});*/
+
+describe("check function removeDuplicates", () => {
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
+  it("case 1- array contains duplicates", () => {
+    const result = geoquery.removeDuplicates(["a", "a", "a", "a"]);
+    expect(result).to.eql(["a"]);
+  });
+  it("case 2- array contains substrings", () => {
+    const result = geoquery.removeDuplicates(["aab", "aacc", "aa", "aaad"]);
+    expect(result).to.eql(["aa"]);
+  });
+  it("case 3- array contains nothing", () => {
+    const result = geoquery.removeDuplicates([]);
+    expect(result).to.eql([]);
+  });
+  it("case 3- array contains duplicates and substrings", () => {
+    const result = geoquery.removeDuplicates(["ab", "abc", "aaa", "aa", "abc"]);
+    expect(result).to.eql(["ab", "aa"]);
+  });
 });

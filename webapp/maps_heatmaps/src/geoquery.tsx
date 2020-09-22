@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-import { hash, decodeHash } from "geokit";
+import { hash } from "geokit";
 import { map } from "./index";
 let rectangles: google.maps.Rectangle[] = [];
 
-function removeDuplicates(hashs: string[]) {
+function removeDuplicates(hashs: string[]): string[] {
   const newHashs: string[] = [];
   let subString = false;
   hashs.map((hash) => {
@@ -29,10 +29,8 @@ function removeDuplicates(hashs: string[]) {
       }
       if (hash.startsWith(hash1)) subString = true;
     });
-    if (!subString) {
-      newHashs.push(hash);
-      subString = false;
-    }
+    if (!subString) newHashs.push(hash);
+    subString = false;
   });
   console.log(Array.from(new Set(newHashs)));
   return Array.from(new Set(newHashs));
@@ -154,4 +152,4 @@ function getLongestCommonPrefixLen(hash1: string, hash2: string): number {
   return count;
 }
 
-export { getGeohashBoxes };
+export { getGeohashBoxes, removeDuplicates };
