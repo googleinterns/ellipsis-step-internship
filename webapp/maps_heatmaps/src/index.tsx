@@ -31,7 +31,7 @@ import ReactDOM from "react-dom";
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import SidePanel from "./components/sidepanel";
-import { addImageToSidePanel } from "./components/sidepanel";
+import { addImageToSidePanel, updateNumOfResults } from "./sidepanelUtils";
 import { eraseAllMarkers, addMarkerWithListener } from "./clickInfoWindow";
 import {
   convertGeopointToLatLon,
@@ -46,6 +46,8 @@ let map: google.maps.Map, heatmap: google.maps.visualization.HeatmapLayer;
 let selectedLabels: string[] = [];
 let selectedDate: DateTime = {};
 let timeOfLastRequest: number = Date.now();
+let queriedCollection: firebase.firestore.Query;
+let lastVisibleDoc: firebase.firestore.QueryDocumentSnapshot<firebase.firestore.DocumentData>;
 
 /*Gets all the different labels from the label Collection in firestore data base
  and adds them as options for label querying."*/
@@ -112,6 +114,7 @@ async function mapChanged() {
   //TODO: check what should be the default radius value.
   const newRadius = getRadius(bounds);
   if (timeOfLastRequest === timeOfRequest) {
+    //TODO: make this assign to global variable.
     const queriedCollection = queryDB.getQueriedCollection(
       newCenter,
       newRadius,
@@ -120,16 +123,9 @@ async function mapChanged() {
     );
     if (timeOfLastRequest === timeOfRequest) {
       //updateNumOfResults(queriedCollection);
-      //updateTwentyImagesAndMarkers(queriedCollection);
+      //updateTwentyImagesAndMarkers(true);
       queryDB.updateHeatmapFromQuery(heatmap, queriedCollection);
     }
-  }
-}
-async function updateNumOfResults(queriedCollection: firebase.firestore.Query) {
-  const numOfResults = (await queriedCollection.get()).docs.length;
-  const elementById = document.getElementById("num-of-results");
-  if (elementById != null) {
-    elementById.innerHTML = numOfResults + " images found";
   }
 }
 
@@ -137,19 +133,16 @@ async function updateNumOfResults(queriedCollection: firebase.firestore.Query) {
 //TODO: use this function to show images on the side panel-so they will correlate (relocate to a different file)
 /*After any queries change, the images in the side bar should be
 updated according to the new queried collection. */
-async function updateTwentyImagesAndMarkers(
-  queriedCollection: firebase.firestore.Query
-): Promise<void> {
+async function updateTwentyImagesAndMarkers(first: boolean): Promise<void> {
   let countOfImagesAndMarkers = 0;
   const elementById = document.getElementById("images-holder");
   eraseAllMarkers();
-  let lastVisibleDoc = null;
   let dataRef: firebase.firestore.QueryDocumentSnapshot<
     firebase.firestore.DocumentData
   >[];
   if (elementById != null) {
     while (countOfImagesAndMarkers < 20) {
-      if (lastVisibleDoc == null) {
+      if (first) {
         dataRef = (await queriedCollection.orderBy("random").limit(20).get())
           .docs;
       } else {
@@ -175,6 +168,7 @@ async function updateTwentyImagesAndMarkers(
           countOfImagesAndMarkers++;
         }
         if (countOfImagesAndMarkers >= 20) {
+          lastVisibleDoc = dataRef[i];
           break;
         }
       }
@@ -196,4 +190,4 @@ function queriesChanged(selectedQueries: {
 }
 // [END maps_layer_heatmap]
 
-export { initMap, database, queriesChanged, map };
+export { initMap, database, queriesChanged, map, updateTwentyImagesAndMarkers };
