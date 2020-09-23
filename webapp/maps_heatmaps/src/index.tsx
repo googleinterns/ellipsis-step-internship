@@ -31,12 +31,13 @@ import ReactDOM from "react-dom";
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import SidePanel from "./components/sidepanel";
+import { addImageToSidePanel } from "./components/sidepanel";
 import { eraseAllMarkers, addMarkerWithListener } from "./clickInfoWindow";
 import {
-  convertLatLngToGeopoint,
   convertGeopointToLatLon,
   getRadius,
   toLatLngLiteral,
+  isInVisibleMap,
 } from "./utils";
 import { DateTime } from "./interface";
 import { getGeohashBoxes } from "./geoquery";
@@ -134,38 +135,49 @@ async function updateNumOfResults(queriedCollection: firebase.firestore.Query) {
   }
 }
 
-/* Queries for 20 random dataPoints in the database in order to place markers on them. */
-//TODO: make the function more random by having all makers equally separated on the map.
-//We can do this by:
-//1. Having a random field and ordering by it.
-//2. Dividing the map into sections and in each section query for a datapoint.
-//TODO: use this function to show images on the side panel-so they will correlate (relocate to a different file)
-/*After any queries change, the images in the side bar should be
+/* Queries for 20 random dataPoints in the database in order to place markers on them. 
+After any queries change, the images in the side bar should be
 updated according to the new queried collection. */
 async function updateTwentyImagesAndMarkers(
   queriedCollection: firebase.firestore.Query
 ): Promise<void> {
-  const dataRef = (await queriedCollection.get()).docs;
-  const jump = Math.ceil(dataRef.length / 10);
+  let countOfImagesAndMarkers = 0;
   const elementById = document.getElementById("images-holder");
+  eraseAllMarkers();
+  let lastVisibleDoc = null;
+  let dataRef: firebase.firestore.QueryDocumentSnapshot<
+    firebase.firestore.DocumentData
+  >[];
   if (elementById != null) {
-    eraseAllMarkers();
     elementById.innerHTML = "";
-    for (let i = 0; i < dataRef.length; i = i + jump) {
-      const docData = dataRef[i].data();
-      const imageElement = document.createElement("img");
-      imageElement.className = "sidepanel-image";
-      imageElement.src = docData.url;
-      elementById.appendChild(imageElement);
-      const latLng = convertGeopointToLatLon(docData.coordinates);
-      await addMarkerWithListener(
-        imageElement,
-        map,
-        latLng,
-        hash({ lat: latLng.lat(), lng: latLng.lng() }, 10),
-        docData.labels,
-        selectedDate
-      );
+    while (countOfImagesAndMarkers < 20) {
+      if (lastVisibleDoc === null) {
+        dataRef = (await queriedCollection.limit(20).get()).docs;
+      } else {
+        dataRef = (
+          await queriedCollection.startAfter(lastVisibleDoc).limit(20).get()
+        ).docs;
+      }
+      for (let i = 0; i < dataRef.length; i++) {
+        const docData = dataRef[i].data();
+        const latlng = convertGeopointToLatLon(docData.coordinates);
+        if (isInVisibleMap(docData, map)) {
+          const imageElement = addImageToSidePanel(docData, elementById);
+          await addMarkerWithListener(
+            imageElement,
+            map,
+            convertGeopointToLatLon(docData.coordinates),
+            hash({ lat: latlng.lat(), lng: latlng.lng() }, 10),
+            docData.labels,
+            selectedDate
+          );
+          countOfImagesAndMarkers++;
+        }
+        if (countOfImagesAndMarkers >= 20) {
+          break;
+        }
+      }
+      lastVisibleDoc = dataRef[dataRef.length - 1];
     }
   }
 }

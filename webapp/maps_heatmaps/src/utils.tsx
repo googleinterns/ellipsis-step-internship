@@ -59,6 +59,29 @@ export function getRadius(
   return newRadius;
 }
 
-export function toLatLngLiteral(coords: google.maps.LatLng) {
+export function toLatLngLiteral(
+  coords: google.maps.LatLng
+): { lat: number; lng: number } {
   return { lat: coords.lat(), lng: coords.lng() };
+}
+
+/*Checks if the document's coordinates is inside the visible current map.*/
+//TODO: check waht to do if bounds are null.
+export function isInVisibleMap(
+  docData: firebase.firestore.DocumentData,
+  map: google.maps.Map
+): boolean {
+  const bounds = map.getBounds();
+  if (bounds != null) {
+    const lat = docData.coordinates.latitude;
+    const lng = docData.coordinates.longitude;
+    const northEast = bounds.getNorthEast();
+    const southWest = bounds.getSouthWest();
+    const maxLat = northEast.lat();
+    const maxLng = northEast.lng();
+    const minLat = southWest.lat();
+    const minLng = southWest.lng();
+    return lat < maxLat && lat > minLat && lng < maxLng && lng > minLng;
+  }
+  return true;
 }
