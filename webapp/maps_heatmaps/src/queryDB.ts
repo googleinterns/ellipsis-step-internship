@@ -63,19 +63,20 @@ function getQueriedCollection(
 
 /* Displays the relevant images on the map
 given the filtered collection and the heapmap. */
-function updateHeatmapFromQuery(
+async function updateHeatmapFromQuery(
   heatmap: google.maps.visualization.HeatmapLayer,
-  dataRef: firebase.firestore.Query
-): void {
+  dataRefs: firebase.firestore.Query[]
+): Promise<void> {
   const allPoints: Array<google.maps.LatLng> = [];
-  dataRef.get().then((querySnapshot) => {
-    querySnapshot.forEach((doc) => {
+  for (const dataRef of dataRefs) {
+    const docs = (await dataRef.get()).docs;
+    for (const doc of docs) {
       const coordinates = doc.data().coordinates;
       const newLatLon = getLatLon(coordinates);
       allPoints.push(newLatLon);
-    });
-    heatmap.setData(allPoints);
-  });
+    }
+  }
+  heatmap.setData(allPoints);
 }
 
 function getLatLon(coordinates: firebase.firestore.GeoPoint) {

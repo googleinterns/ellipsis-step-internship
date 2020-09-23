@@ -19,7 +19,7 @@ import React from "react";
 import Sidebar from "react-sidebar";
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import QueriesForm from "./queriesForm";
-import { updateTwentyImagesAndMarkers } from "../index";
+//import { updateTwentyImagesAndMarkers } from "../index";
 
 /*Component that uses react-sidebar component. 
 Contains all the features of the sidebar- the queries and the images.
@@ -65,9 +65,9 @@ class SidePanel extends React.Component<
               </button>
               <QueriesForm data={this.props.labels} />
               <h4 id="num-of-results"></h4>
-              <button onClick={() => updateTwentyImagesAndMarkers(false)}>
+              {/* <button onClick={() => updateTwentyImagesAndMarkers(false)}>
                 next
-              </button>
+              </button> */}
             </div>
             <div id="images-holder"></div>
           </div>

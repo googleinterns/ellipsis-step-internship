@@ -47,8 +47,11 @@ let map: google.maps.Map, heatmap: google.maps.visualization.HeatmapLayer;
 let selectedLabels: string[] = [];
 let selectedDate: DateTime = {};
 let timeOfLastRequest: number = Date.now();
-let queriedCollection: firebase.firestore.Query;
-let lastVisibleDoc: firebase.firestore.QueryDocumentSnapshot<firebase.firestore.DocumentData>;
+let queriedCollections: firebase.firestore.Query[];
+let lastVisibleDocs: firebase.firestore.QueryDocumentSnapshot<
+  firebase.firestore.DocumentData
+>[];
+const numOfImagesAndMarkers = 20;
 
 /*Gets all the different labels from the label Collection in firestore data base
  and adds them as options for label querying."*/
@@ -100,9 +103,6 @@ center/zoom of the current map or of the different queries.*/
 async function mapChanged() {
   const timeOfRequest = Date.now();
   timeOfLastRequest = timeOfRequest;
-  const center: google.maps.LatLng = map.getCenter();
-  const lat = center.lat();
-  const lng = center.lng();
   const bounds = map.getBounds(); //map's current bounderies
   if (bounds != null) {
     const arrayhash = getGeohashBoxes(
@@ -111,67 +111,112 @@ async function mapChanged() {
       toLatLngLiteral(bounds.getSouthWest())
     );
     if (timeOfLastRequest === timeOfRequest) {
+      eraseAllMarkers();
+      queriedCollections = [];
+      lastVisibleDocs = [];
       arrayhash.forEach((hash: string) => {
-        queriedCollection = queryDB.getQueriedCollection(
+        const queriedCollection = queryDB.getQueriedCollection(
           hash,
           selectedLabels,
           selectedDate
         );
         if (timeOfLastRequest === timeOfRequest) {
-          updateNumOfResults(queriedCollection);
-          updateTwentyImagesAndMarkers(true);
-          queryDB.updateHeatmapFromQuery(heatmap, queriedCollection);
+          queriedCollections.push(queriedCollection);
         }
       });
+      await queryDB.updateHeatmapFromQuery(heatmap, queriedCollections);
+      updateNumOfResults(queriedCollections);
+      updateImagesAndMarkers(true);
     }
   }
+}
+
+//TODO: Check if its is better to get less than 20 docs each time.
+async function getNextDocs(index: number, first: boolean) {
+  let docsArray: firebase.firestore.QueryDocumentSnapshot<
+    firebase.firestore.DocumentData
+  >[];
+  if (first) {
+    docsArray = (
+      await queriedCollections[index].limit(numOfImagesAndMarkers).get()
+    ).docs;
+    console.log("first");
+    first = false;
+  } else {
+    docsArray = (
+      await queriedCollections[index]
+        .startAfter(lastVisibleDocs[index])
+        .limit(20)
+        .get()
+    ).docs;
+  }
+  return docsArray;
 }
 
 /* Queries for 20 random dataPoints in the database in order to place markers on them. 
 After any queries change, the images in the side bar should be
 updated according to the new queried collection. */
-async function updateTwentyImagesAndMarkers(first: boolean): Promise<void> {
+async function updateImagesAndMarkers(first: boolean): Promise<void> {
   let countOfImagesAndMarkers = 0;
   const elementById = document.getElementById("images-holder");
-  eraseAllMarkers();
   let dataRef: firebase.firestore.QueryDocumentSnapshot<
     firebase.firestore.DocumentData
   >[];
+  const allDocArrays: firebase.firestore.QueryDocumentSnapshot<
+    firebase.firestore.DocumentData
+  >[][] = new Array<
+    firebase.firestore.QueryDocumentSnapshot<firebase.firestore.DocumentData>[]
+  >(queriedCollections.length);
+  const pointers: number[] = new Array<number>(queriedCollections.length);
+  for (let i = 0; i < queriedCollections.length; i++) {
+    allDocArrays[i] = await getNextDocs(i, true);
+    pointers[i] = 0;
+  }
   if (elementById != null) {
     elementById.innerHTML = "";
     while (countOfImagesAndMarkers < 20) {
-      //TODO: add orderby random.
-      if (first) {
-        dataRef = (await queriedCollection.limit(20).get()).docs;
-      } else {
-        dataRef = (
-          await queriedCollection.startAfter(lastVisibleDoc).limit(20).get()
-        ).docs;
-      }
-      for (let i = 0; i < dataRef.length; i++) {
-        const docData = dataRef[i].data();
-        const latlng = convertGeopointToLatLon(docData.coordinates);
-        if (isInVisibleMap(docData, map)) {
-          const imageElement = addImageToSidePanel(docData, elementById);
-          await addMarkerWithListener(
-            imageElement,
-            map,
-            convertGeopointToLatLon(docData.coordinates),
-            hash({ lat: latlng.lat(), lng: latlng.lng() }, 10),
-            docData.labels,
-            selectedDate
-          );
-          countOfImagesAndMarkers++;
-        }
-        if (countOfImagesAndMarkers >= 20) {
-          lastVisibleDoc = dataRef[i];
-          break;
-        }
-      }
-      lastVisibleDoc = dataRef[dataRef.length - 1];
+      const minDocData = await getDataOfMinDoc(allDocArrays, pointers);
+      const latlng = convertGeopointToLatLon(minDocData.coordinates);
+      const imageElement = addImageToSidePanel(minDocData, elementById);
+      await addMarkerWithListener(
+        imageElement,
+        map,
+        latlng,
+        hash({ lat: latlng.lat(), lng: latlng.lng() }, 10),
+        minDocData.labels,
+        selectedDate
+      );
+      countOfImagesAndMarkers++;
     }
   }
 }
+
+//TODO: Figure out how not to give priority to the doc in the first geohash
+async function getDataOfMinDoc(
+  allDocArrays: firebase.firestore.QueryDocumentSnapshot<
+    firebase.firestore.DocumentData
+  >[][],
+  pointers: number[]
+) {
+  let minDoc = allDocArrays[0][pointers[0]];
+  let indexOfMin = 0;
+  for (let i = 1; i < allDocArrays.length; i++) {
+    const pointer = pointers[i];
+    const doc = allDocArrays[0][pointer];
+    if (doc.data().random < minDoc.data().random) {
+      minDoc = doc;
+      indexOfMin = i;
+    }
+  }
+  pointers[indexOfMin]++;
+  /* Done with all docs of this geohash, need to get next ones. */
+  if (pointers[indexOfMin] >= allDocArrays[indexOfMin].length) {
+    lastVisibleDocs[indexOfMin] = minDoc;
+    allDocArrays[indexOfMin] = await getNextDocs(indexOfMin, false);
+  }
+  return minDoc.data();
+}
+
 /* Updates the global queries variables according to 
 the client's inputs on the side panel. 
 Changes the map according to the new variables. */
@@ -186,4 +231,4 @@ function queriesChanged(selectedQueries: {
 }
 // [END maps_layer_heatmap]
 
-export { initMap, database, queriesChanged, map, updateTwentyImagesAndMarkers };
+export { initMap, database, queriesChanged, map };

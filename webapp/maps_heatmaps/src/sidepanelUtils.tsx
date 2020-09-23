@@ -28,9 +28,13 @@ export function addImageToSidePanel(
 }
 
 export async function updateNumOfResults(
-  queriedCollection: firebase.firestore.Query
+  queriedCollections: firebase.firestore.Query[]
 ): Promise<void> {
-  const numOfResults = (await queriedCollection.get()).docs.length;
+  let numOfResults = 0;
+  for (const queriedCollection of queriedCollections) {
+    const collectionLen = (await queriedCollection.get()).docs.length;
+    numOfResults += collectionLen;
+  }
   const elementById = document.getElementById("num-of-results");
   if (elementById != null) {
     elementById.innerHTML = numOfResults + " images found";
