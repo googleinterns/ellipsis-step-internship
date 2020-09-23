@@ -40,7 +40,7 @@ import {
 } from "./utils";
 import { DateTime } from "./interface";
 import { getGeohashBoxes } from "./geoquery";
-console.log("hi");
+import { hash, decodeHash } from "geokit";
 
 let map: google.maps.Map, heatmap: google.maps.visualization.HeatmapLayer;
 let selectedLabels: string[] = [];
@@ -100,32 +100,33 @@ async function mapChanged() {
   const center: google.maps.LatLng = map.getCenter();
   const lat = center.lat();
   const lng = center.lng();
-  const newCenter = new firebase.firestore.GeoPoint(lat, lng);
   const bounds = map.getBounds(); //map's current bounderies
   if (bounds != null) {
-    getGeohashBoxes(
+    const arrayhash = getGeohashBoxes(
       toLatLngLiteral(bounds.getNorthEast()),
       toLatLngLiteral(bounds.getCenter()),
       toLatLngLiteral(bounds.getSouthWest())
     );
-  }
-  //TODO: check what should be the default radius value.
-  const newRadius = getRadius(bounds);
-  if (timeOfLastRequest === timeOfRequest) {
-    const queriedCollection = queryDB.getQueriedCollection(
-      newCenter,
-      newRadius,
-      selectedLabels,
-      selectedDate
-    );
+
+    //TODO: check what should be the default radius value.
+    let queriedCollection: firebase.firestore.Query;
     if (timeOfLastRequest === timeOfRequest) {
-      updateNumOfResults(queriedCollection);
-      updateTwentyImagesAndMarkers(queriedCollection);
-      queryDB.updateHeatmapFromQuery(heatmap, queriedCollection);
+      arrayhash.forEach((hash: string) => {
+        queriedCollection = queryDB.getQueriedCollection(
+          hash,
+          selectedLabels,
+          selectedDate
+        );
+        if (timeOfLastRequest === timeOfRequest) {
+          updateNumOfResults(queriedCollection);
+          updateTwentyImagesAndMarkers(queriedCollection);
+          queryDB.updateHeatmapFromQuery(heatmap, queriedCollection);
+        }
+      });
     }
   }
 }
-async function updateNumOfResults(queriedCollection: geofirestore.GeoQuery) {
+async function updateNumOfResults(queriedCollection: firebase.firestore.Query) {
   const numOfResults = (await queriedCollection.get()).docs.length;
   const elementById = document.getElementById("num-of-results");
   if (elementById != null) {
@@ -142,7 +143,7 @@ async function updateNumOfResults(queriedCollection: geofirestore.GeoQuery) {
 /*After any queries change, the images in the side bar should be
 updated according to the new queried collection. */
 async function updateTwentyImagesAndMarkers(
-  queriedCollection: geofirestore.GeoQuery
+  queriedCollection: firebase.firestore.Query
 ): Promise<void> {
   const dataRef = (await queriedCollection.get()).docs;
   const jump = Math.ceil(dataRef.length / 10);
@@ -156,10 +157,12 @@ async function updateTwentyImagesAndMarkers(
       imageElement.className = "sidepanel-image";
       imageElement.src = docData.url;
       elementById.appendChild(imageElement);
+      const latLng = convertGeopointToLatLon(docData.coordinates);
       await addMarkerWithListener(
         imageElement,
         map,
-        convertGeopointToLatLon(docData.g.geopoint),
+        latLng,
+        hash({ lat: latLng.lat(), lng: latLng.lng() }, 10),
         docData.labels,
         selectedDate
       );

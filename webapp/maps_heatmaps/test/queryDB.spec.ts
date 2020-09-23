@@ -17,19 +17,15 @@
 import * as queryDB from "../src/queryDB";
 import { expect } from "chai";
 import "mocha";
-import firebase from "firebase";
 import { DateTime } from "../src/interface";
 
 describe("check function getQueriedCollection", () => {
-  const lat = 37.780501;
-  const lon = -122.391281;
-  const center = new firebase.firestore.GeoPoint(lat, lon);
-  const radius = 100;
+  const hash = "9q8y";
   const datetime: DateTime = { year: 2015, month: 4, day: 20 };
   const label = ["cat"];
   it("test by date", async () => {
     await queryDB
-      .getQueriedCollection(center, radius, label, datetime)
+      .getQueriedCollection(hash, label, datetime)
       .get()
       .then((querySnapshot) => {
         querySnapshot.forEach((doc) => {
@@ -41,7 +37,7 @@ describe("check function getQueriedCollection", () => {
   });
   it("test by label", async () => {
     await queryDB
-      .getQueriedCollection(center, radius, label, {})
+      .getQueriedCollection(hash, label, {})
       .get()
       .then((querySnapshot) => {
         querySnapshot.forEach((doc) => {
@@ -51,7 +47,7 @@ describe("check function getQueriedCollection", () => {
   });
   it("test by date and label", async () => {
     await queryDB
-      .getQueriedCollection(center, radius, label, datetime)
+      .getQueriedCollection(hash, label, datetime)
       .get()
       .then((querySnapshot) => {
         querySnapshot.forEach((doc) => {
@@ -65,7 +61,7 @@ describe("check function getQueriedCollection", () => {
   it("test by several labels", async () => {
     const labels = ["cat", "bag"];
     await queryDB
-      .getQueriedCollection(center, radius, labels, datetime)
+      .getQueriedCollection(hash, labels, datetime)
       .get()
       .then((querySnapshot) => {
         querySnapshot.forEach((doc) => {
@@ -76,14 +72,13 @@ describe("check function getQueriedCollection", () => {
         });
       });
   });
-  it("test by center and radius", async () => {
+  it("test by hash", async () => {
     await queryDB
-      .getQueriedCollection(center, radius, label, {})
+      .getQueriedCollection(hash, label, {})
       .get()
       .then((querySnapshot) => {
         querySnapshot.forEach((doc) => {
-          expect(doc.distance).to.be.at.least(0);
-          expect(doc.distance).to.be.at.most(radius);
+          expect(doc.data().hashmap.hash4).to.equal("9q8y");
         });
       });
   });

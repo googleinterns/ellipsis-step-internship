@@ -36,6 +36,7 @@ function addMarkerWithListener(
   image: HTMLImageElement,
   map: google.maps.Map,
   latlng: google.maps.LatLng,
+  hash: string,
   labels: string[],
   datetime: DateTime
 ): void {
@@ -48,23 +49,24 @@ function addMarkerWithListener(
   }
   markers.push(marker);
   image.addEventListener("click", async () =>
-    openInfoWindow(infoWindow, marker, labels, datetime)
+    openInfoWindow(infoWindow, marker, hash, labels, datetime)
   );
   google.maps.event.addListener(marker, "click", async () =>
-    openInfoWindow(infoWindow, marker, labels, datetime)
+    openInfoWindow(infoWindow, marker, hash, labels, datetime)
   );
 }
 
 async function openInfoWindow(
   infoWindow: google.maps.InfoWindow | null,
   marker: google.maps.Marker,
+  hash: string,
   labels: string[],
   dateTime: DateTime
 ) {
   const center = convertLatLngToGeopoint(marker.getPosition());
   if (center !== undefined) {
     const dataref = await (
-      await getQueriedCollection(center, 0, labels, dateTime).get()
+      await getQueriedCollection(hash, labels, dateTime).get()
     ).docs[0];
     if (infoWindow !== null) {
       infoWindow.close();
@@ -81,7 +83,7 @@ async function openInfoWindow(
               })
             }
             //TODO: add attribution field to the database.
-            attribution={""}
+            attribution={dataref.data().attribution}
           />
         )
       );

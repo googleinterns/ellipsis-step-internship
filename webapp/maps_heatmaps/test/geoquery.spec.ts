@@ -42,3 +42,23 @@ describe("check function removeDuplicates", () => {
     expect(result).to.eql(["ab", "aa"]);
   });
 });
+
+describe("check function getGeohashBoxes length", () => {
+  const northEast = { lat: 37.826683863620005, lng: -122.33592020593264 };
+  const center = { lat: 37.78048656364348, lng: -122.39128100000002 };
+  const southWest = { lat: 37.73428926366695, lng: -122.4466417940674 };
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
+  it("case 1- check max hashes in list", () => {
+    const result = geoquery.getGeohashBoxes(northEast, center, southWest)
+      .length;
+    expect(result).to.be.at.least(0);
+    expect(result).to.be.at.least(4);
+  });
+  it("case 2- all hashes same length", () => {
+    const geolist = geoquery.getGeohashBoxes(northEast, center, southWest);
+    geolist.forEach((geohash) => {
+      const result = geohash.length;
+      expect(result).to.equal(4);
+    });
+  });
+});

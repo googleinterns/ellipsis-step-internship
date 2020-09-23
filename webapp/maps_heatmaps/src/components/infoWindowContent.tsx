@@ -67,7 +67,7 @@ class InfoWindowContent extends React.Component<{
     return (
       <>
         <b>Attribution: </b>
-        {"uploader of the image_______"}
+        {"uploader of the image is " + this.props.attribution}
       </>
     );
   }
