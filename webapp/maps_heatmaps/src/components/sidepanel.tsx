@@ -1,4 +1,3 @@
-import { firestore } from "firebase";
 /*
  * Copyright 2020 Google LLC
  *

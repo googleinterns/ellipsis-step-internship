@@ -106,9 +106,6 @@ function getGeohashBoxes(
   center: { lat: number; lng: number },
   southWest: { lat: number; lng: number }
 ): string[] {
-  console.log(northEast.lat + " " + northEast.lng);
-  console.log(center.lat + " " + center.lng);
-  console.log(southWest.lat + " " + southWest.lng);
   let geohashList: string[] = [];
   const northWest = { lat: northEast.lat, lng: southWest.lng };
   const southEast = { lat: southWest.lat, lng: northEast.lng };
@@ -116,14 +113,17 @@ function getGeohashBoxes(
   const southCenter = { lat: southWest.lat, lng: center.lng };
   const eastCenter = { lat: center.lat, lng: northEast.lng };
   const westCenter = { lat: center.lat, lng: southWest.lng };
-  geohashList = geohashList.concat(
-    getCommonGeohash(northEast, eastCenter, southEast),
-    getCommonGeohash(northWest, westCenter, southWest),
-    getCommonGeohash(northEast, northCenter, northWest),
-    getCommonGeohash(southEast, southCenter, southWest)
-  );
-  //console.log(geohashList);
-  return removeDuplicates(geohashList);
+  try {
+    geohashList = geohashList.concat(
+      getCommonGeohash(northEast, eastCenter, southEast),
+      getCommonGeohash(northWest, westCenter, southWest),
+      getCommonGeohash(northEast, northCenter, northWest),
+      getCommonGeohash(southEast, southCenter, southWest)
+    );
+    return removeDuplicates(geohashList);
+  } catch (e) {
+    return [];
+  }
 }
 
 function getCommonGeohash(
@@ -134,14 +134,10 @@ function getCommonGeohash(
   const cornerAHash = hash(cornerA);
   const middleHash = hash(middle);
   const cornerBHash = hash(cornerB);
-  //console.log(cornerAHash + " " + cornerBHash + " " + middleHash);
   const commonPrefixLenA = getLongestCommonPrefixLen(cornerAHash, middleHash);
   const commonPrefixLenB = getLongestCommonPrefixLen(cornerBHash, middleHash);
   const commonPrefixMaxLen = Math.max(commonPrefixLenA, commonPrefixLenB);
-  //console.log(commonPrefixLenA, commonPrefixLenB, maxDiff);
-  // console.log(
-  //   cornerAHash.substring(0, maxDiff) + " " + cornerBHash.substring(0, maxDiff)
-  // );
+  if (commonPrefixMaxLen === 0) throw new Error("no common prefix");
   return [
     cornerAHash.substring(0, commonPrefixMaxLen),
     cornerBHash.substring(0, commonPrefixMaxLen),
