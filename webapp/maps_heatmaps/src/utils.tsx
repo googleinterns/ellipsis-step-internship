@@ -85,3 +85,13 @@ export function isInVisibleMap(
   }
   return true;
 }
+
+export async function updateNumOfResults(
+  queriedCollection: firebase.firestore.Query
+): Promise<void> {
+  const numOfResults = (await queriedCollection.get()).docs.length;
+  const elementById = document.getElementById("num-of-results");
+  if (elementById != null) {
+    elementById.innerHTML = numOfResults + " images found";
+  }
+}

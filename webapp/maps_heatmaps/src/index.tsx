@@ -31,7 +31,7 @@ import ReactDOM from "react-dom";
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import SidePanel from "./components/sidepanel";
-import { addImageToSidePanel } from "./components/sidepanel";
+import { addImageToSidePanel, updateNumOfResults } from "./sidepanelUtils";
 import { eraseAllMarkers, addMarkerWithListener } from "./clickInfoWindow";
 import {
   convertGeopointToLatLon,
@@ -47,6 +47,8 @@ let map: google.maps.Map, heatmap: google.maps.visualization.HeatmapLayer;
 let selectedLabels: string[] = [];
 let selectedDate: DateTime = {};
 let timeOfLastRequest: number = Date.now();
+let queriedCollection: firebase.firestore.Query;
+let lastVisibleDoc: firebase.firestore.QueryDocumentSnapshot<firebase.firestore.DocumentData>;
 
 /*Gets all the different labels from the label Collection in firestore data base
  and adds them as options for label querying."*/
@@ -108,9 +110,6 @@ async function mapChanged() {
       toLatLngLiteral(bounds.getCenter()),
       toLatLngLiteral(bounds.getSouthWest())
     );
-
-    //TODO: check what should be the default radius value.
-    let queriedCollection: firebase.firestore.Query;
     if (timeOfLastRequest === timeOfRequest) {
       arrayhash.forEach((hash: string) => {
         queriedCollection = queryDB.getQueriedCollection(
@@ -120,38 +119,29 @@ async function mapChanged() {
         );
         if (timeOfLastRequest === timeOfRequest) {
           updateNumOfResults(queriedCollection);
-          updateTwentyImagesAndMarkers(queriedCollection);
+          updateTwentyImagesAndMarkers(true);
           queryDB.updateHeatmapFromQuery(heatmap, queriedCollection);
         }
       });
     }
   }
 }
-async function updateNumOfResults(queriedCollection: firebase.firestore.Query) {
-  const numOfResults = (await queriedCollection.get()).docs.length;
-  const elementById = document.getElementById("num-of-results");
-  if (elementById != null) {
-    elementById.innerHTML = numOfResults + " images found";
-  }
-}
 
 /* Queries for 20 random dataPoints in the database in order to place markers on them. 
 After any queries change, the images in the side bar should be
 updated according to the new queried collection. */
-async function updateTwentyImagesAndMarkers(
-  queriedCollection: firebase.firestore.Query
-): Promise<void> {
+async function updateTwentyImagesAndMarkers(first: boolean): Promise<void> {
   let countOfImagesAndMarkers = 0;
   const elementById = document.getElementById("images-holder");
   eraseAllMarkers();
-  let lastVisibleDoc = null;
   let dataRef: firebase.firestore.QueryDocumentSnapshot<
     firebase.firestore.DocumentData
   >[];
   if (elementById != null) {
     elementById.innerHTML = "";
     while (countOfImagesAndMarkers < 20) {
-      if (lastVisibleDoc === null) {
+      //TODO: add orderby random.
+      if (first) {
         dataRef = (await queriedCollection.limit(20).get()).docs;
       } else {
         dataRef = (
@@ -174,6 +164,7 @@ async function updateTwentyImagesAndMarkers(
           countOfImagesAndMarkers++;
         }
         if (countOfImagesAndMarkers >= 20) {
+          lastVisibleDoc = dataRef[i];
           break;
         }
       }
@@ -195,4 +186,4 @@ function queriesChanged(selectedQueries: {
 }
 // [END maps_layer_heatmap]
 
-export { initMap, database, queriesChanged, map };
+export { initMap, database, queriesChanged, map, updateTwentyImagesAndMarkers };
