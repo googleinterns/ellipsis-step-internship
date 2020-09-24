@@ -25,7 +25,7 @@ describe("check function getQueriedCollection", () => {
   const label = ["cat"];
   it("test by date", async () => {
     await queryDB
-      .getQueriedCollection(hash, label, datetime)
+      .getQueriedCollection(label, datetime, hash)
       .get()
       .then((querySnapshot) => {
         querySnapshot.forEach((doc) => {
@@ -37,7 +37,7 @@ describe("check function getQueriedCollection", () => {
   });
   it("test by label", async () => {
     await queryDB
-      .getQueriedCollection(hash, label, {})
+      .getQueriedCollection(label, {}, hash)
       .get()
       .then((querySnapshot) => {
         querySnapshot.forEach((doc) => {
@@ -47,7 +47,7 @@ describe("check function getQueriedCollection", () => {
   });
   it("test by date and label", async () => {
     await queryDB
-      .getQueriedCollection(hash, label, datetime)
+      .getQueriedCollection(label, datetime, hash)
       .get()
       .then((querySnapshot) => {
         querySnapshot.forEach((doc) => {
@@ -61,7 +61,7 @@ describe("check function getQueriedCollection", () => {
   it("test by several labels", async () => {
     const labels = ["cat", "bag"];
     await queryDB
-      .getQueriedCollection(hash, labels, datetime)
+      .getQueriedCollection(labels, datetime, hash)
       .get()
       .then((querySnapshot) => {
         querySnapshot.forEach((doc) => {
@@ -74,7 +74,7 @@ describe("check function getQueriedCollection", () => {
   });
   it("test by hash", async () => {
     await queryDB
-      .getQueriedCollection(hash, label, {})
+      .getQueriedCollection(label, {}, hash)
       .get()
       .then((querySnapshot) => {
         querySnapshot.forEach((doc) => {

@@ -77,7 +77,7 @@ async function openInfoWindow(
   const center = convertLatLngToGeopoint(marker.getPosition());
   if (center !== undefined) {
     const dataref = await (
-      await getQueriedCollection(hash, labels, dateTime).get()
+      await getQueriedCollection(labels, dateTime, hash).get()
     ).docs[0];
     if (infoWindow !== null) {
       infoWindow.close();
