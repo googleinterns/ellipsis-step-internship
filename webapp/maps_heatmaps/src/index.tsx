@@ -49,7 +49,7 @@ let queriedCollections: firebase.firestore.Query[];
 let lastVisibleDocs: firebase.firestore.QueryDocumentSnapshot<
   firebase.firestore.DocumentData
 >[];
-const NUMOFIMAGESANDMARKERS = 20;
+const NUM_OF_IMAGES_AND_MARKERS = 20;
 
 /*Gets all the different labels from the label Collection in firestore data base
  and adds them as options for label querying."*/
@@ -110,6 +110,7 @@ async function mapChanged() {
       toLatLngLiteral(bounds.getSouthWest())
     );
     if (timeOfLastRequest === timeOfRequest) {
+      //Check if it's the last request made.
       eraseAllMarkers();
       queriedCollections = [];
       lastVisibleDocs = [];
@@ -119,6 +120,7 @@ async function mapChanged() {
           selectedDate
         );
         if (timeOfLastRequest === timeOfRequest) {
+          //Check if it's the last request made.
           queriedCollections.push(queriedCollection);
         }
       } else {
@@ -140,6 +142,9 @@ async function mapChanged() {
   }
 }
 
+/*@param index The index of the geohash box that we need the next docs from.
+  @param first Determines whether this is a new collection and the next docs should be from the beginning,
+  or should start after the last visible doc.*/
 //TODO: Check if its is better to get less than 20 docs each time.
 async function getNextDocs(index: number, first: boolean) {
   let docsArray: firebase.firestore.QueryDocumentSnapshot<
@@ -147,43 +152,42 @@ async function getNextDocs(index: number, first: boolean) {
   >[];
   if (first) {
     docsArray = (
-      await queriedCollections[index].limit(NUMOFIMAGESANDMARKERS).get()
+      await queriedCollections[index].limit(NUM_OF_IMAGES_AND_MARKERS).get()
     ).docs;
     first = false;
   } else {
     docsArray = (
       await queriedCollections[index]
         .startAfter(lastVisibleDocs[index])
-        .limit(20)
+        .limit(NUM_OF_IMAGES_AND_MARKERS)
         .get()
     ).docs;
   }
   return docsArray;
 }
 
-/* Queries for 20 random dataPoints in the database in order to place markers on them. 
-After any queries change, the images in the side bar should be
-updated according to the new queried collection. */
+/*@param first Determines whether this is a new collection and the next docs should be from the beginning,
+  or should start after the last visible doc.
+  Queries for random dataPoints in the database in order to place markers and images of it. */
 async function updateImagesAndMarkers(first: boolean): Promise<void> {
   let countOfImagesAndMarkers = 0;
   const elementById = document.getElementById("images-holder");
-  let dataRef: firebase.firestore.QueryDocumentSnapshot<
-    firebase.firestore.DocumentData
-  >[];
   const allDocArrays: firebase.firestore.QueryDocumentSnapshot<
     firebase.firestore.DocumentData
   >[][] = new Array<
     firebase.firestore.QueryDocumentSnapshot<firebase.firestore.DocumentData>[]
   >(queriedCollections.length);
+  //Array of the docs from each geohash box.
   const pointers: number[] = new Array<number>(queriedCollections.length);
+  //Pointers to the last doc that was taken from each geohash box.
   for (let i = 0; i < queriedCollections.length; i++) {
-    allDocArrays[i] = await getNextDocs(i, true);
+    allDocArrays[i] = await getNextDocs(i, first);
     pointers[i] = 0;
   }
   if (elementById != null) {
     elementById.innerHTML = "";
     try {
-      while (countOfImagesAndMarkers < 20) {
+      while (countOfImagesAndMarkers < NUM_OF_IMAGES_AND_MARKERS) {
         let minDocData;
         do {
           minDocData = await getDataOfMinDoc(allDocArrays, pointers);
@@ -201,6 +205,7 @@ async function updateImagesAndMarkers(first: boolean): Promise<void> {
         countOfImagesAndMarkers++;
       }
     } catch (e) {
+      //There are no more new docs to present.
       return;
     }
   }
@@ -230,8 +235,9 @@ async function getDataOfMinDoc(
   pointers[indexOfMin]++;
   if (minDoc != null) {
     if (pointers[indexOfMin] >= allDocArrays[indexOfMin].length) {
-      /* Done with all current docs of this geohash, need to get next ones. */
+      // Done with all current docs of this geohash box, need to get next ones.
       lastVisibleDocs[indexOfMin] = minDoc;
+      pointers[indexOfMin] = 0;
       allDocArrays[indexOfMin] = await getNextDocs(indexOfMin, false);
     }
     return minDoc.data();

@@ -30,10 +30,10 @@ function removeDuplicates(hashs: string[]): string[] {
     if (!subString) newHashs.push(hash);
     subString = false;
   });
-  //console.log(Array.from(new Set(newHashs)));
   return Array.from(new Set(newHashs));
 }
 
+/*@return an array of maximum 4 geohash boxes that cover the whole visible map. */
 function getGeohashBoxes(
   northEast: { lat: number; lng: number },
   center: { lat: number; lng: number },
@@ -55,10 +55,12 @@ function getGeohashBoxes(
     );
     return removeDuplicates(geohashList);
   } catch (e) {
+    //If the area on the visible map is more than 1/36 of the world.
     return [];
   }
 }
 
+/*Finds the geohash boxes that cover each side of the visible map. */
 function getCommonGeohash(
   cornerA: { lat: number; lng: number },
   middle: { lat: number; lng: number },
