@@ -22,7 +22,6 @@
 
 // Imports
 import * as firebase from "firebase";
-import * as geofirestore from "geofirestore";
 import { database } from "./declareDatabase";
 import * as queryDB from "./queryDB";
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -35,13 +34,12 @@ import { addImageToSidePanel, updateNumOfResults } from "./sidepanelUtils";
 import { eraseAllMarkers, addMarkerWithListener } from "./clickInfoWindow";
 import {
   convertGeopointToLatLon,
-  getRadius,
   toLatLngLiteral,
   isInVisibleMap,
 } from "./utils";
 import { DateTime } from "./interface";
 import { getGeohashBoxes } from "./geoquery";
-import { hash, decodeHash } from "geokit";
+import { hash } from "geokit";
 
 let map: google.maps.Map, heatmap: google.maps.visualization.HeatmapLayer;
 let selectedLabels: string[] = [];
@@ -51,7 +49,7 @@ let queriedCollections: firebase.firestore.Query[];
 let lastVisibleDocs: firebase.firestore.QueryDocumentSnapshot<
   firebase.firestore.DocumentData
 >[];
-const numOfImagesAndMarkers = 20;
+const NUMOFIMAGESANDMARKERS = 20;
 
 /*Gets all the different labels from the label Collection in firestore data base
  and adds them as options for label querying."*/
@@ -98,6 +96,7 @@ function initMap() {
   map.addListener("center_changed", () => mapChanged());
   map.addListener("zoom_changed", () => mapChanged());
 }
+
 /* Updates the map and the sidepanel after any change of the
 center/zoom of the current map or of the different queries.*/
 async function mapChanged() {
@@ -140,7 +139,6 @@ async function getNextDocs(index: number, first: boolean) {
     docsArray = (
       await queriedCollections[index].limit(numOfImagesAndMarkers).get()
     ).docs;
-    console.log("first");
     first = false;
   } else {
     docsArray = (
@@ -174,47 +172,61 @@ async function updateImagesAndMarkers(first: boolean): Promise<void> {
   }
   if (elementById != null) {
     elementById.innerHTML = "";
-    while (countOfImagesAndMarkers < 20) {
-      const minDocData = await getDataOfMinDoc(allDocArrays, pointers);
-      const latlng = convertGeopointToLatLon(minDocData.coordinates);
-      const imageElement = addImageToSidePanel(minDocData, elementById);
-      await addMarkerWithListener(
-        imageElement,
-        map,
-        latlng,
-        hash({ lat: latlng.lat(), lng: latlng.lng() }, 10),
-        minDocData.labels,
-        selectedDate
-      );
-      countOfImagesAndMarkers++;
+    try {
+      while (countOfImagesAndMarkers < 20) {
+        let minDocData;
+        do {
+          minDocData = await getDataOfMinDoc(allDocArrays, pointers);
+        } while (!isInVisibleMap(minDocData, map));
+        const latlng = convertGeopointToLatLon(minDocData.coordinates);
+        const imageElement = addImageToSidePanel(minDocData, elementById);
+        await addMarkerWithListener(
+          imageElement,
+          map,
+          latlng,
+          hash({ lat: latlng.lat(), lng: latlng.lng() }, 10),
+          minDocData.labels,
+          selectedDate
+        );
+        countOfImagesAndMarkers++;
+      }
+    } catch (e) {
+      return;
     }
   }
 }
 
-//TODO: Figure out how not to give priority to the doc in the first geohash
+//TODO: Figure out how not to give priority to the doc in the first geohash.
 async function getDataOfMinDoc(
   allDocArrays: firebase.firestore.QueryDocumentSnapshot<
     firebase.firestore.DocumentData
   >[][],
   pointers: number[]
 ) {
-  let minDoc = allDocArrays[0][pointers[0]];
+  let minRandom = Infinity;
+  let minDoc = null;
   let indexOfMin = 0;
-  for (let i = 1; i < allDocArrays.length; i++) {
+  for (let i = 0; i < allDocArrays.length; i++) {
     const pointer = pointers[i];
-    const doc = allDocArrays[0][pointer];
-    if (doc.data().random < minDoc.data().random) {
-      minDoc = doc;
-      indexOfMin = i;
+    const doc = allDocArrays[i][pointer];
+    if (doc != null && doc != undefined) {
+      if (doc.data().random < minRandom) {
+        minDoc = doc;
+        indexOfMin = i;
+        minRandom = doc.data().random;
+      }
     }
   }
   pointers[indexOfMin]++;
-  /* Done with all docs of this geohash, need to get next ones. */
-  if (pointers[indexOfMin] >= allDocArrays[indexOfMin].length) {
-    lastVisibleDocs[indexOfMin] = minDoc;
-    allDocArrays[indexOfMin] = await getNextDocs(indexOfMin, false);
+  if (minDoc != null) {
+    if (pointers[indexOfMin] >= allDocArrays[indexOfMin].length) {
+      /* Done with all current docs of this geohash, need to get next ones. */
+      lastVisibleDocs[indexOfMin] = minDoc;
+      allDocArrays[indexOfMin] = await getNextDocs(indexOfMin, false);
+    }
+    return minDoc.data();
   }
-  return minDoc.data();
+  throw new Error("no more documents in queries");
 }
 
 /* Updates the global queries variables according to 

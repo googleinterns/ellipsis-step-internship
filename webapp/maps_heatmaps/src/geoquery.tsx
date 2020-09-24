@@ -15,8 +15,6 @@
  */
 
 import { hash } from "geokit";
-import { map } from "./index";
-let rectangles: google.maps.Rectangle[] = [];
 
 function removeDuplicates(hashs: string[]): string[] {
   const newHashs: string[] = [];
@@ -34,71 +32,6 @@ function removeDuplicates(hashs: string[]): string[] {
   });
   //console.log(Array.from(new Set(newHashs)));
   return Array.from(new Set(newHashs));
-}
-
-function bounds(geohash: string) {
-  const base32 = "0123456789bcdefghjkmnpqrstuvwxyz";
-
-  let evenBit = true;
-  let latMin = -90;
-  let latMax = 90;
-  let lonMin = -180;
-  let lonMax = 180;
-
-  for (let i = 0; i < geohash.length; i++) {
-    const chr = geohash.charAt(i);
-    const idx = base32.indexOf(chr);
-    if (idx == -1) throw new Error("Invalid geohash");
-
-    for (let n = 4; n >= 0; n--) {
-      const bitN = (idx >> n) & 1;
-      if (evenBit) {
-        // longitude
-        const lonMid = (lonMin + lonMax) / 2;
-        if (bitN == 1) {
-          lonMin = lonMid;
-        } else {
-          lonMax = lonMid;
-        }
-      } else {
-        // latitude
-        const latMid = (latMin + latMax) / 2;
-        if (bitN == 1) {
-          latMin = latMid;
-        } else {
-          latMax = latMid;
-        }
-      }
-      evenBit = !evenBit;
-    }
-  }
-
-  const bounds = { north: latMax, south: latMin, east: lonMax, west: lonMin };
-  return bounds;
-}
-
-function eraseAllRectangles(): void {
-  rectangles.forEach((rectangle) => {
-    rectangle.setMap(null);
-  });
-  rectangles = [];
-}
-
-function addRetangle(geohash: string) {
-  const rec = new google.maps.Rectangle({
-    map: map,
-    bounds: bounds(geohash),
-    fillColor: "#FF0000",
-    fillOpacity: 0.35,
-  });
-  rectangles.push(rec);
-}
-
-function addMarker(cord: google.maps.LatLng) {
-  new google.maps.Marker({
-    position: cord,
-    map: map,
-  });
 }
 
 function getGeohashBoxes(
