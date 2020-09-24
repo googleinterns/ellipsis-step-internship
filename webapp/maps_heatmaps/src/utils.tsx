@@ -66,8 +66,8 @@ export function toLatLngLiteral(
   return { lat: coords.lat(), lng: coords.lng() };
 }
 
-/*Checks if the document's coordinates is inside the visible current map.*/
-//TODO: check waht to do if bounds are null.
+/*Checks if the document's coordinates are inside the visible current map.*/
+//TODO: check what to do if bounds are null.
 export function isInVisibleMap(
   docData: firebase.firestore.DocumentData,
   map: google.maps.Map
