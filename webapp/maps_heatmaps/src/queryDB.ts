@@ -21,6 +21,10 @@ import { DateTime } from "./interface";
 
 const databaseCollection = database.collection("Images");
 
+async function getQueriedCollectionById(id: string) {
+  return (await database.collection("Images").doc(id).get()).data();
+}
+
 /* @param labels The labels the client queries by
    @param datetime The date the client queries by
    @param hash The hash of the current map bounderies
@@ -76,4 +80,8 @@ function getLatLon(coordinates: firebase.firestore.GeoPoint) {
   return new google.maps.LatLng(lat, lng);
 }
 
-export { updateHeatmapFromQuery, getQueriedCollection };
+export {
+  updateHeatmapFromQuery,
+  getQueriedCollection,
+  getQueriedCollectionById,
+};

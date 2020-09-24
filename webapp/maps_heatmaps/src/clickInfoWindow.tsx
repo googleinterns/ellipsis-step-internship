@@ -16,7 +16,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
 import { map } from "./index";
-import { getQueriedCollection } from "./queryDB";
+import { getQueriedCollectionById } from "./queryDB";
 import { DateTime } from "./interface";
 import { convertLatLngToGeopoint } from "./utils";
 
@@ -34,14 +34,14 @@ let infoWindow: google.maps.InfoWindow | null = null;
    @param image The image we add a click listener
    @param map The map we place markers
    @param latlng The coordinates of the image
-   @param hash The hash of the current map bounderies
+   @param id The id of the image
    @param labels The labels the client queries by
    @param datetime The date the client queries by */
 function addMarkerWithListener(
   image: HTMLImageElement,
   map: google.maps.Map,
   latlng: google.maps.LatLng,
-  hash: string,
+  id: string,
   labels: string[],
   datetime: DateTime
 ): void {
@@ -49,51 +49,48 @@ function addMarkerWithListener(
     position: latlng,
     map: map,
   });
+  marker.setValues({ id: id });
   if (infoWindow === null) {
     infoWindow = new google.maps.InfoWindow();
   }
   markers.push(marker);
   image.addEventListener("click", async () =>
-    openInfoWindow(infoWindow, marker, hash, labels, datetime)
+    openInfoWindow(infoWindow, marker, labels, datetime)
   );
   google.maps.event.addListener(marker, "click", async () =>
-    openInfoWindow(infoWindow, marker, hash, labels, datetime)
+    openInfoWindow(infoWindow, marker, labels, datetime)
   );
 }
 
 /* This function creates and opens a infoWindow on a specific marker
    @param infoWindow The infoWindow we will open with new information
    @param marker The marker we will open a infoWindow
-   @param hash The hash of the image
    @param labels The labels the client queries by
    @param datetime The date the client queries by */
 async function openInfoWindow(
   infoWindow: google.maps.InfoWindow | null,
   marker: google.maps.Marker,
-  hash: string,
   labels: string[],
   dateTime: DateTime
 ) {
   const center = convertLatLngToGeopoint(marker.getPosition());
   if (center !== undefined) {
-    const dataref = await (
-      await getQueriedCollection(labels, dateTime, hash).get()
-    ).docs[0];
-    if (infoWindow !== null) {
+    const dataref = await getQueriedCollectionById(marker.get("id"));
+    if (infoWindow !== null && dataref !== undefined) {
       infoWindow.close();
       infoWindow.setContent(
         ReactDOMServer.renderToString(
           <InfoWindowContent
-            labels={dataref.data().labels}
-            url={dataref.data().url}
+            labels={dataref.labels}
+            url={dataref.url}
             dateTime={
               (dateTime = {
-                year: dataref.data().date.year,
-                month: dataref.data().date.month,
-                day: dataref.data().date.day,
+                year: dataref.date.year,
+                month: dataref.date.month,
+                day: dataref.date.day,
               })
             }
-            attribution={dataref.data().attribution}
+            attribution={dataref.attribution}
           />
         )
       );
