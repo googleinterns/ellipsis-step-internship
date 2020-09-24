@@ -26,17 +26,3 @@ export function addImageToSidePanel(
   elementById.appendChild(imageElement);
   return imageElement;
 }
-
-export async function updateNumOfResults(
-  queriedCollections: firebase.firestore.Query[]
-): Promise<void> {
-  let numOfResults = 0;
-  for (const queriedCollection of queriedCollections) {
-    const collectionLen = (await queriedCollection.get()).docs.length;
-    numOfResults += collectionLen;
-  }
-  const elementById = document.getElementById("num-of-results");
-  if (elementById != null) {
-    elementById.innerHTML = numOfResults + " images found";
-  }
-}

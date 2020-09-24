@@ -30,7 +30,7 @@ import ReactDOM from "react-dom";
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import SidePanel from "./components/sidepanel";
-import { addImageToSidePanel, updateNumOfResults } from "./sidepanelUtils";
+import { addImageToSidePanel } from "./sidepanelUtils";
 import { eraseAllMarkers, addMarkerWithListener } from "./clickInfoWindow";
 import {
   convertGeopointToLatLon,
@@ -136,7 +136,6 @@ async function mapChanged() {
         });
       }
       await queryDB.updateHeatmapFromQuery(heatmap, queriedCollections);
-      updateNumOfResults(queriedCollections);
       updateImagesAndMarkers(true);
     }
   }
@@ -168,6 +167,7 @@ async function getNextDocs(index: number, first: boolean) {
 /*@param first Determines whether this is a new collection and the next docs should be from the beginning,
   or should start after the last visible doc.
   Queries for random dataPoints in the database in order to place markers and images of it. */
+//TODO: store all previous shown images and markers and add a 'previous' button.
 async function updateImagesAndMarkers(first: boolean): Promise<void> {
   let countOfImagesAndMarkers = 0;
   const elementById = document.getElementById("images-holder");
@@ -183,8 +183,10 @@ async function updateImagesAndMarkers(first: boolean): Promise<void> {
     allDocArrays[i] = await getNextDocs(i, first);
     pointers[i] = 0;
   }
+  const nextBtn = document.getElementsByTagName("button").namedItem("next-btn");
+  if (nextBtn) nextBtn.disabled = false;
   eraseAllMarkers();
-  if (elementById != null) {
+  if (elementById) {
     elementById.innerHTML = "";
     try {
       while (countOfImagesAndMarkers < NUM_OF_IMAGES_AND_MARKERS) {
@@ -206,6 +208,7 @@ async function updateImagesAndMarkers(first: boolean): Promise<void> {
       }
     } catch (e) {
       //There are no more new docs to present.
+      if (nextBtn) nextBtn.disabled = true;
       return;
     }
   }
