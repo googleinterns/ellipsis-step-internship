@@ -114,9 +114,8 @@ async function mapChanged() {
       eraseAllMarkers();
       queriedCollections = [];
       lastVisibleDocs = [];
-      arrayhash.forEach((hash: string) => {
+      if (arrayhash.length === 0) {
         const queriedCollection = queryDB.getQueriedCollection(
-          hash,
           selectedLabels,
           selectedDate
         );
@@ -124,7 +123,18 @@ async function mapChanged() {
           //Check if it's the last request made.
           queriedCollections.push(queriedCollection);
         }
-      });
+      } else {
+        arrayhash.forEach((hash: string) => {
+          const queriedCollection = queryDB.getQueriedCollection(
+            selectedLabels,
+            selectedDate,
+            hash
+          );
+          if (timeOfLastRequest === timeOfRequest) {
+            queriedCollections.push(queriedCollection);
+          }
+        });
+      }
       await queryDB.updateHeatmapFromQuery(heatmap, queriedCollections);
       updateNumOfResults(queriedCollections);
       updateImagesAndMarkers(true);

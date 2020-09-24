@@ -21,19 +21,24 @@ import { DateTime } from "./interface";
 
 const databaseCollection = database.collection("Images");
 
-/* @param hash The hash of the current map bounderies, 
-   @param labels The labels the client queries by
+/* @param labels The labels the client queries by
    @param datetime The date the client queries by
+   @param hash The hash of the current map bounderies
    @return The filtered collection by the different queries*/
 function getQueriedCollection(
-  hash: string,
   labels: string[],
-  datetime: DateTime
+  datetime: DateTime,
+  hash?: string
 ): firebase.firestore.Query {
-  const hashfield: string = "hashmap.hash" + hash.length;
-  let dataRef = databaseCollection
-    .where(hashfield, "==", hash)
-    .where("labels", "array-contains-any", labels);
+  let dataRef = databaseCollection.where(
+    "labels",
+    "array-contains-any",
+    labels
+  );
+  if (hash != undefined) {
+    const hashfield: string = "hashmap.hash" + hash.length;
+    dataRef = dataRef.where(hashfield, "==", hash);
+  }
   if (datetime.year != undefined)
     dataRef = dataRef.where("date.year", "==", datetime.year);
   if (datetime.year != undefined && datetime.month != undefined)
