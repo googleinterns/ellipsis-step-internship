@@ -51,7 +51,9 @@ function initializeDB() {
 /* @param url The source of the image
   @param label The label found in the image
   @param lat, lng The coordinates of the image
-  @param year, month, day The date the image was taken
+  @param date The date the image was taken
+  @param attribution The attribution the image (uploader)
+  @param random The random field we arder dy the collection
 Adds an image to 'images' collection.*/
 //TODO: add subcollection of labels to each image.
 function addNewImage(
@@ -86,7 +88,7 @@ function addNewImage(
   });
 }
 
-/* Adds images to 'images' collection with randomized information
+/* Adds images to 'Images' collection with randomized information
 from a set of coordinates.*/
 function addImagesToDB(points: Array<Array<number>>): void {
   points.forEach((element) => {
@@ -97,14 +99,14 @@ function addImagesToDB(points: Array<Array<number>>): void {
       month: getRandomNumber(12) + 1,
       day: getRandomNumber(30) + 1,
     };
-    const numOfLabel = getRandomNumber(3);
-    const label = ["dog", "bag", "cat"][numOfLabel];
+    const randomIndex = getRandomNumber(3);
+    const label = ["dog", "bag", "cat"][randomIndex];
     const url = [
       "https://live.staticflickr.com/5284/5338762379_59f7435b93_c.jpg",
       "https://live.staticflickr.com/65535/49748702651_07ae2b33b4_c.jpg",
       "https://live.staticflickr.com/3677/13545844805_170ec3746b_c.jpg",
-    ][numOfLabel];
-    const attribution = ["Tal", "Ofri", "Anonymus"][numOfLabel];
+    ][randomIndex];
+    const attribution = ["Tal", "Ofri", "Anonymus"][randomIndex];
     const random = getRandomNumber(100);
     addNewImage(url, label, latitude, longitude, date, attribution, random);
   });

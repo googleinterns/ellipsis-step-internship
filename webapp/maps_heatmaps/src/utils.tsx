@@ -59,6 +59,7 @@ export function getRadius(
   return newRadius;
 }
 
+/* This function converts from a fgoogle.maps.LatLng to a LatLngLiteral.*/
 export function toLatLngLiteral(
   coords: google.maps.LatLng
 ): { lat: number; lng: number } {
@@ -84,14 +85,4 @@ export function isInVisibleMap(
     return lat < maxLat && lat > minLat && lng < maxLng && lng > minLng;
   }
   return true;
-}
-
-export async function updateNumOfResults(
-  queriedCollection: firebase.firestore.Query
-): Promise<void> {
-  const numOfResults = (await queriedCollection.get()).docs.length;
-  const elementById = document.getElementById("num-of-results");
-  if (elementById != null) {
-    elementById.innerHTML = numOfResults + " images found";
-  }
 }

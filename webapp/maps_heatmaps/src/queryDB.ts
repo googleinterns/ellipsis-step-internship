@@ -21,23 +21,9 @@ import { DateTime } from "./interface";
 
 const databaseCollection = database.collection("Images");
 
-/*
-function getAllQueriedCollections(
-  hashs: string[],
-  labels: string[],
-  datetime: DateTime
-): firebase.firestore.Query {
-  let allQueriedCollection: firebase.firestore.Query;
-  hashs.forEach((hash: string) => {
-    const queriedCollection = getQueriedCollection(hash, labels, datetime);
-    allQueriedCollection = allQueriedCollection + queriedCollection;
-  });
-}*/
-
-/* @param center The center of the current map, 
-   @param radius The radius of the circle that contains the current map bounderies
+/* @param hash The hash of the current map bounderies, 
    @param labels The labels the client queries by
-   @param year, month, day The date the client queries by
+   @param datetime The date the client queries by
    @return The filtered collection by the different queries*/
 function getQueriedCollection(
   hash: string,

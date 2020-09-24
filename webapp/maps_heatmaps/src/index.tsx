@@ -137,7 +137,7 @@ async function getNextDocs(index: number, first: boolean) {
   >[];
   if (first) {
     docsArray = (
-      await queriedCollections[index].limit(numOfImagesAndMarkers).get()
+      await queriedCollections[index].limit(NUMOFIMAGESANDMARKERS).get()
     ).docs;
     first = false;
   } else {
