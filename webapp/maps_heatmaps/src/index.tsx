@@ -111,7 +111,6 @@ async function mapChanged() {
     );
     if (timeOfLastRequest === timeOfRequest) {
       //Check if it's the last request made.
-      eraseAllMarkers();
       queriedCollections = [];
       lastVisibleDocs = [];
       if (arrayhash.length === 0) {
@@ -150,17 +149,16 @@ async function getNextDocs(index: number, first: boolean) {
   let docsArray: firebase.firestore.QueryDocumentSnapshot<
     firebase.firestore.DocumentData
   >[];
-  if (first) {
-    docsArray = (
-      await queriedCollections[index].limit(NUM_OF_IMAGES_AND_MARKERS).get()
-    ).docs;
-    first = false;
-  } else {
+  if (!first && lastVisibleDocs[index]) {
     docsArray = (
       await queriedCollections[index]
         .startAfter(lastVisibleDocs[index])
         .limit(NUM_OF_IMAGES_AND_MARKERS)
         .get()
+    ).docs;
+  } else {
+    docsArray = (
+      await queriedCollections[index].limit(NUM_OF_IMAGES_AND_MARKERS).get()
     ).docs;
   }
   return docsArray;
@@ -184,6 +182,7 @@ async function updateImagesAndMarkers(first: boolean): Promise<void> {
     allDocArrays[i] = await getNextDocs(i, first);
     pointers[i] = 0;
   }
+  eraseAllMarkers();
   if (elementById != null) {
     elementById.innerHTML = "";
     try {
@@ -234,9 +233,9 @@ async function getDataOfMinDoc(
   }
   pointers[indexOfMin]++;
   if (minDoc != null) {
+    lastVisibleDocs[indexOfMin] = minDoc;
     if (pointers[indexOfMin] >= allDocArrays[indexOfMin].length) {
       // Done with all current docs of this geohash box, need to get next ones.
-      lastVisibleDocs[indexOfMin] = minDoc;
       pointers[indexOfMin] = 0;
       allDocArrays[indexOfMin] = await getNextDocs(indexOfMin, false);
     }
@@ -259,4 +258,4 @@ function queriesChanged(selectedQueries: {
 }
 // [END maps_layer_heatmap]
 
-export { initMap, database, queriesChanged, map };
+export { initMap, database, queriesChanged, map, updateImagesAndMarkers };
