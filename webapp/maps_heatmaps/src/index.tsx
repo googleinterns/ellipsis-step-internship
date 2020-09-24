@@ -93,8 +93,9 @@ function initMap() {
     data: [],
     map: map,
   });
-  map.addListener("center_changed", () => mapChanged());
+  map.addListener("drag", () => mapChanged());
   map.addListener("zoom_changed", () => mapChanged());
+  google.maps.event.addListenerOnce(map, "center_changed", () => mapChanged());
 }
 
 /* Updates the map and the sidepanel after any change of the
