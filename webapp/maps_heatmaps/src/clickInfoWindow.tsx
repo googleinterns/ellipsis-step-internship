@@ -17,7 +17,6 @@
 
 import { map } from "./index";
 import { getQueriedCollection } from "./queryDB";
-import * as firebase from "firebase";
 import { DateTime } from "./interface";
 import { convertLatLngToGeopoint } from "./utils";
 
@@ -31,7 +30,13 @@ let infoWindow: google.maps.InfoWindow | null = null;
 
 /* Placing a marker with a click event in a given location. 
    When clicking on the marker an infoWindow will appear 
-   with all the information on this location from the database. */
+   with all the information on this location from the database. 
+   @param image The image we add a click listener
+   @param map The map we place markers
+   @param latlng The coordinates of the image
+   @param hash The hash of the current map bounderies
+   @param labels The labels the client queries by
+   @param datetime The date the client queries by */
 function addMarkerWithListener(
   image: HTMLImageElement,
   map: google.maps.Map,
@@ -56,6 +61,12 @@ function addMarkerWithListener(
   );
 }
 
+/* This function creates and opens a infoWindow on a specific marker
+   @param infoWindow The infoWindow we will open with new information
+   @param marker The marker we will open a infoWindow
+   @param hash The hash of the image
+   @param labels The labels the client queries by
+   @param datetime The date the client queries by */
 async function openInfoWindow(
   infoWindow: google.maps.InfoWindow | null,
   marker: google.maps.Marker,
@@ -77,12 +88,11 @@ async function openInfoWindow(
             url={dataref.data().url}
             dateTime={
               (dateTime = {
-                year: dataref.data().year,
-                month: dataref.data().month,
-                day: dataref.data().day,
+                year: dataref.data().date.year,
+                month: dataref.data().date.month,
+                day: dataref.data().date.day,
               })
             }
-            //TODO: add attribution field to the database.
             attribution={dataref.data().attribution}
           />
         )
