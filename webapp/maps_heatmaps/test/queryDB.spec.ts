@@ -72,14 +72,4 @@ describe("check function getQueriedCollection", () => {
         });
       });
   });
-  it("test by hash", async () => {
-    await queryDB
-      .getQueriedCollection(label, {}, hash)
-      .get()
-      .then((querySnapshot) => {
-        querySnapshot.forEach((doc) => {
-          expect(doc.data().hashmap.hash4).to.equal("9q8y");
-        });
-      });
-  });
 });

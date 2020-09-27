@@ -90,7 +90,7 @@ describe("check function removeDuplicates", () => {
   });
 });
 
-describe("check function getGeohashBoxes hashList", () => {
+describe("check result of getGeohashBoxes function- the result is a list of hashes to query by", () => {
   const northEast = { lat: 37.826683863620005, lng: -122.33592020593264 };
   const southWest = { lat: 37.73428926366695, lng: -122.4466417940674 };
   // eslint-disable-next-line @typescript-eslint/no-empty-function
