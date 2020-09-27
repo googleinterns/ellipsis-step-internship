@@ -16,8 +16,10 @@
 
 import { database } from "../src/declareDatabase";
 import * as firebase from "firebase";
-import * as geofirestore from "geofirestore";
+import { DateTime } from "../src/interface";
 import fs from "fs";
+import * as geokit from "geokit";
+import { hash } from "geokit";
 
 initializeDB();
 
@@ -47,9 +49,11 @@ function initializeDB() {
 }
 
 /* @param url The source of the image
-   @param label The label found in the image
-   @param lat, lng The coordinates of the image
-   @param year, month, day The date the image was taken
+  @param label The label found in the image
+  @param lat, lng The coordinates of the image
+  @param date The date the image was taken
+  @param attribution The attribution the image (uploader)
+  @param random The random field we arder dy the collection
 Adds an image to 'images' collection.*/
 //TODO: add subcollection of labels to each image.
 function addNewImage(
@@ -57,39 +61,50 @@ function addNewImage(
   label: string,
   lat: number,
   lng: number,
-  year: number,
-  month: number,
-  day: number
+  date: DateTime,
+  attribution: string,
+  random: number
 ) {
-  const GeoFirestore = geofirestore.initializeApp(database);
-  const geocollection = GeoFirestore.collection("images");
-  geocollection.add({
-    year: year,
-    month: month,
-    day: day,
+  const hash = geokit.hash({ lat: lat, lng: lng }, 12);
+  database.collection("Images").add({
+    date: date,
     coordinates: new firebase.firestore.GeoPoint(lat, lng),
+    hashmap: generateHashMap(hash),
     labels: [label],
     url: url,
+    attribution: attribution,
+    random: random,
   });
 }
+function generateHashMap(hash: string) {
+  const hashmap = {};
+  for (let i = 1; i++; i <= 10) {
+    hashmap["hash" + i] = hash.substring(0, i);
+  }
+  return hashmap;
+}
 
-/* Adds images to 'images' collection with randomized information
- from a set of coordinates.*/
+/* Adds images to 'Images' collection with randomized information
+from a set of coordinates.*/
 function addImagesToDB(points: Array<Array<number>>): void {
   points.forEach((element) => {
     const latitude = element[0];
     const longitude = element[1];
-    const year = 1990 + getRandomNumber(31);
-    const month = getRandomNumber(12) + 1;
-    const day = getRandomNumber(30) + 1;
-    const numOfLabel = getRandomNumber(3);
-    const label = ["dog", "bag", "cat"][numOfLabel];
+    const date = {
+      year: 1990 + getRandomNumber(31),
+      month: getRandomNumber(12) + 1,
+      day: getRandomNumber(30) + 1,
+    };
+    const randomIndex = getRandomNumber(3);
+    const label = ["dog", "bag", "cat"][randomIndex];
     const url = [
       "https://live.staticflickr.com/5284/5338762379_59f7435b93_c.jpg",
       "https://live.staticflickr.com/65535/49748702651_07ae2b33b4_c.jpg",
       "https://live.staticflickr.com/3677/13545844805_170ec3746b_c.jpg",
-    ][numOfLabel];
-    addNewImage(url, label, latitude, longitude, year, month, day);
+    ][randomIndex];
+    const attribution = ["Tal", "Ofri", "Anonymus"][randomIndex];
+    const random = getRandomNumber(100);
+    addNewImage(url, label, latitude, longitude, date, attribution, random);
   });
 }
 

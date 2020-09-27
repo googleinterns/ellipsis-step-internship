@@ -16,6 +16,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
 import * as firebase from "firebase";
+import { LatLng } from "./interface";
 
 /* This function converts from a google.maps.LatLng to a firebase.firestore.GeoPoint.*/
 export function convertLatLngToGeopoint(
@@ -56,4 +57,37 @@ export function getRadius(
     newRadius = meterRadius * 0.000621371192; //convert to miles
   }
   return newRadius;
+}
+
+/* This function converts from a google.maps.LatLng to a LatLngLiteral.*/
+export function toLatLngLiteral(coords: google.maps.LatLng): LatLng {
+  return { lat: coords.lat(), lng: coords.lng() };
+}
+
+/*Checks if the document's coordinates are inside the visible current map.*/
+//TODO: check what to do if bounds are null.
+export function isInVisibleMap(
+  docData: firebase.firestore.DocumentData,
+  map: google.maps.Map
+): boolean {
+  const bounds = map.getBounds();
+  if (bounds != null) {
+    const lat = docData.coordinates.latitude;
+    const lng = docData.coordinates.longitude;
+    const northEast = bounds.getNorthEast();
+    const southWest = bounds.getSouthWest();
+    const maxLat = northEast.lat();
+    const maxLng = northEast.lng();
+    const minLat = southWest.lat();
+    const minLng = southWest.lng();
+    return lat < maxLat && lat > minLat && lng < maxLng && lng > minLng;
+  }
+  return true;
+}
+
+/*@return Coordinates of the point that is in the middle of the two given coordinates. */
+export function findMidCoordinates(pointA: LatLng, pointB: LatLng): LatLng {
+  const midLat = (pointA.lat + pointB.lat) / 2;
+  const midLng = (pointA.lng + pointB.lng) / 2;
+  return { lat: midLat, lng: midLng };
 }

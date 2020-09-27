@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/ban-types */
 /*
  * Copyright 2020 Google LLC
  *
@@ -15,15 +14,16 @@
  * limitations under the License.
  */
 /* eslint-disable @typescript-eslint/explicit-module-boundary-types */
+/* eslint-disable @typescript-eslint/ban-types */
 
 import React from "react";
 import { DateTime } from "../interface";
 
 /* This component renders information for the info window, in html format.
-   @param labels - all the labels this image has, 
-   @param url - the image url,
-   @param dateTime - the date the image was taken,
-   @param attribution - who uplouded the image, */
+   @param labels The labels this image has, 
+   @param url The image url,
+   @param dateTime The date the image was taken,
+   @param attribution The attribution of the image- who uplouded the image, */
 class InfoWindowContent extends React.Component<{
   labels: string[];
   url: string;
@@ -62,12 +62,11 @@ class InfoWindowContent extends React.Component<{
     );
   }
 
-  //TODO: add field attribute to database and extract attribute field in this function.
   getAttribution() {
     return (
       <>
         <b>Attribution: </b>
-        {"uploader of the image_______"}
+        {"uploader of the image is " + this.props.attribution}
       </>
     );
   }

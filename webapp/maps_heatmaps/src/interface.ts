@@ -20,4 +20,9 @@ interface DateTime {
   day?: number;
 }
 
-export type { DateTime };
+interface LatLng {
+  lat: number;
+  lng: number;
+}
+
+export type { DateTime, LatLng };

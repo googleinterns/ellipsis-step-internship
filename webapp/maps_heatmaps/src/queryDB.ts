@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/explicit-module-boundary-types */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /*
  * Copyright 2020 Google LLC
  *
@@ -16,56 +18,64 @@
 
 import { database } from "./index";
 import * as firebase from "firebase";
-import * as geofirestore from "geofirestore";
 import { DateTime } from "./interface";
 
-/* @param center The center of the current map, 
-   @param radius The radius of the circle that contains the current map bounderies
+const databaseCollection = database.collection("Images");
+
+/* This function gets a document by its id*/
+async function getDocById(id: string) {
+  return (await database.collection("Images").doc(id).get()).data();
+}
+
+/* Queries for docs in firebase by given data such as labels, date and hash. 
+   the function returns a reference to the queried data.
    @param labels The labels the client queries by
-   @param year, month, day The date the client queries by
+   @param datetime The date the client queries by
+   @param hash The hash of the current map bounderies
    @return The filtered collection by the different queries*/
 function getQueriedCollection(
-  center: firebase.firestore.GeoPoint,
-  radius: number,
   labels: string[],
-  datetime: DateTime
-): geofirestore.GeoQuery {
-  const GeoFirestore = geofirestore.initializeApp(database);
-  const geoCollection = GeoFirestore.collection("images");
-  let dataRef: geofirestore.GeoQuery = geoCollection
-    .near({
-      center: center,
-      radius: radius,
-    })
-    .where("labels", "array-contains-any", labels);
+  datetime: DateTime,
+  hash?: string
+): firebase.firestore.Query {
+  let dataRef = databaseCollection.where(
+    "labels",
+    "array-contains-any",
+    labels
+  );
+  if (hash != undefined) {
+    const hashfield: string = "hashmap.hash" + hash.length;
+    dataRef = dataRef.where(hashfield, "==", hash);
+  }
   if (datetime.year != undefined)
-    dataRef = dataRef.where("year", "==", datetime.year);
+    dataRef = dataRef.where("date.year", "==", datetime.year);
   if (datetime.year != undefined && datetime.month != undefined)
-    dataRef = dataRef.where("month", "==", datetime.month);
+    dataRef = dataRef.where("date.month", "==", datetime.month);
   if (
     datetime.year != undefined &&
     datetime.month != undefined &&
     datetime.day != undefined
   )
-    dataRef = dataRef.where("day", "==", datetime.day);
-  return dataRef;
+    dataRef = dataRef.where("date.day", "==", datetime.day);
+  return dataRef.orderBy("random");
 }
 
 /* Displays the relevant images on the map
 given the filtered collection and the heapmap. */
-function updateHeatmapFromQuery(
+async function updateHeatmapFromQuery(
   heatmap: google.maps.visualization.HeatmapLayer,
-  dataRef: geofirestore.GeoQuery
-): void {
+  dataRefs: firebase.firestore.Query[]
+): Promise<void> {
   const allPoints: Array<google.maps.LatLng> = [];
-  dataRef.get().then((querySnapshot) => {
-    querySnapshot.forEach((doc) => {
-      const coordinates: firebase.firestore.GeoPoint = doc.data().g.geopoint;
+  for (const dataRef of dataRefs) {
+    const docs = (await dataRef.get()).docs;
+    for (const doc of docs) {
+      const coordinates = doc.data().coordinates;
       const newLatLon = getLatLon(coordinates);
       allPoints.push(newLatLon);
-    });
-    heatmap.setData(allPoints);
-  });
+    }
+  }
+  heatmap.setData(allPoints);
 }
 
 function getLatLon(coordinates: firebase.firestore.GeoPoint) {
@@ -74,4 +84,4 @@ function getLatLon(coordinates: firebase.firestore.GeoPoint) {
   return new google.maps.LatLng(lat, lng);
 }
 
-export { updateHeatmapFromQuery, getQueriedCollection };
+export { updateHeatmapFromQuery, getQueriedCollection, getDocById };

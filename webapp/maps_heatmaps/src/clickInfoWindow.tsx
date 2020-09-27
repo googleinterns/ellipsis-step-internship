@@ -16,8 +16,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
 import { map } from "./index";
-import { getQueriedCollection } from "./queryDB";
-import * as firebase from "firebase";
+import { getDocById } from "./queryDB";
 import { DateTime } from "./interface";
 import { convertLatLngToGeopoint } from "./utils";
 
@@ -31,11 +30,18 @@ let infoWindow: google.maps.InfoWindow | null = null;
 
 /* Placing a marker with a click event in a given location. 
    When clicking on the marker an infoWindow will appear 
-   with all the information on this location from the database. */
+   with all the information on this location from the database. 
+   @param image The image we add a click listener
+   @param map The map we place markers
+   @param latlng The coordinates of the image
+   @param id The id of the image
+   @param labels The labels the client queries by
+   @param datetime The date the client queries by */
 function addMarkerWithListener(
   image: HTMLImageElement,
   map: google.maps.Map,
   latlng: google.maps.LatLng,
+  id: string,
   labels: string[],
   datetime: DateTime
 ): void {
@@ -43,6 +49,7 @@ function addMarkerWithListener(
     position: latlng,
     map: map,
   });
+  marker.setValues({ id: id });
   if (infoWindow === null) {
     infoWindow = new google.maps.InfoWindow();
   }
@@ -55,6 +62,11 @@ function addMarkerWithListener(
   );
 }
 
+/* This function creates and opens a infoWindow on a specific marker
+   @param infoWindow The infoWindow we will open with new information
+   @param marker The marker we will open a infoWindow
+   @param labels The labels the client queries by
+   @param datetime The date the client queries by */
 async function openInfoWindow(
   infoWindow: google.maps.InfoWindow | null,
   marker: google.maps.Marker,
@@ -63,25 +75,22 @@ async function openInfoWindow(
 ) {
   const center = convertLatLngToGeopoint(marker.getPosition());
   if (center !== undefined) {
-    const dataref = await (
-      await getQueriedCollection(center, 0, labels, dateTime).get()
-    ).docs[0];
-    if (infoWindow !== null) {
+    const dataref = await getDocById(marker.get("id"));
+    if (infoWindow !== null && dataref !== undefined) {
       infoWindow.close();
       infoWindow.setContent(
         ReactDOMServer.renderToString(
           <InfoWindowContent
-            labels={dataref.data().labels}
-            url={dataref.data().url}
+            labels={dataref.labels}
+            url={dataref.url}
             dateTime={
               (dateTime = {
-                year: dataref.data().year,
-                month: dataref.data().month,
-                day: dataref.data().day,
+                year: dataref.date.year,
+                month: dataref.date.month,
+                day: dataref.date.day,
               })
             }
-            //TODO: add attribution field to the database.
-            attribution={""}
+            attribution={dataref.attribution}
           />
         )
       );
