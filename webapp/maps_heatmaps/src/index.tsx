@@ -39,7 +39,6 @@ import {
 } from "./utils";
 import { DateTime } from "./interface";
 import { getGeohashBoxes } from "./geoquery";
-import { hash } from "geokit";
 
 let map: google.maps.Map, heatmap: google.maps.visualization.HeatmapLayer;
 let selectedLabels: string[] = [];
