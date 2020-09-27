@@ -129,6 +129,7 @@ async function mapChanged() {
             selectedDate,
             hash
           );
+          //Check if it's the last request made.
           if (timeOfLastRequest === timeOfRequest) {
             queriedCollections.push(queriedCollection);
           }
