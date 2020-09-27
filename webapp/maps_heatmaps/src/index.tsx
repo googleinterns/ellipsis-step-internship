@@ -150,15 +150,18 @@ async function getNextDocs(index: number, first: boolean) {
   >[];
   if (first) {
     docsArray = (
-      await queriedCollections[index].limit(NUM_OF_IMAGES_AND_MARKERS).get()
+      await queriedCollections[index]
+        .orderBy("random")
+        .limit(NUM_OF_IMAGES_AND_MARKERS)
+        .get()
     ).docs;
     first = false;
   } else {
     docsArray = (
       await queriedCollections[index]
+        .orderBy("random")
         .startAfter(lastVisibleDocs[index])
         .limit(NUM_OF_IMAGES_AND_MARKERS)
-        .orderBy("random")
         .get()
     ).docs;
   }
