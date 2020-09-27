@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import { eraseAllMarkers } from "./clickInfoWindow";
+
 /* @param docData The data of the image that is added to the sidepanel
    @param ElementById The HTML element that will contain the new image  */
 export function addImageToSidePanel(
@@ -25,4 +27,11 @@ export function addImageToSidePanel(
   imageElement.src = docData.url;
   elementById.appendChild(imageElement);
   return imageElement;
+}
+
+export function eraseAllImages() {
+  const imagesHolderElement = document.getElementById("images-holder");
+  if (imagesHolderElement) {
+    imagesHolderElement.innerHTML = "";
+  }
 }

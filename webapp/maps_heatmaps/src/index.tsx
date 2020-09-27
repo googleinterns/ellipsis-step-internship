@@ -30,7 +30,7 @@ import ReactDOM from "react-dom";
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import SidePanel from "./components/sidepanel";
-import { addImageToSidePanel } from "./sidepanelUtils";
+import { addImageToSidePanel, eraseAllImages } from "./sidepanelUtils";
 import { eraseAllMarkers, addMarkerWithListener } from "./clickInfoWindow";
 import {
   convertGeopointToLatLon,
@@ -111,7 +111,6 @@ async function mapChanged() {
     );
     //Check if it's the last request made.
     if (timeOfLastRequest === timeOfRequest) {
-      eraseAllMarkers();
       queriedCollections = [];
       lastVisibleDocs = [];
       if (arrayhash.length === 0) {
@@ -187,8 +186,8 @@ async function updateImagesAndMarkers(first: boolean): Promise<void> {
   const nextBtn = document.getElementsByTagName("button").namedItem("next-btn");
   if (nextBtn) nextBtn.disabled = false;
   eraseAllMarkers();
+  eraseAllImages();
   if (elementById) {
-    elementById.innerHTML = "";
     try {
       while (countOfImagesAndMarkers < NUM_OF_IMAGES_AND_MARKERS) {
         let minDocData;
