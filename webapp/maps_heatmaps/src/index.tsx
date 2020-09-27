@@ -106,11 +106,10 @@ async function mapChanged() {
   if (bounds != null) {
     const arrayhash = getGeohashBoxes(
       toLatLngLiteral(bounds.getNorthEast()),
-      toLatLngLiteral(bounds.getCenter()),
       toLatLngLiteral(bounds.getSouthWest())
     );
+    //Check if it's the last request made.
     if (timeOfLastRequest === timeOfRequest) {
-      //Check if it's the last request made.
       eraseAllMarkers();
       queriedCollections = [];
       lastVisibleDocs = [];
@@ -119,8 +118,8 @@ async function mapChanged() {
           selectedLabels,
           selectedDate
         );
+        //Check if it's the last request made.
         if (timeOfLastRequest === timeOfRequest) {
-          //Check if it's the last request made.
           queriedCollections.push(queriedCollection);
         }
       } else {
