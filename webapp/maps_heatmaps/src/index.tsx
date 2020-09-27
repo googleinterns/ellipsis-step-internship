@@ -152,9 +152,9 @@ async function getNextDocs(index: number, first: boolean) {
   if (!first && lastVisibleDocs[index]) {
     docsArray = (
       await queriedCollections[index]
+        .orderBy("random")
         .startAfter(lastVisibleDocs[index])
         .limit(NUM_OF_IMAGES_AND_MARKERS)
-        .orderBy("random")
         .get()
     ).docs;
   } else {

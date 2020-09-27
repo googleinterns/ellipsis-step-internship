@@ -58,7 +58,7 @@ function getQueriedCollection(
     datetime.day != undefined
   )
     dataRef = dataRef.where("date.day", "==", datetime.day);
-  return dataRef.orderBy("random");
+  return dataRef;
 }
 
 /* Displays the relevant images on the map
