@@ -160,6 +160,7 @@ async function getNextDocs(index: number, first: boolean) {
       await queriedCollections[index]
         .startAfter(lastVisibleDocs[index])
         .limit(NUM_OF_IMAGES_AND_MARKERS)
+        .orderBy("random")
         .get()
     ).docs;
   }
@@ -188,9 +189,10 @@ async function updateImagesAndMarkers(first: boolean): Promise<void> {
     elementById.innerHTML = "";
     try {
       while (countOfImagesAndMarkers < NUM_OF_IMAGES_AND_MARKERS) {
-        let minDocData;
+        let minDocData, docData;
         do {
-          minDocData = await getDataOfMinDoc(allDocArrays, pointers);
+          docData = await getMinDoc(allDocArrays, pointers);
+          minDocData = docData.data();
         } while (!isInVisibleMap(minDocData, map));
         const latlng = convertGeopointToLatLon(minDocData.coordinates);
         const imageElement = addImageToSidePanel(minDocData, elementById);
@@ -198,7 +200,7 @@ async function updateImagesAndMarkers(first: boolean): Promise<void> {
           imageElement,
           map,
           latlng,
-          hash({ lat: latlng.lat(), lng: latlng.lng() }, 10),
+          docData.id,
           minDocData.labels,
           selectedDate
         );
@@ -211,8 +213,8 @@ async function updateImagesAndMarkers(first: boolean): Promise<void> {
   }
 }
 
-//TODO: Figure out how not to give priority to the doc in the first geohash.
-async function getDataOfMinDoc(
+//TODO: Figure out how not to give priority to the docData in the first geohash.
+async function getMinDoc(
   allDocArrays: firebase.firestore.QueryDocumentSnapshot<
     firebase.firestore.DocumentData
   >[][],
@@ -240,7 +242,7 @@ async function getDataOfMinDoc(
       pointers[indexOfMin] = 0;
       allDocArrays[indexOfMin] = await getNextDocs(indexOfMin, false);
     }
-    return minDoc.data();
+    return minDoc;
   }
   throw new Error("no more documents in queries");
 }

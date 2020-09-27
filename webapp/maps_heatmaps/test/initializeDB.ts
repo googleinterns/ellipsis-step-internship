@@ -69,23 +69,19 @@ function addNewImage(
   database.collection("Images").add({
     date: date,
     coordinates: new firebase.firestore.GeoPoint(lat, lng),
-    hashmap: {
-      hash1: hash.substring(0, 1),
-      hash2: hash.substring(0, 2),
-      hash3: hash.substring(0, 3),
-      hash4: hash.substring(0, 4),
-      hash5: hash.substring(0, 5),
-      hash6: hash.substring(0, 6),
-      hash7: hash.substring(0, 7),
-      hash8: hash.substring(0, 8),
-      hash9: hash.substring(0, 9),
-      hash10: hash.substring(0, 10),
-    },
+    hashmap: generateHashMap(hash),
     labels: [label],
     url: url,
     attribution: attribution,
     random: random,
   });
+}
+function generateHashMap(hash: string) {
+  const hashmap = {};
+  for (let i = 1; i++; i <= 10) {
+    hashmap["hash" + i] = hash.substring(0, i);
+  }
+  return hashmap;
 }
 
 /* Adds images to 'Images' collection with randomized information
