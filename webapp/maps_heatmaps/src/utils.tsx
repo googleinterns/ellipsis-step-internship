@@ -16,7 +16,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
 import * as firebase from "firebase";
-import { validateCoordinates } from "geokit";
+import { LatLng } from "./interface";
 
 /* This function converts from a google.maps.LatLng to a firebase.firestore.GeoPoint.*/
 export function convertLatLngToGeopoint(
@@ -59,10 +59,8 @@ export function getRadius(
   return newRadius;
 }
 
-/* This function converts from a fgoogle.maps.LatLng to a LatLngLiteral.*/
-export function toLatLngLiteral(
-  coords: google.maps.LatLng
-): { lat: number; lng: number } {
+/* This function converts from a google.maps.LatLng to a LatLngLiteral.*/
+export function toLatLngLiteral(coords: google.maps.LatLng): LatLng {
   return { lat: coords.lat(), lng: coords.lng() };
 }
 
@@ -85,4 +83,11 @@ export function isInVisibleMap(
     return lat < maxLat && lat > minLat && lng < maxLng && lng > minLng;
   }
   return true;
+}
+
+/*@return Coordinates of the point that is in the middle of the two given coordinates. */
+export function findMidCoordinates(pointA: LatLng, pointB: LatLng): LatLng {
+  const midLat = (pointA.lat + pointB.lat) / 2;
+  const midLng = (pointA.lng + pointB.lng) / 2;
+  return { lat: midLat, lng: midLng };
 }

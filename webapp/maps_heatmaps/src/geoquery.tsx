@@ -15,43 +15,42 @@
  */
 
 import { hash } from "geokit";
+import { LatLng } from "./interface";
+import { findMidCoordinates } from "./utils";
 
-function removeDuplicates(hashs: string[]): string[] {
-  const newHashs: string[] = [];
+/*@param hashes an array of 8 geohash strings that represents
+ the geohashes that cover the visible map from all sides.
+  @return an array of 1-4 geohash strings that cover the visible map with no duplicates. */
+function removeDuplicates(hashes: string[]): string[] {
+  const newHashes: string[] = [];
   let subString = false;
-  hashs.map((hash) => {
-    newHashs.forEach((hash1, index1) => {
+  hashes.map((hash) => {
+    newHashes.forEach((hash1, index1) => {
       if (hash1.startsWith(hash)) {
-        newHashs[index1] = hash;
+        newHashes[index1] = hash;
         subString = true;
       }
       if (hash.startsWith(hash1)) subString = true;
     });
-    if (!subString) newHashs.push(hash);
+    if (!subString) newHashes.push(hash);
     subString = false;
   });
-  return Array.from(new Set(newHashs));
+  return Array.from(new Set(newHashes));
 }
 
-/*@return an array of maximum 4 geohash boxes that cover the whole visible map. */
-function getGeohashBoxes(
-  northEast: { lat: number; lng: number },
-  center: { lat: number; lng: number },
-  southWest: { lat: number; lng: number }
-): string[] {
+/*@return an array of maximum 4 geohash boxes that cover the whole visible map.
+  The geohash strings that are returned are the most specific 0-4 geohashes 
+  that cover the whole visible map. */
+function getGeohashBoxes(northEast: LatLng, southWest: LatLng): string[] {
   let geohashList: string[] = [];
   const northWest = { lat: northEast.lat, lng: southWest.lng };
   const southEast = { lat: southWest.lat, lng: northEast.lng };
-  const northCenter = { lat: northEast.lat, lng: center.lng };
-  const southCenter = { lat: southWest.lat, lng: center.lng };
-  const eastCenter = { lat: center.lat, lng: northEast.lng };
-  const westCenter = { lat: center.lat, lng: southWest.lng };
   try {
     geohashList = geohashList.concat(
-      getCommonGeohash(northEast, eastCenter, southEast),
-      getCommonGeohash(northWest, westCenter, southWest),
-      getCommonGeohash(northEast, northCenter, northWest),
-      getCommonGeohash(southEast, southCenter, southWest)
+      getMostSpecificGeohashesCover(northEast, southEast),
+      getMostSpecificGeohashesCover(northWest, southWest),
+      getMostSpecificGeohashesCover(northEast, northWest),
+      getMostSpecificGeohashesCover(southEast, southWest)
     );
     return removeDuplicates(geohashList);
   } catch (e) {
@@ -60,17 +59,23 @@ function getGeohashBoxes(
   }
 }
 
-/*Finds the geohash boxes that cover each side of the visible map. */
-function getCommonGeohash(
-  cornerA: { lat: number; lng: number },
-  middle: { lat: number; lng: number },
-  cornerB: { lat: number; lng: number }
+/*@return an array of 1-2 different geohash boxes that cover a side of 
+  the visible map. 
+  For Each side the function compares between the geohash strings of the
+  two corners and the one of the middle point and finds the longest common
+  prefix of the two comparisons. This prefix and the prefix of theb same 
+  length of the other corner represent the most specific geohash boxes that
+  cover this side of the visible map. */
+function getMostSpecificGeohashesCover(
+  cornerA: LatLng,
+  cornerB: LatLng
 ): string[] {
+  const middle = findMidCoordinates(cornerA, cornerB);
   const cornerAHash = hash(cornerA);
   const middleHash = hash(middle);
   const cornerBHash = hash(cornerB);
-  const commonPrefixLenA = getLongestCommonPrefixLen(cornerAHash, middleHash);
-  const commonPrefixLenB = getLongestCommonPrefixLen(cornerBHash, middleHash);
+  const commonPrefixLenA = getCommonPrefixLen(cornerAHash, middleHash);
+  const commonPrefixLenB = getCommonPrefixLen(cornerBHash, middleHash);
   const commonPrefixMaxLen = Math.max(commonPrefixLenA, commonPrefixLenB);
   if (commonPrefixMaxLen === 0) throw new Error("no common prefix");
   return [
@@ -79,11 +84,9 @@ function getCommonGeohash(
   ];
 }
 
-function getLongestCommonPrefixLen(hash1: string, hash2: string): number {
+function getCommonPrefixLen(hash1: string, hash2: string): number {
   let count = 0;
-  let i = 0;
-  while (hash1.charAt(i) === hash2.charAt(i)) {
-    i++;
+  while (hash1.charAt(count) === hash2.charAt(count)) {
     count++;
   }
   return count;

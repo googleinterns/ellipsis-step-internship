@@ -16,7 +16,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
 import { map } from "./index";
-import { getQueriedCollectionById } from "./queryDB";
+import { getDocById } from "./queryDB";
 import { DateTime } from "./interface";
 import { convertLatLngToGeopoint } from "./utils";
 
@@ -75,7 +75,7 @@ async function openInfoWindow(
 ) {
   const center = convertLatLngToGeopoint(marker.getPosition());
   if (center !== undefined) {
-    const dataref = await getQueriedCollectionById(marker.get("id"));
+    const dataref = await getDocById(marker.get("id"));
     if (infoWindow !== null && dataref !== undefined) {
       infoWindow.close();
       infoWindow.setContent(
