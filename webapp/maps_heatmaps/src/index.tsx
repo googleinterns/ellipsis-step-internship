@@ -136,7 +136,7 @@ async function mapChanged() {
         });
       }
       await queryDB.updateHeatmapFromQuery(heatmap, queriedCollections);
-      updateImagesAndMarkers(true);
+      updateImagesAndMarkers(true, timeOfRequest);
     }
   }
 }
@@ -172,7 +172,10 @@ async function getNextDocs(index: number, first: boolean) {
   or should start after the last visible doc.
   Queries for random dataPoints in the database in order to place markers and images of it. */
 //TODO: store all previous shown images and markers and add a 'previous' button.
-async function updateImagesAndMarkers(first: boolean): Promise<void> {
+async function updateImagesAndMarkers(
+  first: boolean,
+  timeOfRequest: number
+): Promise<void> {
   let countOfImagesAndMarkers = 0;
   const elementById = document.getElementById("images-holder");
   const allDocArrays: firebase.firestore.QueryDocumentSnapshot<
@@ -189,33 +192,35 @@ async function updateImagesAndMarkers(first: boolean): Promise<void> {
   }
   const nextBtn = document.getElementsByTagName("button").namedItem("next-btn");
   if (nextBtn) nextBtn.disabled = false;
-  eraseAllMarkers();
-  eraseAllImages();
-  if (elementById) {
-    try {
-      while (countOfImagesAndMarkers < NUM_OF_IMAGES_AND_MARKERS) {
-        let minDocData;
-        let minDoc;
-        do {
-          minDoc = await getMinDoc(allDocArrays, pointers);
-          minDocData = minDoc.data();
-        } while (!isInVisibleMap(minDocData, map));
-        const latlng = convertGeopointToLatLon(minDocData.coordinates);
-        const imageElement = addImageToSidePanel(minDocData, elementById);
-        await addMarkerWithListener(
-          imageElement,
-          map,
-          latlng,
-          minDoc.id,
-          minDocData.labels,
-          selectedDate
-        );
-        countOfImagesAndMarkers++;
+  if (timeOfRequest === timeOfLastRequest) {
+    eraseAllMarkers();
+    eraseAllImages();
+    if (elementById) {
+      try {
+        while (countOfImagesAndMarkers < NUM_OF_IMAGES_AND_MARKERS) {
+          let minDocData;
+          let minDoc;
+          do {
+            minDoc = await getMinDoc(allDocArrays, pointers);
+            minDocData = minDoc.data();
+          } while (!isInVisibleMap(minDocData, map));
+          const latlng = convertGeopointToLatLon(minDocData.coordinates);
+          const imageElement = addImageToSidePanel(minDocData, elementById);
+          await addMarkerWithListener(
+            imageElement,
+            map,
+            latlng,
+            minDoc.id,
+            minDocData.labels,
+            selectedDate
+          );
+          countOfImagesAndMarkers++;
+        }
+      } catch (e) {
+        //There are no more new docs to present.
+        if (nextBtn) nextBtn.disabled = true;
+        return;
       }
-    } catch (e) {
-      //There are no more new docs to present.
-      if (nextBtn) nextBtn.disabled = true;
-      return;
     }
   }
 }
