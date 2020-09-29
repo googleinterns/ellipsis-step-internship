@@ -39,7 +39,7 @@ import {
 } from "./utils";
 import { DateTime } from "./interface";
 import { getGeohashBoxes } from "./geoquery";
-import { MinOfLists } from "./MinOfLists";
+import { MinOfLists } from "./minOfLists";
 
 let map: google.maps.Map, heatmap: google.maps.visualization.HeatmapLayer;
 let selectedLabels: string[] = [];
