@@ -28,7 +28,7 @@ export class MergeLists {
     for (let i = 0; i < arrayOfLists.length; i++) {
       const pointer = pointers[i];
       const object = arrayOfLists[i][pointer];
-      if (object) {
+      if (object !== null) {
         if (this.getMinBy(object) < minValue) {
           minObject = object;
           indexOfMin = i;
