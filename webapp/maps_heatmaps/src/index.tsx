@@ -30,7 +30,7 @@ import ReactDOM from "react-dom";
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import SidePanel from "./components/sidepanel";
-import { addImageToSidePanel, updateNumOfResults } from "./sidepanelUtils";
+import { addImageToSidePanel, eraseAllImages } from "./sidepanelUtils";
 import { eraseAllMarkers, addMarkerWithListener } from "./clickInfoWindow";
 import {
   convertGeopointToLatLon,
@@ -93,8 +93,9 @@ function initMap() {
     data: [],
     map: map,
   });
-  map.addListener("center_changed", () => mapChanged());
+  map.addListener("drag", () => mapChanged());
   map.addListener("zoom_changed", () => mapChanged());
+  google.maps.event.addListenerOnce(map, "center_changed", () => mapChanged());
 }
 
 /* Updates the map and the sidepanel after any change of the
@@ -110,7 +111,6 @@ async function mapChanged() {
     );
     //Check if it's the last request made.
     if (timeOfLastRequest === timeOfRequest) {
-      eraseAllMarkers();
       queriedCollections = [];
       lastVisibleDocs = [];
       if (arrayhash.length === 0) {
@@ -129,13 +129,13 @@ async function mapChanged() {
             selectedDate,
             hash
           );
+          //Check if it's the last request made.
           if (timeOfLastRequest === timeOfRequest) {
             queriedCollections.push(queriedCollection);
           }
         });
       }
       await queryDB.updateHeatmapFromQuery(heatmap, queriedCollections);
-      updateNumOfResults(queriedCollections);
       updateImagesAndMarkers(true);
     }
   }
@@ -149,21 +149,17 @@ async function getNextDocs(index: number, first: boolean) {
   let docsArray: firebase.firestore.QueryDocumentSnapshot<
     firebase.firestore.DocumentData
   >[];
-  if (first) {
-    docsArray = (
-      await queriedCollections[index]
-        .orderBy("random")
-        .limit(NUM_OF_IMAGES_AND_MARKERS)
-        .get()
-    ).docs;
-    first = false;
-  } else {
+  if (!first && lastVisibleDocs[index]) {
     docsArray = (
       await queriedCollections[index]
         .orderBy("random")
         .startAfter(lastVisibleDocs[index])
         .limit(NUM_OF_IMAGES_AND_MARKERS)
         .get()
+    ).docs;
+  } else {
+    docsArray = (
+      await queriedCollections[index].limit(NUM_OF_IMAGES_AND_MARKERS).get()
     ).docs;
   }
   return docsArray;
@@ -172,6 +168,7 @@ async function getNextDocs(index: number, first: boolean) {
 /*@param first Determines whether this is a new collection and the next docs should be from the beginning,
   or should start after the last visible doc.
   Queries for random dataPoints in the database in order to place markers and images of it. */
+//TODO: store all previous shown images and markers and add a 'previous' button.
 async function updateImagesAndMarkers(first: boolean): Promise<void> {
   let countOfImagesAndMarkers = 0;
   const elementById = document.getElementById("images-holder");
@@ -187,14 +184,18 @@ async function updateImagesAndMarkers(first: boolean): Promise<void> {
     allDocArrays[i] = await getNextDocs(i, first);
     pointers[i] = 0;
   }
-  if (elementById != null) {
-    elementById.innerHTML = "";
+  const nextBtn = document.getElementsByTagName("button").namedItem("next-btn");
+  if (nextBtn) nextBtn.disabled = false;
+  eraseAllMarkers();
+  eraseAllImages();
+  if (elementById) {
     try {
       while (countOfImagesAndMarkers < NUM_OF_IMAGES_AND_MARKERS) {
-        let minDocData, docData;
+        let minDocData;
+        let minDoc;
         do {
-          docData = await getMinDoc(allDocArrays, pointers);
-          minDocData = docData.data();
+          minDoc = await getMinDoc(allDocArrays, pointers);
+          minDocData = minDoc.data();
         } while (!isInVisibleMap(minDocData, map));
         const latlng = convertGeopointToLatLon(minDocData.coordinates);
         const imageElement = addImageToSidePanel(minDocData, elementById);
@@ -202,7 +203,7 @@ async function updateImagesAndMarkers(first: boolean): Promise<void> {
           imageElement,
           map,
           latlng,
-          docData.id,
+          minDoc.id,
           minDocData.labels,
           selectedDate
         );
@@ -210,12 +211,13 @@ async function updateImagesAndMarkers(first: boolean): Promise<void> {
       }
     } catch (e) {
       //There are no more new docs to present.
+      if (nextBtn) nextBtn.disabled = true;
       return;
     }
   }
 }
 
-//TODO: Figure out how not to give priority to the docData in the first geohash.
+//TODO: Figure out how not to give priority to the doc in the first geohash.
 async function getMinDoc(
   allDocArrays: firebase.firestore.QueryDocumentSnapshot<
     firebase.firestore.DocumentData
@@ -234,9 +236,9 @@ async function getMinDoc(
   const indexOfMin = minInfo.index;
   pointers[indexOfMin]++;
   if (minDoc) {
+    lastVisibleDocs[indexOfMin] = minDoc;
     if (pointers[indexOfMin] >= allDocArrays[indexOfMin].length) {
       // Done with all current docs of this geohash box, need to get next ones.
-      lastVisibleDocs[indexOfMin] = minDoc;
       pointers[indexOfMin] = 0;
       allDocArrays[indexOfMin] = await getNextDocs(indexOfMin, false);
     }
@@ -259,4 +261,4 @@ function queriesChanged(selectedQueries: {
 }
 // [END maps_layer_heatmap]
 
-export { initMap, database, queriesChanged, map };
+export { initMap, database, queriesChanged, map, updateImagesAndMarkers };

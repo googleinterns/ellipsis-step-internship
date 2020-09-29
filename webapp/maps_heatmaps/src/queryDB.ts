@@ -33,6 +33,7 @@ async function getDocById(id: string) {
    @param datetime The date the client queries by
    @param hash The hash of the current map bounderies
    @return The filtered collection by the different queries*/
+//TODO: make async.
 function getQueriedCollection(
   labels: string[],
   datetime: DateTime,
