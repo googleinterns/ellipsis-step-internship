@@ -174,7 +174,7 @@ async function getNextDocs(index: number, first: boolean) {
 //TODO: store all previous shown images and markers and add a 'previous' button.
 async function updateImagesAndMarkers(
   first: boolean,
-  timeOfRequest: number
+  timeOfRequest?: number
 ): Promise<void> {
   let countOfImagesAndMarkers = 0;
   const elementById = document.getElementById("images-holder");
@@ -192,6 +192,10 @@ async function updateImagesAndMarkers(
   }
   const nextBtn = document.getElementsByTagName("button").namedItem("next-btn");
   if (nextBtn) nextBtn.disabled = false;
+  if (!timeOfRequest) {
+    timeOfRequest = Date.now();
+    timeOfLastRequest = timeOfRequest;
+  }
   if (timeOfRequest === timeOfLastRequest) {
     eraseAllMarkers();
     eraseAllImages();

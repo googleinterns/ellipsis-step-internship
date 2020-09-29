@@ -68,7 +68,7 @@ class SidePanel extends React.Component<
               <button
                 className="btn next-btn"
                 name="next-btn"
-                onClick={() => updateImagesAndMarkers(false, Date.now())}
+                onClick={() => updateImagesAndMarkers(false)}
               >
                 next
               </button>
