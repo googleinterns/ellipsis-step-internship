@@ -39,7 +39,7 @@ import {
 } from "./utils";
 import { DateTime } from "./interface";
 import { getGeohashBoxes } from "./geoquery";
-import { MergeLists } from "./MergeLists";
+import { MinOfLists } from "./MinOfLists";
 
 let map: google.maps.Map, heatmap: google.maps.visualization.HeatmapLayer;
 let selectedLabels: string[] = [];
@@ -222,7 +222,7 @@ async function getMinDoc(
   >[][],
   pointers: number[]
 ) {
-  const getMinObject = new MergeLists(
+  const getMinObject = new MinOfLists(
     (
       doc: firebase.firestore.QueryDocumentSnapshot<
         firebase.firestore.DocumentData

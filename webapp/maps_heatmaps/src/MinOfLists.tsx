@@ -14,14 +14,17 @@
  * limitations under the License.
  */
 
-export class MergeLists {
-  getMinBy: (object: any) => number;
+export class MinOfLists<T> {
+  getMinByFunction: (object: T) => number;
 
-  constructor(getMinBy: (object: any) => number) {
-    this.getMinBy = getMinBy;
+  constructor(getMinBy: (object: T) => number) {
+    this.getMinByFunction = getMinBy;
   }
 
-  getMin(arrayOfLists: any[][], pointers: number[]) {
+  getMin(
+    arrayOfLists: T[][],
+    pointers: number[]
+  ): { object: T | null; index: number } {
     let minValue = Infinity;
     let minObject = null;
     let indexOfMin = 0;
@@ -29,10 +32,10 @@ export class MergeLists {
       const pointer = pointers[i];
       const object = arrayOfLists[i][pointer];
       if (object) {
-        if (this.getMinBy(object) < minValue) {
+        if (this.getMinByFunction(object) < minValue) {
           minObject = object;
           indexOfMin = i;
-          minValue = this.getMinBy(object);
+          minValue = this.getMinByFunction(object);
         }
       }
     }
