@@ -159,7 +159,10 @@ async function getNextDocs(index: number, first: boolean) {
     ).docs;
   } else {
     docsArray = (
-      await queriedCollections[index].limit(NUM_OF_IMAGES_AND_MARKERS).get()
+      await queriedCollections[index]
+        .orderBy("random")
+        .limit(NUM_OF_IMAGES_AND_MARKERS)
+        .get()
     ).docs;
   }
   return docsArray;
