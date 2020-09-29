@@ -18,7 +18,7 @@ import { expect } from "chai";
 import "mocha";
 import { MinOfLists } from "../src/MinOfLists";
 
-describe("check class MergeLists", () => {
+describe("check class MinOfLists", () => {
   it("case 1- minimum number is a positive", async () => {
     const getMinObject = new MinOfLists((doc: number) => doc);
     const minInfo = getMinObject.getMin(
