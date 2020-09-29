@@ -39,6 +39,7 @@ import {
 } from "./utils";
 import { DateTime } from "./interface";
 import { getGeohashBoxes } from "./geoquery";
+import { MergeLists } from "./MergeLists";
 
 let map: google.maps.Map, heatmap: google.maps.visualization.HeatmapLayer;
 let selectedLabels: string[] = [];
@@ -221,22 +222,18 @@ async function getMinDoc(
   >[][],
   pointers: number[]
 ) {
-  let minRandom = Infinity;
-  let minDoc = null;
-  let indexOfMin = 0;
-  for (let i = 0; i < allDocArrays.length; i++) {
-    const pointer = pointers[i];
-    const doc = allDocArrays[i][pointer];
-    if (doc != null && doc != undefined) {
-      if (doc.data().random < minRandom) {
-        minDoc = doc;
-        indexOfMin = i;
-        minRandom = doc.data().random;
-      }
-    }
-  }
+  const getMinObject = new MergeLists(
+    (
+      doc: firebase.firestore.QueryDocumentSnapshot<
+        firebase.firestore.DocumentData
+      >
+    ) => doc.data().random
+  );
+  const minInfo = getMinObject.getMin(allDocArrays, pointers);
+  const minDoc = minInfo.object;
+  const indexOfMin = minInfo.index;
   pointers[indexOfMin]++;
-  if (minDoc != null) {
+  if (minDoc) {
     if (pointers[indexOfMin] >= allDocArrays[indexOfMin].length) {
       // Done with all current docs of this geohash box, need to get next ones.
       lastVisibleDocs[indexOfMin] = minDoc;
