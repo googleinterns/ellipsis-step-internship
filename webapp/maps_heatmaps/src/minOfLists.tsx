@@ -21,6 +21,10 @@ export class MinOfLists<T> {
     this.getMinByFunction = getMinBy;
   }
 
+  /*@param arrayOfLists is an array the contains all list which we need to retrieve the minimum from
+    @param pointers for the minimum object of each list in the arrayOflists  
+    @return map of the minimun object that is found by the getMinByFuction of the class,
+    and the number of list in which the minimum object is found,*/
   getMin(
     arrayOfLists: T[][],
     pointers: number[]
