@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import { eraseAllMarkers } from "./clickInfoWindow";
+
 /* @param docData The data of the image that is added to the sidepanel
    @param ElementById The HTML element that will contain the new image  */
 export function addImageToSidePanel(
@@ -27,16 +29,9 @@ export function addImageToSidePanel(
   return imageElement;
 }
 
-export async function updateNumOfResults(
-  queriedCollections: firebase.firestore.Query[]
-): Promise<void> {
-  let numOfResults = 0;
-  for (const queriedCollection of queriedCollections) {
-    const collectionLen = (await queriedCollection.get()).docs.length;
-    numOfResults += collectionLen;
-  }
-  const elementById = document.getElementById("num-of-results");
-  if (elementById != null) {
-    elementById.innerHTML = numOfResults + " images found";
+export function eraseAllImages() {
+  const imagesHolderElement = document.getElementById("images-holder");
+  if (imagesHolderElement) {
+    imagesHolderElement.innerHTML = "";
   }
 }

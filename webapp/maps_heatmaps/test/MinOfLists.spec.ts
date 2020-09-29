@@ -16,11 +16,11 @@
 
 import { expect } from "chai";
 import "mocha";
-import { MergeLists } from "../src/MergeLists";
+import { MinOfLists } from "../src/MinOfLists";
 
 describe("check class MergeLists", () => {
   it("case 1- minimum number is a positive", async () => {
-    const getMinObject = new MergeLists((doc: number) => doc);
+    const getMinObject = new MinOfLists((doc: number) => doc);
     const minInfo = getMinObject.getMin(
       [[7, 9], [1], [3, 2], [4]],
       [0, 0, 1, 0]
@@ -31,7 +31,7 @@ describe("check class MergeLists", () => {
     expect(numOfList).to.equal(1);
   });
   it("case 2- minimum number is a negative", async () => {
-    const getMinObject = new MergeLists((doc: number) => doc);
+    const getMinObject = new MinOfLists((doc: number) => doc);
     const minInfo = getMinObject.getMin(
       [[1, 2, 3], [0], [-3], [4]],
       [0, 0, 0, 0]
@@ -42,7 +42,7 @@ describe("check class MergeLists", () => {
     expect(numOfList).to.equal(2);
   });
   it("case 3- minimum number is a zero", async () => {
-    const getMinObject = new MergeLists((doc: number) => doc);
+    const getMinObject = new MinOfLists((doc: number) => doc);
     const minInfo = getMinObject.getMin(
       [[1, 2, 3], [0], [-3], [4]],
       [0, 0, 0, 0]
