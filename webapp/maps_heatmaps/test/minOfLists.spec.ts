@@ -16,7 +16,7 @@
 
 import { expect } from "chai";
 import "mocha";
-import { MinOfLists } from "../src/MinOfLists";
+import { MinOfLists } from "../src/minOfLists";
 
 describe("check class MergeLists", () => {
   it("case 1- minimum number is a positive", async () => {
