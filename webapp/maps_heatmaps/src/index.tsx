@@ -109,7 +109,7 @@ async function mapChanged() {
       toLatLngLiteral(bounds.getNorthEast()),
       toLatLngLiteral(bounds.getSouthWest())
     );
-    //Check if it's the last request made.
+    //Check if it's the last request made. Ignores request otherwise.
     if (timeOfLastRequest === timeOfRequest) {
       queriedCollections = [];
       lastVisibleDocs = [];
@@ -118,7 +118,7 @@ async function mapChanged() {
           selectedLabels,
           selectedDate
         );
-        //Check if it's the last request made.
+        //Check if it's the last request made. Ignores request otherwise.
         if (timeOfLastRequest === timeOfRequest) {
           queriedCollections.push(queriedCollection);
         }
@@ -129,7 +129,7 @@ async function mapChanged() {
             selectedDate,
             hash
           );
-          //Check if it's the last request made.
+          //Check if it's the last request made. Ignores request otherwise.
           if (timeOfLastRequest === timeOfRequest) {
             queriedCollections.push(queriedCollection);
           }
@@ -168,9 +168,9 @@ async function getNextDocs(index: number, first: boolean) {
   return docsArray;
 }
 
-/*@param first Determines whether this is a new collection and the next docs should be from the beginning,
-  or should start after the last visible doc.
-  Queries for random dataPoints in the database in order to place markers and images of it. */
+/*Queries for random dataPoints in the database in order to place markers and images of it. 
+  @param first Determines whether this is a new collection and the next docs should be from the beginning,
+  or should start after the last visible doc.*/
 //TODO: store all previous shown images and markers and add a 'previous' button.
 async function updateImagesAndMarkers(
   first: boolean,
@@ -196,6 +196,7 @@ async function updateImagesAndMarkers(
     timeOfRequest = Date.now();
     timeOfLastRequest = timeOfRequest;
   }
+  //Check if it's the last request made. Ignores request otherwise.
   if (timeOfRequest === timeOfLastRequest) {
     eraseAllMarkers();
     eraseAllImages();
@@ -204,6 +205,7 @@ async function updateImagesAndMarkers(
         while (countOfImagesAndMarkers < NUM_OF_IMAGES_AND_MARKERS) {
           let minDocData;
           let minDoc;
+          //continues only after finding a document of an image that is inside the visible map.
           do {
             minDoc = await getMinDoc(allDocArrays, pointers);
             minDocData = minDoc.data();
@@ -220,8 +222,8 @@ async function updateImagesAndMarkers(
           );
           countOfImagesAndMarkers++;
         }
-      } catch (e) {
         //There are no more new docs to present.
+      } catch (e) {
         if (nextBtn) nextBtn.disabled = true;
         return;
       }

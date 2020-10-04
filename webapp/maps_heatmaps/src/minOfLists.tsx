@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+/* This class finds the minimum object of an array of sorted lists
+   The class recieved a costumized function that is used to fund the minimun object.  */
 export class MinOfLists<T> {
   getMinByFunction: (object: T) => number;
 
