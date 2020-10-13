@@ -75,19 +75,10 @@ function initMap() {
       style: google.maps.MapTypeControlStyle.HORIZONTAL_BAR,
       position: google.maps.ControlPosition.TOP_CENTER,
     },
+    // TODO: decide where to set default center.
+    center: { lat: 37.783371, lng: -122.439687 },
   });
   getLabelTags();
-  // TODO: decide where to set default center.
-  const images = database.collection("images");
-  images.get().then((querySnapshot) => {
-    if (!querySnapshot.empty) {
-      const image = querySnapshot.docs[0].data();
-      map.setCenter({
-        lat: image.coordinates.latitude,
-        lng: image.coordinates.longitude,
-      });
-    }
-  });
 
   heatmap = new google.maps.visualization.HeatmapLayer({
     data: [],
@@ -95,7 +86,12 @@ function initMap() {
   });
   map.addListener("drag", () => mapChanged());
   map.addListener("zoom_changed", () => mapChanged());
-  google.maps.event.addListenerOnce(map, "center_changed", () => mapChanged());
+  //map.addEventListener("google-map-ready", () => mapChanged());
+  google.maps.event.addListenerOnce(map, "idle", async () => {
+    await getLabelTags();
+    mapChanged();
+  });
+  //google.maps.event.addListenerOnce(map, "bounds_changed", () => mapChanged());
 }
 
 /* Updates the map and the sidepanel after any change of the
