@@ -1,0 +1,104 @@
+Metadata-Version: 2.1
+Name: apache-beam
+Version: 2.24.0
+Summary: Apache Beam SDK for Python
+Home-page: https://beam.apache.org
+Author: Apache Software Foundation
+Author-email: dev@beam.apache.org
+License: Apache License, Version 2.0
+Download-URL: https://pypi.python.org/pypi/apache-beam
+Keywords: apache beam
+Platform: UNKNOWN
+Classifier: Intended Audience :: End Users/Desktop
+Classifier: License :: OSI Approved :: Apache Software License
+Classifier: Operating System :: POSIX :: Linux
+Classifier: Programming Language :: Python :: 2.7
+Classifier: Programming Language :: Python :: 3.5
+Classifier: Programming Language :: Python :: 3.6
+Classifier: Programming Language :: Python :: 3.7
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Topic :: Software Development :: Libraries
+Classifier: Topic :: Software Development :: Libraries :: Python Modules
+Requires-Python: >=2.7,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*
+Requires-Dist: crcmod (<2.0,>=1.7)
+Requires-Dist: dill (<0.3.2,>=0.3.1.1)
+Requires-Dist: fastavro (<0.24,>=0.21.4)
+Requires-Dist: future (<1.0.0,>=0.18.2)
+Requires-Dist: grpcio (<2,>=1.29.0)
+Requires-Dist: hdfs (<3.0.0,>=2.1.0)
+Requires-Dist: httplib2 (<0.18.0,>=0.8)
+Requires-Dist: mock (<3.0.0,>=1.0.1)
+Requires-Dist: numpy (<2,>=1.14.3)
+Requires-Dist: pymongo (<4.0.0,>=3.8.0)
+Requires-Dist: oauth2client (<4,>=2.0.1)
+Requires-Dist: protobuf (<4,>=3.12.2)
+Requires-Dist: pydot (<2,>=1.2.0)
+Requires-Dist: python-dateutil (<3,>=2.8.0)
+Requires-Dist: pytz (>=2018.3)
+Requires-Dist: requests (<3.0.0,>=2.24.0)
+Requires-Dist: typing-extensions (<3.8.0,>=3.7.0)
+Requires-Dist: typing (<3.8.0,>=3.7.0) ; python_full_version < "3.5.3"
+Requires-Dist: avro (<1.10.0,>=1.8.1) ; python_version < "3.0"
+Requires-Dist: funcsigs (<2,>=1.0.2) ; python_version < "3.0"
+Requires-Dist: futures (<4.0.0,>=3.2.0) ; python_version < "3.0"
+Requires-Dist: pyvcf (<0.7.0,>=0.6.8) ; python_version < "3.0"
+Requires-Dist: avro-python3 (!=1.9.2,<1.10.0,>=1.8.1) ; python_version >= "3.0"
+Requires-Dist: pyarrow (<0.18.0,>=0.15.1) ; python_version >= "3.0" or platform_system != "Windows"
+Provides-Extra: aws
+Requires-Dist: boto3 (>=1.9) ; extra == 'aws'
+Provides-Extra: docs
+Requires-Dist: Sphinx (<2.0,>=1.5.2) ; extra == 'docs'
+Provides-Extra: gcp
+Requires-Dist: cachetools (<4,>=3.1.0) ; extra == 'gcp'
+Requires-Dist: google-apitools (<0.5.32,>=0.5.31) ; extra == 'gcp'
+Requires-Dist: google-auth (<2,>=1.18.0) ; extra == 'gcp'
+Requires-Dist: google-cloud-datastore (<2,>=1.7.1) ; extra == 'gcp'
+Requires-Dist: google-cloud-pubsub (<2,>=0.39.0) ; extra == 'gcp'
+Requires-Dist: google-cloud-bigquery (<2,>=1.6.0) ; extra == 'gcp'
+Requires-Dist: google-cloud-core (<2,>=0.28.1) ; extra == 'gcp'
+Requires-Dist: google-cloud-bigtable (<2,>=0.31.1) ; extra == 'gcp'
+Requires-Dist: google-cloud-spanner (<2,>=1.13.0) ; extra == 'gcp'
+Requires-Dist: grpcio-gcp (<1,>=0.2.2) ; extra == 'gcp'
+Requires-Dist: google-cloud-dlp (<2,>=0.12.0) ; extra == 'gcp'
+Requires-Dist: google-cloud-language (<2,>=1.3.0) ; extra == 'gcp'
+Requires-Dist: google-cloud-videointelligence (<2,>=1.8.0) ; extra == 'gcp'
+Requires-Dist: google-cloud-vision (<2,>=0.38.0) ; extra == 'gcp'
+Provides-Extra: interactive
+Requires-Dist: facets-overview (<2,>=1.0.0) ; extra == 'interactive'
+Requires-Dist: ipython (<8,>=5.8.0) ; extra == 'interactive'
+Requires-Dist: ipykernel (<6,>=5.2.0) ; extra == 'interactive'
+Requires-Dist: timeloop (<2,>=1.0.2) ; extra == 'interactive'
+Provides-Extra: interactive_test
+Requires-Dist: nbformat (<6,>=5.0.5) ; extra == 'interactive_test'
+Requires-Dist: nbconvert (<6,>=5.6.1) ; extra == 'interactive_test'
+Requires-Dist: jupyter-client (<7,>=6.1.2) ; extra == 'interactive_test'
+Requires-Dist: selenium (<4,>=3.141.0) ; extra == 'interactive_test'
+Requires-Dist: needle (<1,>=0.5.0) ; extra == 'interactive_test'
+Requires-Dist: chromedriver-binary (<84,>=83) ; extra == 'interactive_test'
+Requires-Dist: pillow (<8,>=7.1.1) ; extra == 'interactive_test'
+Provides-Extra: test
+Requires-Dist: freezegun (>=0.3.12) ; extra == 'test'
+Requires-Dist: nose (>=1.3.7) ; extra == 'test'
+Requires-Dist: nose-xunitmp (>=0.4.1) ; extra == 'test'
+Requires-Dist: parameterized (<0.8.0,>=0.7.1) ; extra == 'test'
+Requires-Dist: pyhamcrest (!=1.10.0,<2.0.0,>=1.9) ; extra == 'test'
+Requires-Dist: pyyaml (<6.0.0,>=3.12) ; extra == 'test'
+Requires-Dist: requests-mock (<2.0,>=1.7) ; extra == 'test'
+Requires-Dist: tenacity (<6.0,>=5.0.2) ; extra == 'test'
+Requires-Dist: pytest (<5.0,>=4.4.0) ; extra == 'test'
+Requires-Dist: pytest-xdist (<2,>=1.29.0) ; extra == 'test'
+Requires-Dist: pytest-timeout (<2,>=1.3.3) ; extra == 'test'
+Requires-Dist: pandas (<1,>=0.24.2) ; (python_full_version < "3.5.3") and extra == 'test'
+Requires-Dist: pandas (<1,>=0.25.2) ; (python_full_version >= "3.5.3") and extra == 'test'
+Requires-Dist: rsa (<4.1) ; (python_version < "3.0") and extra == 'test'
+Requires-Dist: sqlalchemy (<2.0,>=1.3) ; (python_version >= "3.5") and extra == 'test'
+Requires-Dist: psycopg2-binary (<3.0.0,>=2.8.5) ; (python_version >= "3.5") and extra == 'test'
+Requires-Dist: testcontainers (<4.0.0,>=3.0.3) ; (python_version >= "3.5") and extra == 'test'
+
+
+Apache Beam is a unified programming model for both batch and streaming
+data processing, enabling efficient execution across diverse distributed
+execution engines and providing extensibility points for connecting to
+different technologies and user communities.
+
+
