@@ -3,7 +3,10 @@ from __future__ import absolute_import
 import argparse
 import logging
 import re
+import random
+
 from google.cloud import vision
+from google.cloud import vision_v1
 
 from past.builtins import unicode
 
@@ -44,23 +47,34 @@ def callFlicker(pageNumber):
 
 class getUrl(beam.DoFn):
     def process(self, element):
-        return [element.get('url_c')]
+        return [(getRandomKey(), element.get('url_c'))]
 
-class getLabels(beam.DoFn):
+def getRandomKey():
+        return random.randint(1, 10)
+
+class getLabelsByBatch(beam.DoFn):
     def process(self, element):
-        if element:
-            client = vision.ImageAnnotatorClient()
-            image = vision.Image()
-            image.source.image_uri = element
-            response = client.label_detection(image=image)
-            labels = response.label_annotations
-            allLabels = [label.description for label in labels]
-            return [(element, allLabels)]
+        client = vision_v1.ImageAnnotatorClient()
+        features = [ {"type_": vision_v1.Feature.Type.LABEL_DETECTION} ]
+        requests = []
+        results = []
+        for url in element[1]:
+            if url:
+                image = vision_v1.Image()
+                image.source.image_uri = url
+                request = vision_v1.AnnotateImageRequest(image= image, features=features)
+                requests.append(request)
+        batchRequest = vision_v1.BatchAnnotateImagesRequest(requests=requests)
+        response = client.batch_annotate_images(request=batchRequest)
+        for image_response in response.responses:
+            allLabels = [label.description for label in image_response.label_annotations]
+            results.append([(url, allLabels)])
+        return results
 
 class uploadToDatabase(beam.DoFn):
     def process(self, element):
         db = initializeDB()
-        doc_ref = db.collection(u'imagesDemo2').document()
+        doc_ref = db.collection(u'imagesDemo').document()
         doc_ref.set({
             u'url': element[0],
             u'labels': element[1],
@@ -89,11 +103,12 @@ def run(argv=None, save_main_session=True):
   # The pipeline will be run on exiting the with block.
   with beam.Pipeline(options=pipeline_options) as p:
 
-    createbatch = (p | 'createBatch' >> beam.Create([1,2,3]) )
-    images1 = createbatch | 'callAPI' >> beam.ParDo(lambda x: callFlicker(x))
-    images = images1 | 'url' >> beam.ParDo(getUrl())
-    # images = p | 'create' >> beam.Create(photos)
-    labels = images | 'label' >> beam.ParDo(getLabels())
+    createbatch = (p | 'create' >> beam.Create([1,2,3]) )
+    images = createbatch | 'call Flicker API' >> beam.ParDo(lambda x: callFlicker(x))
+    urls = images | 'get url' >> beam.ParDo(getUrl())
+    imagesBatch = urls | 'combine' >> beam.GroupByKey()
+    labelsBatch = imagesBatch | 'label by batch' >> beam.ParDo(getLabelsByBatch()) 
+    labels = labelsBatch | 'Flatten lists' >> beam.FlatMap(lambda elements: elements)
     labels | 'upload' >> beam.ParDo(uploadToDatabase())
 
     # Format the counts into a PCollection of strings.
