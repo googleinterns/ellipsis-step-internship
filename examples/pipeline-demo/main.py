@@ -45,6 +45,10 @@ def callFlicker(pageNumber):
                      sort='relevance')
     return photos[0]
 
+def getNumOfBatches():
+    photos=callFlicker(1)
+    return (photos.attrib['pages'])
+
 class getUrl(beam.DoFn):
     def process(self, element):
         return [(getRandomKey(), element.get('url_c'))]
@@ -104,7 +108,7 @@ def run(argv=None, save_main_session=True):
 
   # The pipeline will be run on exiting the with block.
   with beam.Pipeline(options=pipeline_options) as p:
-
+    
     createbatch = (p | 'create' >> beam.Create([1,2,3]) )
     images = createbatch | 'call Flicker API' >> beam.ParDo(lambda x: callFlicker(x))
     urls = images | 'get url' >> beam.ParDo(getUrl())
