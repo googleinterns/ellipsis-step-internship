@@ -58,17 +58,19 @@ class getLabelsByBatch(beam.DoFn):
         features = [ {"type_": vision_v1.Feature.Type.LABEL_DETECTION} ]
         requests = []
         results = []
+        urls = []
         for url in element[1]:
             if url:
                 image = vision_v1.Image()
                 image.source.image_uri = url
                 request = vision_v1.AnnotateImageRequest(image= image, features=features)
                 requests.append(request)
+                urls.append(url)
         batchRequest = vision_v1.BatchAnnotateImagesRequest(requests=requests)
         response = client.batch_annotate_images(request=batchRequest)
-        for image_response in response.responses:
+        for i, image_response in enumerate(response.responses):
             allLabels = [label.description for label in image_response.label_annotations]
-            results.append([(url, allLabels)])
+            results.append([(urls[i], allLabels)])
         return results
 
 class uploadToDatabase(beam.DoFn):
