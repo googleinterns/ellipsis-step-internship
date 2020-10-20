@@ -161,7 +161,7 @@ def run(argv=None, save_main_session=True):
     labelsBatch = imagesBatch | 'label by batch' >> beam.ParDo(provider.get_labels) 
     labels = labelsBatch | 'flatten lists' >> beam.FlatMap(lambda elements: elements)
     labelsId = labels | 'redefine labels' >> beam.ParDo(RedefineLabels(), provider.provider_Id)
-    labels | 'upload' >> beam.ParDo(UploadToDatabase())
+    labelsId | 'upload' >> beam.ParDo(UploadToDatabase())
     
 
     
