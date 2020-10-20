@@ -1,0 +1,4 @@
+apache-beam==2.24.0
+firebase-admin==4.4.0
+google-cloud-vision==2.0.0
+flickrapi==2.4.0
