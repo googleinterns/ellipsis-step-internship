@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/explicit-module-boundary-types */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /*
  * Copyright 2020 Google LLC
@@ -21,10 +22,18 @@ import { DateTime } from "./interface";
 
 const databaseCollection = database.collection("Images");
 
-/* @param labels The labels the client queries by
+/* This function gets a document by its id*/
+async function getDocById(id: string) {
+  return (await database.collection("Images").doc(id).get()).data();
+}
+
+/* Queries for docs in firebase by given data such as labels, date and hash. 
+   the function returns a reference to the queried data.
+   @param labels The labels the client queries by
    @param datetime The date the client queries by
    @param hash The hash of the current map bounderies
    @return The filtered collection by the different queries*/
+//TODO: make async.
 function getQueriedCollection(
   labels: string[],
   datetime: DateTime,
@@ -49,7 +58,7 @@ function getQueriedCollection(
     datetime.day != undefined
   )
     dataRef = dataRef.where("date.day", "==", datetime.day);
-  return dataRef.orderBy("random");
+  return dataRef;
 }
 
 /* Displays the relevant images on the map
@@ -76,4 +85,4 @@ function getLatLon(coordinates: firebase.firestore.GeoPoint) {
   return new google.maps.LatLng(lat, lng);
 }
 
-export { updateHeatmapFromQuery, getQueriedCollection };
+export { updateHeatmapFromQuery, getQueriedCollection, getDocById };

@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-/*@param docData The data of the image that is added to the sidepanel
-  @param ElemntById The HTML element that will contain the new image  */
+/* @param docData The data of the image that is added to the sidepanel
+   @param ElementById The HTML element that will contain the new image  */
 export function addImageToSidePanel(
   docData: firebase.firestore.DocumentData,
   elementById: HTMLElement
@@ -27,16 +27,9 @@ export function addImageToSidePanel(
   return imageElement;
 }
 
-export async function updateNumOfResults(
-  queriedCollections: firebase.firestore.Query[]
-): Promise<void> {
-  let numOfResults = 0;
-  for (const queriedCollection of queriedCollections) {
-    const collectionLen = (await queriedCollection.get()).docs.length;
-    numOfResults += collectionLen;
-  }
-  const elementById = document.getElementById("num-of-results");
-  if (elementById != null) {
-    elementById.innerHTML = numOfResults + " images found";
+export function eraseAllImages(): void {
+  const imagesHolderElement = document.getElementById("images-holder");
+  if (imagesHolderElement) {
+    imagesHolderElement.innerHTML = "";
   }
 }

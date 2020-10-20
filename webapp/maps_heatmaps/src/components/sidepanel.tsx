@@ -65,13 +65,14 @@ class SidePanel extends React.Component<
                 {"<<"}
               </button>
               <QueriesForm data={this.props.labels} />
-              <h4 id="num-of-results"></h4>
               <button
                 className="btn next-btn"
+                name="next-btn"
                 onClick={() => updateImagesAndMarkers(false)}
               >
                 next
               </button>
+              {/* <h6 id="num-of-results"></h6> */}
             </div>
             <div id="images-holder"></div>
           </div>

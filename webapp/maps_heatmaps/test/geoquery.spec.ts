@@ -22,13 +22,12 @@ import "mocha";
 describe("query by geohash of bounderies", () => {
   it("the boundary box of geohash of precision 7 contains all random points", () => {
     const northEast = { lat: 34.45348076460549, lng: 35.84213872886295 };
-    const center = { lat: 34.45272767006919, lng: 35.841273716455646 };
     const southWest = { lat: 34.45197457553289, lng: 35.84040870404834 };
     const maxLat = northEast.lat;
     const minLat = southWest.lat;
     const maxLng = northEast.lng;
     const minLng = southWest.lng;
-    const geohashList = geoquery.getGeohashBoxes(northEast, center, southWest);
+    const geohashList = geoquery.getGeohashBoxes(northEast, southWest);
     const geohashPrecision = geohashList[0].length;
     for (let i = 0; i < 100; i++) {
       const newGeohash = hash(getRandomCoords(maxLat, minLat, maxLng, minLng));
@@ -37,13 +36,12 @@ describe("query by geohash of bounderies", () => {
   });
   it("the boundary box of geohash of precision 4 contains all random points", () => {
     const northEast = { lat: 37.826683863620005, lng: -122.33592020593264 };
-    const center = { lat: 37.78048656364348, lng: -122.39128100000002 };
     const southWest = { lat: 37.73428926366695, lng: -122.4466417940674 };
     const maxLat = northEast.lat;
     const minLat = southWest.lat;
     const maxLng = northEast.lng;
     const minLng = southWest.lng;
-    const geohashList = geoquery.getGeohashBoxes(northEast, center, southWest);
+    const geohashList = geoquery.getGeohashBoxes(northEast, southWest);
     const geohashPrecision = geohashList[0].length;
     for (let i = 0; i < 100; i++) {
       const newGeohash = hash(getRandomCoords(maxLat, minLat, maxLng, minLng));
@@ -52,13 +50,12 @@ describe("query by geohash of bounderies", () => {
   });
   it("the boundary box of geohash of precision 1 contains all random points", () => {
     const northEast = { lat: 68.89239418761491, lng: 43.79792797674112 };
-    const center = { lat: 51.54207628188834, lng: 15.453201414241121 };
     const southWest = { lat: 34.19175837616178, lng: -12.891525148258877 };
     const maxLat = northEast.lat;
     const minLat = southWest.lat;
     const maxLng = northEast.lng;
     const minLng = southWest.lng;
-    const geohashList = geoquery.getGeohashBoxes(northEast, center, southWest);
+    const geohashList = geoquery.getGeohashBoxes(northEast, southWest);
     const geohashPrecision = geohashList[0].length;
     for (let i = 0; i < 100; i++) {
       const newGeohash = hash(getRandomCoords(maxLat, minLat, maxLng, minLng));
@@ -67,9 +64,8 @@ describe("query by geohash of bounderies", () => {
   });
   it("does not query by geohash if the boundaries are wider than 1/36 of the world", () => {
     const northEast = { lat: 50.63354150815655, lng: -108.06344912811238 };
-    const center = { lat: 24.840069372461947, lng: -136.40817569061238 };
     const southWest = { lat: -0.9534027632326522, lng: -164.75290225311238 };
-    const geohashList = geoquery.getGeohashBoxes(northEast, center, southWest);
+    const geohashList = geoquery.getGeohashBoxes(northEast, southWest);
     expect(geohashList).to.be.empty;
   });
 });
@@ -94,19 +90,17 @@ describe("check function removeDuplicates", () => {
   });
 });
 
-describe("check function getGeohashBoxes hashList", () => {
+describe("check result of getGeohashBoxes function- the result is a list of hashes to query by", () => {
   const northEast = { lat: 37.826683863620005, lng: -122.33592020593264 };
-  const center = { lat: 37.78048656364348, lng: -122.39128100000002 };
   const southWest = { lat: 37.73428926366695, lng: -122.4466417940674 };
   // eslint-disable-next-line @typescript-eslint/no-empty-function
   it("case 1- check langth of list", () => {
-    const result = geoquery.getGeohashBoxes(northEast, center, southWest)
-      .length;
+    const result = geoquery.getGeohashBoxes(northEast, southWest).length;
     expect(result).to.be.at.least(0);
     expect(result).to.be.at.least(4);
   });
   it("case 2- check that all hashes are the same length", () => {
-    const geolist = geoquery.getGeohashBoxes(northEast, center, southWest);
+    const geolist = geoquery.getGeohashBoxes(northEast, southWest);
     geolist.forEach((geohash) => {
       const result = geohash.length;
       expect(result).to.equal(4);
