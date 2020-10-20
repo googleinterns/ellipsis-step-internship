@@ -79,28 +79,6 @@ def is_supported(image, criteria):
     # TODO: not implemnted yet. Should it be switch-case for each different condition?
     return True
 
-class getLabelsByBatch(beam.DoFn):
-    def process(self, element):
-        client = vision_v1.ImageAnnotatorClient()
-        features = [ {"type_": vision_v1.Feature.Type.LABEL_DETECTION} ]
-        requests = []
-        results = []
-        docs = []
-        for doc in element[1]:
-            url = doc['url']
-            if url:
-                image = vision_v1.Image()
-                image.source.image_uri = url
-                request = vision_v1.AnnotateImageRequest(image= image, features=features)
-                requests.append(request)
-                docs.append(doc)
-        batchRequest = vision_v1.BatchAnnotateImagesRequest(requests=requests)
-        response = client.batch_annotate_images(request=batchRequest)
-        for i, image_response in enumerate(response.responses):
-            allLabels = [label.description for label in image_response.label_annotations]
-            results.append([(docs[i], allLabels)])
-        return results
-
 class RedefineLabels(beam.DoFn):
     '''Converts parallelly the labels list returned from the provider to the corresponding label Id's.
 
@@ -180,10 +158,10 @@ def run(argv=None, save_main_session=True):
     dataset = randomNumbers | 'get images dataset' >> beam.ParDo(lambda x: get_dataset(x, x+9, attributer))
     filteredDataset = dataset | 'filter images' >> beam.Filter(is_eligible, provider.provider_Id)
     imagesBatch = filteredDataset | 'combine to batches' >> beam.GroupBy(lambda doc: doc['random'])
-    labelsBatch = imagesBatch | 'label by batch' >> beam.ParDo(getLabelsByBatch()) 
+    labelsBatch = imagesBatch | 'label by batch' >> beam.ParDo(provider.get_labels) 
     labels = labelsBatch | 'flatten lists' >> beam.FlatMap(lambda elements: elements)
     labelsId = labels | 'redefine labels' >> beam.ParDo(RedefineLabels(), provider.provider_Id)
-    # labels | 'upload' >> beam.ParDo(UploadToDatabase())
+    labels | 'upload' >> beam.ParDo(UploadToDatabase())
     
 
     

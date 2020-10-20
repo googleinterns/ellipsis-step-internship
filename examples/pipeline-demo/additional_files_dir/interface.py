@@ -5,7 +5,7 @@ from google.cloud import vision_v1
 class ImageRecognitionProvider(ABC, beam.DoFn):
     
     @abstractmethod
-    def process(self, element):
+    def get_labels(self, element):
         pass
 
     @property
@@ -17,7 +17,7 @@ class ImageRecognitionProvider(ABC, beam.DoFn):
         raise NotImplementedError
 
 class GoogleVisionAPI(ImageRecognitionProvider):
-    def process(self, element):
+    def get_labels(self, element):
         client = vision_v1.ImageAnnotatorClient()
         features = [ {"type_": vision_v1.Feature.Type.LABEL_DETECTION} ]
         requests = []
