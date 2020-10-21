@@ -154,21 +154,21 @@ def run(argv=None, save_main_session=True):
   with beam.Pipeline(options=pipeline_options) as p:
     attributer = known_args.input1
     provider = get_provider(known_args.input2)
-    randomNumbers = p | 'create' >> beam.Create([(1+10*i) for i in range(10)])
-    dataset = randomNumbers | 'get images dataset' >> beam.ParDo(lambda x: get_dataset(x, x+9, attributer))
-    filteredDataset = dataset | 'filter images' >> beam.Filter(is_eligible, provider.provider_Id)
-    imagesBatch = filteredDataset | 'combine to batches' >> beam.GroupBy(lambda doc: doc['random'])
-    labelsBatch = imagesBatch | 'label by batch' >> beam.ParDo(provider.get_labels) 
-    labels = labelsBatch | 'flatten lists' >> beam.FlatMap(lambda elements: elements)
-    labelsId = labels | 'redefine labels' >> beam.ParDo(RedefineLabels(), provider.provider_Id)
-    labelsId | 'upload' >> beam.ParDo(UploadToDatabase())
+    random_numbers = p | 'create' >> beam.Create([(1+10*i) for i in range(10)])
+    dataset = random_numbers | 'get images dataset' >> beam.ParDo(lambda x: get_dataset(x, x+9, attributer))
+    filtered_dataset = dataset | 'filter images' >> beam.Filter(is_eligible, provider.provider_Id)
+    images_batch = filtered_dataset | 'combine to batches' >> beam.GroupBy(lambda doc: doc['random'])
+    label_batch = images_batch | 'label by batch' >> beam.ParDo(provider.get_labels) 
+    labels = labels_batch | 'flatten lists' >> beam.FlatMap(lambda elements: elements)
+    labels_Id = labels | 'redefine labels' >> beam.ParDo(RedefineLabels(), provider.provider_Id)
+    labels_Id | 'upload' >> beam.ParDo(UploadToDatabase())
     
 
     
     def format_result(image, labels):
       return '%s: %s' % (image['url'], labels)
 
-    output = labelsId | 'Format' >> beam.MapTuple(format_result)
+    output = labels_Id | 'Format' >> beam.MapTuple(format_result)
 
     # Write the output using a "Write" transform that has side effects.
     output | 'Write' >> WriteToText(known_args.output)
