@@ -158,7 +158,7 @@ def run(argv=None, save_main_session=True):
     dataset = random_numbers | 'get images dataset' >> beam.ParDo(lambda x: get_dataset(x, x+9, attributer))
     filtered_dataset = dataset | 'filter images' >> beam.Filter(is_eligible, provider.provider_Id)
     images_batch = filtered_dataset | 'combine to batches' >> beam.GroupBy(lambda doc: doc['random'])
-    label_batch = images_batch | 'label by batch' >> beam.ParDo(provider.get_labels) 
+    labels_batch = images_batch | 'label by batch' >> beam.ParDo(provider.get_labels) 
     labels = labels_batch | 'flatten lists' >> beam.FlatMap(lambda elements: elements)
     labels_Id = labels | 'redefine labels' >> beam.ParDo(RedefineLabels(), provider.provider_Id)
     labels_Id | 'upload' >> beam.ParDo(UploadToDatabase())
