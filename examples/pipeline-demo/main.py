@@ -1,99 +1,76 @@
-from __future__ import absolute_import
+"""
+  Copyright 2020 Google LLC
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+ 
+    https://www.apache.org/licenses/LICENSE-2.0
+ 
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+ """
 
+from __future__ import absolute_import
 import argparse
 import logging
 import re
-import random
-
 from google.cloud import vision
 from google.cloud import vision_v1
-
 from past.builtins import unicode
-
-from firebase_admin import firestore
-
-
 import apache_beam as beam
-from apache_beam.io import ReadFromText
 from apache_beam.io import WriteToText
 from apache_beam.options.pipeline_options import PipelineOptions
 from apache_beam.options.pipeline_options import SetupOptions
-
 import firebase_admin
 from firebase_admin import credentials
 from firebase_admin import firestore
+import random
 import flickrapi
+from imageProviderFlickr import FlickerProvider
 
-photos = ['https://live.staticflickr.com/7210/6843831417_861d6996e8_c.jpg']
-
-def initializeDB(): 
-    # Use the application default credentials 
+def initialize_database(): 
     if not firebase_admin._apps:
         firebase_admin.initialize_app(credentials.ApplicationDefault(), {
         'projectId': 'step-project-ellispis',
         })
     return firestore.client()
 
-def callFlicker(pageNumber):
-    flickr = flickrapi.FlickrAPI('2d00397e012c30ccc33ca4fdc05a5c98', 'e36a277c77f09fdd', cache=True)
-    photos = flickr.photos.search(text='plasticbag',
-                     tag_mode='all',
-                     tags='plasticbag',
-                     extras='url_c, geo, date_upload, date_taken, owner_name, icon_server',
-                     per_page=10,  # may be you can try different numbers..
-                     page=pageNumber,
-                     sort='relevance')
-    return photos[0]
-
-def getNumOfBatches():
-    photos=callFlicker(1)
-    return (photos.attrib['pages'])
-
-class getUrl(beam.DoFn):
+class UploadToDatabase(beam.DoFn):
     def process(self, element):
-        return [(getRandomKey(), element.get('url_c'))]
-
-def getRandomKey():
-        return random.randint(1, 10)
-
-class getLabelsByBatch(beam.DoFn):
-    def process(self, element):
-        client = vision_v1.ImageAnnotatorClient()
-        features = [ {"type_": vision_v1.Feature.Type.LABEL_DETECTION} ]
-        requests = []
-        results = []
-        urls = []
-        for url in element[1]:
-            if url:
-                image = vision_v1.Image()
-                image.source.image_uri = url
-                request = vision_v1.AnnotateImageRequest(image= image, features=features)
-                requests.append(request)
-                urls.append(url)
-        batchRequest = vision_v1.BatchAnnotateImagesRequest(requests=requests)
-        response = client.batch_annotate_images(request=batchRequest)
-        for i, image_response in enumerate(response.responses):
-            allLabels = [label.description for label in image_response.label_annotations]
-            results.append([(urls[i], allLabels)])
-        return results
-
-class uploadToDatabase(beam.DoFn):
-    def process(self, element):
-        db = initializeDB()
-        doc_ref = db.collection(u'imagesDemo').document()
+        #location = firestore.GeoPoint(latitude, longitude)
+        db = initialize_database()
+        doc_ref = db.collection(u'imagesDemoTal5').document()
         doc_ref.set({
-            u'url': element[0],
-            u'labels': element[1],
+            u'url': element.url,
+            u'coordinates': element.location,
+            u'date_upload': element.date_upload,
+            u'date_taken': element.date_taken,
+            u'original_format': element.format,
+            u'attribution': element.attribution,
+            u'random': random.randint(1,101)
         })
+
+#TODO: right a filtered function that takes into considration all attributes 
+#such as unvalied resulution date and more
+def filterd_images(element):
+    return element.url != None and element.location[0] != '0'
+
+#TODO: Find a way to make this more dinamic 
+def get_image_provider(provider_name):
+    if 'FlickerProvider' == provider_name:
+        return FlickerProvider()
 
 def run(argv=None, save_main_session=True):
   """Main entry point; defines and runs the wordcount pipeline."""
   parser = argparse.ArgumentParser()
-#   parser.add_argument(
-#       '--input',
-#       dest='input',
-#       default='gs://dataflow-samples/shakespeare/kinglear.txt',
-#       help='Input file to process.')
+  parser.add_argument(
+      '--input',
+      dest='input',
+      default='FlickerProvider',
+      help='Provider name to process.')
   parser.add_argument(
       '--output',
       dest='output',
@@ -108,26 +85,16 @@ def run(argv=None, save_main_session=True):
 
   # The pipeline will be run on exiting the with block.
   with beam.Pipeline(options=pipeline_options) as p:
-    
-    createbatch = (p | 'create' >> beam.Create([1,2,3]) )
-    images = createbatch | 'call Flicker API' >> beam.ParDo(lambda x: callFlicker(x))
-    urls = images | 'get url' >> beam.ParDo(getUrl())
-    imagesBatch = urls | 'combine' >> beam.GroupByKey()
-    labelsBatch = imagesBatch | 'label by batch' >> beam.ParDo(getLabelsByBatch()) 
-    labels = labelsBatch | 'Flatten lists' >> beam.FlatMap(lambda elements: elements)
-    labels | 'upload' >> beam.ParDo(uploadToDatabase())
-
-    # Format the counts into a PCollection of strings.
-    def format_result(word, count):
-      return '%s: %s' % (word, count)
-
-    output = labels | 'Format' >> beam.MapTuple(format_result)
-
-    # Write the output using a "Write" transform that has side effects.
-    # pylint: disable=expression-not-assigned
-    output | 'Write' >> WriteToText(known_args.output)
-
+    ApiProvider= get_image_provider(known_args.input)
+    num= ApiProvider.get_num_of_batches()
+    create_batch = (p | 'create' >> beam.Create([i for i in range(1, int(3)+1, 1)]) )
+    images = create_batch | 'call API' >> beam.ParDo(ApiProvider.get_images)
+    extracted_element = images | 'extract attributes' >> beam.Map(ApiProvider.get_image_attributes)
+    filtered_element = extracted_element | 'filter' >> beam.Filter(filterd_images) 
+    filtered_element | 'upload' >> beam.ParDo(UploadToDatabase())
+    filtered_element | 'Write' >> WriteToText(known_args.output)
 
 if __name__ == '__main__':
   logging.getLogger().setLevel(logging.INFO)
   run()
+  
