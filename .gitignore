@@ -2,3 +2,12 @@
 *.iml
 
 webapp/maps_heatmaps/.firebase/hosting.cHVibGlj.cache
+examples/recognition-pipeline/additional_files_dir/__pycache__/interface.cpython-37.pyc
+examples/recognition-pipeline/dist/ImageRecognitionPipeline-1.0.tar.gz
+examples/recognition-pipeline/__pycache__/interface.cpython-37.pyc
+examples/recognition-pipeline/__pycache__/recognition_pipeline.cpython-37.pyc
+examples/recognition-pipeline/__pycache__/recognitionPipeline.cpython-37.pyc
+examples/recognition-pipeline/.vscode/settings.json
+examples/recognition-pipeline/additional_files_dir/__pycache__/image_filtering.cpython-37.pyc
+examples/recognition-pipeline/additional_files_dir/__pycache__/image_recognition_provider.cpython-37.pyc
+examples/recognition-pipeline/additional_files_dir/__pycache__/redefine_labels.cpython-37.pyc
