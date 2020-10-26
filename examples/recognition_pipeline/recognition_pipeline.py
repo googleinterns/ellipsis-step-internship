@@ -45,7 +45,8 @@ from additional_files_dir.redefine_labels import RedefineLabels
 
 
 def initialize_DB(): 
-    '''Initializes project's Firestore databse for writing and reading purposes.'''
+    """Initializes project's Firestore databse for writing and reading purposes.
+    """
     if not firebase_admin._apps:
         firebase_admin.initialize_app(credentials.ApplicationDefault(), {
         'projectId': 'step-project-ellispis',
@@ -57,7 +58,7 @@ def get_provider(provider_name):
         return GoogleVisionAPI()
 
 def get_dataset(random_min, random_max, ingestion_provider = None, ingestion_run = None):
-    '''Queries firestore database for images from the ingestion_provider within a random range (by batch).
+    """Queries firestore database for images from the ingestion_provider within a random range (by batch).
     
     Args:
         random_min: the lower limit for querying the database by the random field.
@@ -67,7 +68,7 @@ def get_dataset(random_min, random_max, ingestion_provider = None, ingestion_run
 
     Returns:
         A list of dictionaries with all the information (fields and id) of each one of the Firestore query's image documents.
-    '''
+    """
     # TODO: have different queries for ingestion provider and ingestion run once relevant data has been uploaded to Firestore by ingestion pipeline.
     db = initialize_DB()
     if ingestion_provider:
@@ -82,18 +83,18 @@ def add_id_to_dict(doc):
     return full_dict
 
 class UploadToDatabase(beam.DoFn):
-    '''Uploads parallelly the label informtion parallelly tp the project's database.
+    """Uploads parallelly the label informtion parallelly tp the project's database.
 
-    '''
+    """
     def setup(self):
         self.db = initialize_DB()
 
     def process(self, element):
-        '''Updates the project's database to contain documents with the currect fields for each label in the Labels subcollection of each image.
+        """Updates the project's database to contain documents with the currect fields for each label in the Labels subcollection of each image.
 
         Args: 
             element: (element[0], all_label_Ids)
-        '''
+        """
         # TODO: need to figure out how to add the pipeline run's id inside the pipeline
         # db = initialize_DB()
         doc_id = element[0]['id']

@@ -13,5 +13,6 @@ setuptools.setup(
         "Operating System :: OS Independent",
     ],
     python_requires='>=3.6',
+    install_requires=['firebase-admin', 'apache-beam', 'google-cloud-vision']
 )
 

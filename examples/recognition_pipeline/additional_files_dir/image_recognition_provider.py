@@ -18,9 +18,22 @@ import apache_beam as beam
 from google.cloud import vision_v1
 
 class ImageRecognitionProvider(ABC, beam.DoFn):
+    """ Each recognition provider used in our project will have an implementation of this abstract class.
+    
+    All recognition providers need to have a method for labeling the images, 
+    an Id property and the latest version.
+    """
     
     @abstractmethod
     def get_labels(self, element):
+        """Labels a batch of images from dataset using a specific recognition provider.
+
+        Args:
+            element: a tuple of a random number and a list of images information dictionaries.
+
+        Returns:
+            list of lists in which each inner list is a tuple of a image dictionary and all labels recognixed in it by the provider.
+        """
         pass
 
     @property

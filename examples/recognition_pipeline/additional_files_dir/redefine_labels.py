@@ -20,11 +20,11 @@ LABEL_TO_ID = {'bag': 'GaveDiWni9CzOp6eYRDE'}
 REDEFINE_LABELS = {'Google_Vision_API':{'Bag': LABEL_TO_ID['bag'], 'Glass': LABEL_TO_ID['bag']}} #TODO: fill this map, need to think how do to that. 
 
 class RedefineLabels(beam.DoFn):
-    '''Converts parallelly the labels list returned from the provider to the corresponding label Id's.
+    """Converts parallelly the labels list returned from the provider to the corresponding label Id's.
 
-    '''
+    """
     def process(self, element, provider):
-        '''Uses the global redefine map to change the different labels to the project's label Ids.
+        """Uses the global redefine map to change the different labels to the project's label Ids.
 
         Args:
             element: (dictionary of image properties, labels list)
@@ -32,7 +32,7 @@ class RedefineLabels(beam.DoFn):
 
         Returns:
             [(dictionary of image properties, label ids list)] 
-        '''
+        """
         all_label_Ids = []
         for label in element[1]:
             if label in REDEFINE_LABELS[provider]: 

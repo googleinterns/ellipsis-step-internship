@@ -2,12 +2,17 @@
 *.iml
 
 webapp/maps_heatmaps/.firebase/hosting.cHVibGlj.cache
-examples/recognition-pipeline/additional_files_dir/__pycache__/interface.cpython-37.pyc
-examples/recognition-pipeline/dist/ImageRecognitionPipeline-1.0.tar.gz
-examples/recognition-pipeline/__pycache__/interface.cpython-37.pyc
-examples/recognition-pipeline/__pycache__/recognition_pipeline.cpython-37.pyc
-examples/recognition-pipeline/__pycache__/recognitionPipeline.cpython-37.pyc
-examples/recognition-pipeline/.vscode/settings.json
-examples/recognition-pipeline/additional_files_dir/__pycache__/image_filtering.cpython-37.pyc
-examples/recognition-pipeline/additional_files_dir/__pycache__/image_recognition_provider.cpython-37.pyc
-examples/recognition-pipeline/additional_files_dir/__pycache__/redefine_labels.cpython-37.pyc
+examples/recognition_pipeline/.vscode/settings.json
+examples/recognition_pipeline/__pycache__/interface.cpython-37.pyc
+examples/recognition_pipeline/__pycache__/recognition_pipeline.cpython-37.pyc
+examples/recognition_pipeline/__pycache__/recognitionPipeline.cpython-37.pyc
+examples/recognition_pipeline/additional_files_dir/__pycache__/image_filtering.cpython-37.pyc
+examples/recognition_pipeline/additional_files_dir/__pycache__/image_recognition_provider.cpython-37.pyc
+examples/recognition_pipeline/additional_files_dir/__pycache__/interface.cpython-37.pyc
+examples/recognition_pipeline/additional_files_dir/__pycache__/redefine_labels.cpython-37.pyc
+examples/recognition_pipeline/dist/ImageRecognitionPipeline-1.0.tar.gz
+examples/recognition_pipeline/recognition_pipeline_OFRI_AVIELI.egg-info/dependency_links.txt
+examples/recognition_pipeline/recognition_pipeline_OFRI_AVIELI.egg-info/PKG-INFO
+examples/recognition_pipeline/recognition_pipeline_OFRI_AVIELI.egg-info/requires.txt
+examples/recognition_pipeline/recognition_pipeline_OFRI_AVIELI.egg-info/SOURCES.txt
+examples/recognition_pipeline/recognition_pipeline_OFRI_AVIELI.egg-info/top_level.txt
