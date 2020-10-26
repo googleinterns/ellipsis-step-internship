@@ -21,16 +21,20 @@ def is_eligible(image, provider):
     For each criteria of the providers requirements, checks if the image's attributes match the providers prerequisites.
     """
     for key, value in PREREQUISITES_MAP[provider].items():
-        if not is_supported(image['image_attributes'][key], key, value): # TODO: check if this is how tal named the map.
+        if not is_supported(image['image_attributes'], key, value): # TODO: check if this is how tal named the map.
             return False
     return True
 
-def is_supported(image_attribute, criteria, prerequisites):
+def is_supported(image_attribute_map, criteria, prerequisites):
     """ Checks if the images arribute is supported by the provider's prerequisites for a specific criteria.
+
     """
-    # TODO: not fully implemnted yet. Should it be switch-case for each different condition? need to make sure it is ok that all prequisites are of the same.
+    # TODO: not fully implemnted yet. Should it be switch-case for each different condition? need to make sure it is ok to assume that all prequisites are the same.
+    if criteria not in image_attribute_map: # Image doesn't have this property and therefore is not supported.
+        return False
     if criteria == 'format':
-        return image_attribute in prerequisites
+        # Return True iff image format is in list of allowed formats.
+        return image_attribute_map[criteria] in prerequisites 
     if criteria == 'resolution':
-        return image_attribute >= prerequisites
-    return True
+        # Return True iff image resolution is equal or bigger than the minimum supported resolution supported by the provider.
+        return image_attribute_map[criteria] >= prerequisites 

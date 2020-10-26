@@ -39,13 +39,14 @@ import firebase_admin
 from firebase_admin import credentials
 from firebase_admin import firestore
 
-from pipeline_lib.image_recognition_provider import *
+from providers import google_vision_api
 from pipeline_lib.image_filtering import is_eligible
 from pipeline_lib.redefine_labels import RedefineLabels
 
 
 def initialize_DB(): 
     """Initializes project's Firestore databse for writing and reading purposes.
+
     """
     if not firebase_admin._apps:
         firebase_admin.initialize_app(credentials.ApplicationDefault(), {
@@ -54,28 +55,38 @@ def initialize_DB():
     return firestore.client()
 
 def get_provider(provider_name):
+    """ Creates an object of type ImageRecognitionProvider by the specific provider input.
+
+    """ 
     if provider_name == 'Google_Vision_API':
-        return GoogleVisionAPI()
-
-def get_dataset(random_min, random_max, ingestion_provider = None, ingestion_run = None):
-    """Queries firestore database for images from the ingestion_provider within a random range (by batch).
+        return google_vision_api.GoogleVisionAPI()
     
-    Args:
-        random_min: the lower limit for querying the database by the random field.
-        random_max: the higher limit for querying the database by the random field.
-        ingestion_provider: the input of the pipeline, determines the images dataset.
-        ingestion_run: the input of the pipeline, determines the dataset.
+class GetDataset(beam.DoFn):
+    """Queries the project's database to get the image dataset to label.
 
-    Returns:
-        A list of dictionaries with all the information (fields and id) of each one of the Firestore query's image documents.
     """
-    # TODO: have different queries for ingestion provider and ingestion run once relevant data has been uploaded to Firestore by ingestion pipeline.
-    db = initialize_DB()
-    if ingestion_provider:
-        query = db.collection(u'Images').where(u'attribution', u'==', ingestion_provider).where(u'random', u'>=', random_min).where(u'random', u'<=', random_max).stream()
-    else:
-        query = db.collection(u'Images').where(u'attribution', u'==', ingestion_run).where(u'random', u'>=', random_min).where(u'random', u'<=', random_max).stream()
-    return [add_id_to_dict(doc) for doc in query]
+    def setup(self):
+        self.db = initialize_DB()
+
+    def process(self, element, ingestion_provider = None, ingestion_run = None):
+        """Queries firestore database for images from the ingestion_provider within a random range (by batch).
+        
+        Args:
+            element: the lower limit for querying the database by the random field.
+            ingestion_provider: the input of the pipeline, determines the images dataset.
+            ingestion_run: the input of the pipeline, determines the dataset.
+
+        Returns:
+            A list of dictionaries with all the information (fields and id) of each one of the Firestore query's image documents.
+        """
+        random_min = element
+        random_max = element+9 # the higher limit for querying the database by the random field.
+        # TODO: have different queries for ingestion provider and ingestion run once relevant data has been uploaded to Firestore by ingestion pipeline.
+        if ingestion_provider:
+            query = self.db.collection(u'Images').where(u'attribution', u'==', ingestion_provider).where(u'random', u'>=', random_min).where(u'random', u'<=', random_max).stream()
+        else:
+            query = self.db.collection(u'Images').where(u'attribution', u'==', ingestion_run).where(u'random', u'>=', random_min).where(u'random', u'<=', random_max).stream()
+        return [add_id_to_dict(doc) for doc in query]
 
 def add_id_to_dict(doc):
     full_dict = doc.to_dict()
@@ -83,7 +94,7 @@ def add_id_to_dict(doc):
     return full_dict
 
 class UploadToDatabase(beam.DoFn):
-    """Uploads parallelly the label informtion parallelly tp the project's database.
+    """Uploads parallelly the label information parallelly to the project's database.
 
     """
     def setup(self):
@@ -93,7 +104,7 @@ class UploadToDatabase(beam.DoFn):
         """Updates the project's database to contain documents with the currect fields for each label in the Labels subcollection of each image.
 
         Args: 
-            element: (element[0], all_label_Ids)
+            element: tuple of image document dict and a list of all label Ids.
         """
         # TODO: need to figure out how to add the pipeline run's id inside the pipeline
         doc_id = element[0]['id']
@@ -105,8 +116,22 @@ class UploadToDatabase(beam.DoFn):
                 u'labelId': label,
                 u'visibility': 0,
                 u'parentImageId': doc_id,
+                u'pipelineRunId': 00,
                 u'hashmap': element[0]['hashmap']
             })
+
+def upload_to_pipeline_runs_collection(providerId):
+    """ Uploads inforamtion about the pipeline run to the Firestore collection
+    """
+    # TODO: get start, end and quality of current pipeline run.
+    db = initialize_DB()
+    db.collection(u'RecognitionPipelineRuns').document().set({
+        u'providerId': providerId,
+        u'startDate': 00,
+        u'endDate': 00,
+        u'quality': 00,
+        u'visibility': 0
+    })
 
 def run(argv=None, save_main_session=True):
   """Main entry point, defines and runs the image recognition pipeline."""
@@ -138,23 +163,22 @@ def run(argv=None, save_main_session=True):
     ingestion_provider = known_args.input_ingestion_provider
     provider = get_provider(known_args.input_recognition_provider)
     # Creating an object of type ImageRecognitionProvider for the specific image recognition provider input 
-    # db = initialize_DB() !!!!!!!
     random_numbers = p | 'create' >> beam.Create([(1+10*i) for i in range(10)])
     if ingestion_run: # If the input that was given for specifing the images dataset was an ingestion run.
-        dataset = random_numbers | 'get images dataset' >> beam.ParDo(lambda x: get_dataset(x, x+9, ingestion_run=ingestion_run))
+        dataset = random_numbers | 'get images dataset' >> beam.ParDo(GetDataset(), ingestion_run=ingestion_run)
     else:  # If the input that was given for specifing the images dataset was an ingestion provider.
-        dataset = random_numbers | 'get images dataset' >> beam.ParDo(lambda x: get_dataset(x, x+9, ingestion_provider=ingestion_provider))
+        dataset = random_numbers | 'get images dataset' >> beam.ParDo(GetDataset(), ingestion_provider=ingestion_provider)
     # filtered_dataset = dataset | 'filter images' >> beam.Filter(is_eligible, provider.provider_Id) # need to add this back after having a relevant dataset from Tal's pipeline
     images_batch = dataset | 'combine to batches' >> beam.GroupBy(lambda doc: doc['random'])
     labels_batch = images_batch | 'label by batch' >> beam.ParDo(provider) # labels the images by the process method of the provider
     labels = labels_batch | 'flatten lists' >> beam.FlatMap(lambda elements: elements)
     labels_Id = labels | 'redefine labels' >> beam.ParDo(RedefineLabels(), provider.provider_Id)
-    # labels_Id | 'upload' >> beam.ParDo(UploadToDatabase())
+    labels_Id | 'upload' >> beam.ParDo(UploadToDatabase())
+    upload_to_pipeline_runs_collection(provider.provider_Id)
     
-    def format_result(image, labels):
-      return '%s: %s' % (image['url'], labels)
-
-    if known_args.output:
+    if known_args.output: # For testing.
+        def format_result(image, labels):
+            return '%s: %s' % (image['url'], labels)
         output = labels_Id | 'Format' >> beam.MapTuple(format_result)
         output | 'Write' >> WriteToText(known_args.output)
 

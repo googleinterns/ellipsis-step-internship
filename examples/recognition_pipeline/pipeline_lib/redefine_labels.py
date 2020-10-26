@@ -27,8 +27,8 @@ class RedefineLabels(beam.DoFn):
         """Uses the global redefine map to change the different labels to the project's label Ids.
 
         Args:
-            element: (dictionary of image properties, labels list)
-            provider: image recognition provider for the redefine map
+            element: tuple of dictionary of image properties and list of labels.
+            provider: image recognition provider for the redefine map.
 
         Returns:
             [(dictionary of image properties, label ids list)] 

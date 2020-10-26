@@ -22,3 +22,5 @@ examples/recognition_pipeline/pipeline_lib/__pycache__/image_recognition_provide
 examples/recognition_pipeline/pipeline_lib/__pycache__/redefine_labels.cpython-37.pyc
 examples/recognition_pipeline/pipeline_lib/__pycache__/interface.cpython-37.pyc
 examples/recognition_pipeline/dist/recognition_pipeline_OFRI_AVIELI-0.0.1-py3.7.egg
+examples/recognition_pipeline/providers/__pycache__/__init__.cpython-37.pyc
+examples/recognition_pipeline/providers/__pycache__/google_vision_api.cpython-37.pyc
