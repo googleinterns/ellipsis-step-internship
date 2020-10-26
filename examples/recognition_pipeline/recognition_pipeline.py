@@ -43,6 +43,7 @@ from providers import google_vision_api
 from pipeline_lib.image_filtering import is_eligible
 from pipeline_lib.redefine_labels import RedefineLabels
 
+RANGE_OF_BATCH = 10 # Defines the range of the each batch for querying the database.
 
 def initialize_DB(): 
     """Initializes project's Firestore databse for writing and reading purposes.
@@ -80,7 +81,7 @@ class GetDataset(beam.DoFn):
             A list of dictionaries with all the information (fields and id) of each one of the Firestore query's image documents.
         """
         random_min = element
-        random_max = element+9 # the higher limit for querying the database by the random field.
+        random_max = element+RANGE_OF_BATCH-1 # the higher limit for querying the database by the random field.
         # TODO: have different queries for ingestion provider and ingestion run once relevant data has been uploaded to Firestore by ingestion pipeline.
         if ingestion_provider:
             query = self.db.collection(u'Images').where(u'attribution', u'==', ingestion_provider).where(u'random', u'>=', random_min).where(u'random', u'<=', random_max).stream()
@@ -175,6 +176,7 @@ def run(argv=None, save_main_session=True):
     labels_Id = labels | 'redefine labels' >> beam.ParDo(RedefineLabels(), provider.provider_Id)
     labels_Id | 'upload' >> beam.ParDo(UploadToDatabase())
     upload_to_pipeline_runs_collection(provider.provider_Id)
+    # TODO: add notification to admin team.
     
     if known_args.output: # For testing.
         def format_result(image, labels):
