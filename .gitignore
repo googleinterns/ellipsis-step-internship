@@ -6,4 +6,6 @@ webapp/maps_heatmaps/.firebase/hosting.cHVibGlj.cache
 examples/ingestion-pipeline/.vscode/settings.json
 examples/.vscode/settings.json
 examples/ingestion-pipeline/__pycache__/*
-examples/ingestion-pipeline/.gcloudignore
+examples/ingestion-pipeline/.gcloudignoregit stt
+examples/pipeline-demo/.vscode/settings.json
+examples/pipeline-demo/__pycache__/main.cpython-37.pyc
