@@ -29,7 +29,7 @@ from firebase_admin import credentials
 from firebase_admin import firestore
 import random
 import flickrapi
-from provideres.imageProviderFlickr import FlickerProvider
+import providers
 
 def initialize_database(): 
     if not firebase_admin._apps:
@@ -63,7 +63,7 @@ def filterd_images(element):
 #TODO: Find a way to make this more dinamic 
 def get_image_provider(provider_name):
     if 'FlickerProvider' == provider_name:
-        return FlickerProvider()
+        return providers.imageProviderFlickr.FlickerProvider()
 
 def run(argv=None, save_main_session=True):
   """Main entry point; defines and runs the wordcount pipeline."""
