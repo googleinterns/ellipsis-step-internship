@@ -68,8 +68,10 @@ def get_random_key():
         return random.randint(1, 10)
 
 class GetLabelsByBatch(beam.DoFn):
+    def setup(self):
+        self.client = vision_v1.ImageAnnotatorClient()
+
     def process(self, element):
-        client = vision_v1.ImageAnnotatorClient()
         features = [ {"type_": vision_v1.Feature.Type.LABEL_DETECTION} ]
         requests = []
         results = []
@@ -82,7 +84,7 @@ class GetLabelsByBatch(beam.DoFn):
                 requests.append(request)
                 urls.append(url)
         batchRequest = vision_v1.BatchAnnotateImagesRequest(requests=requests)
-        response = client.batch_annotate_images(request=batchRequest)
+        response = self.client.batch_annotate_images(request=batchRequest)
         for i, image_response in enumerate(response.responses):
             allLabels = [label.description for label in image_response.label_annotations]
             results.append([(urls[i], allLabels)])
