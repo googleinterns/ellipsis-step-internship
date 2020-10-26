@@ -104,14 +104,12 @@ def run(argv=None, save_main_session=True):
   parser.add_argument(
       '--output',
       dest='output',
-      required=True,
       help='Output file to write results to.')
   known_args, pipeline_args = parser.parse_known_args(argv)
 
   # We use the save_main_session option because one or more DoFn's in this
   # workflow rely on global context (e.g., a module imported at module level).
   pipeline_options = PipelineOptions(pipeline_args)
-  pipeline_options.view_as(SetupOptions).save_main_session = save_main_session
 
   # The pipeline will be run on exiting the with block.
   with beam.Pipeline(options=pipeline_options) as p:
@@ -129,11 +127,12 @@ def run(argv=None, save_main_session=True):
     def format_result(word, count):
       return '%s: %s' % (word, count)
 
-    output = labels | 'Format' >> beam.MapTuple(format_result)
+    if known_args.output:
+        output = labels | 'Format' >> beam.MapTuple(format_result)
 
-    # Write the output using a "Write" transform that has side effects.
-    # pylint: disable=expression-not-assigned
-    output | 'Write' >> WriteToText(known_args.output)
+        # Write the output using a "Write" transform that has side effects.
+        # pylint: disable=expression-not-assigned
+        output | 'Write' >> WriteToText(known_args.output)
 
 
 if __name__ == '__main__':
