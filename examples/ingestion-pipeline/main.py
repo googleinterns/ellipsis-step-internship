@@ -29,7 +29,7 @@ from firebase_admin import credentials
 from firebase_admin import firestore
 import random
 import flickrapi
-from additional_files_dir.imageProviderFlickr import FlickerProvider
+from provideres.imageProviderFlickr import FlickerProvider
 
 def initialize_database(): 
     if not firebase_admin._apps:
@@ -39,17 +39,18 @@ def initialize_database():
     return firestore.client()
 
 class UploadToDatabase(beam.DoFn):
+    def setup(self):
+        self.db = initialize_database()
     def process(self, element):
         #location = firestore.GeoPoint(latitude, longitude)
-        db = initialize_database()
-        doc_ref = db.collection(u'imagesDemoTal2').document()
+        doc_ref = self.db.collection(u'imagesDemoTal2').document()
         doc_ref.set({
             u'url': element.url,
             u'coordinates': element.location,
             u'date_upload': element.date_upload,
             u'date_taken': element.date_taken,
             u'imageAttributes': 
-            {'format': element.format,u'resolution':element.resolution},
+            {'format': element.format, u'resolution':element.resolution},
             u'attribution': element.attribution,
             u'random': random.randint(1,101)
         })

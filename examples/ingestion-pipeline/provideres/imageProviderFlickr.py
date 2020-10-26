@@ -11,11 +11,11 @@
   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
   See the License for the specific language governing permissions and
   limitations under the License.
- """
+"""
 
-from imageProviderInterface import ImageProviger
-from enums import ProviderType
-from imageAttributes import ImageAttributes
+from pipeline_lib.imageProviderInterface import ImageProviger
+from pipeline_lib.enums import ProviderType
+from pipeline_lib.imageAttributes import ImageAttributes
 import flickrapi
 
 class FlickerProvider(ImageProviger):
