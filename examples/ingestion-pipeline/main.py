@@ -29,7 +29,7 @@ from firebase_admin import credentials
 from firebase_admin import firestore
 import random
 import flickrapi
-from imageProviderFlickr import FlickerProvider
+from additional_files_dir.imageProviderFlickr import FlickerProvider
 
 def initialize_database(): 
     if not firebase_admin._apps:
