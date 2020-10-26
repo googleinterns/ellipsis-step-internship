@@ -19,7 +19,8 @@ from imageAttributes import ImageAttributes
 import flickrapi
 
 class FlickerProvider(ImageProviger):
-
+    """ This class is an implementation for the ImageProvider interface."""
+    
     def get_images(self, page):
         flickr = flickrapi.FlickrAPI('2d00397e012c30ccc33ca4fdc05a5c98', 'e36a277c77f09fdd', cache=True)
         photos = flickr.photos.search(text='plasticbag',
@@ -46,5 +47,7 @@ class FlickerProvider(ImageProviger):
             element.get('originalformat'),
             element.get('ownername'),
             element.get('height_c'),
-            element.get('width_c'))
+            element.get('width_c'),
+            {'height':element.get('height_c'),
+            'width':element.get('width_c')})
         return image_arrributes

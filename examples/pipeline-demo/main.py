@@ -42,18 +42,19 @@ class UploadToDatabase(beam.DoFn):
     def process(self, element):
         #location = firestore.GeoPoint(latitude, longitude)
         db = initialize_database()
-        doc_ref = db.collection(u'imagesDemoTal5').document()
+        doc_ref = db.collection(u'imagesDemoTal2').document()
         doc_ref.set({
             u'url': element.url,
             u'coordinates': element.location,
             u'date_upload': element.date_upload,
             u'date_taken': element.date_taken,
-            u'original_format': element.format,
+            u'imageAttributes': 
+            {'format': element.format,u'resolution':element.resolution},
             u'attribution': element.attribution,
             u'random': random.randint(1,101)
         })
 
-#TODO: right a filtered function that takes into considration all attributes 
+#TODO: write a filtering function that takes into considration all attributes 
 #such as unvalied resulution date and more
 def filterd_images(element):
     return element.url != None and element.location[0] != '0'
