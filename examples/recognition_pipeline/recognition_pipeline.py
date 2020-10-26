@@ -39,9 +39,9 @@ import firebase_admin
 from firebase_admin import credentials
 from firebase_admin import firestore
 
-from additional_files_dir.image_recognition_provider import *
-from additional_files_dir.image_filtering import is_eligible
-from additional_files_dir.redefine_labels import RedefineLabels
+from pipeline_lib.image_recognition_provider import *
+from pipeline_lib.image_filtering import is_eligible
+from pipeline_lib.redefine_labels import RedefineLabels
 
 
 def initialize_DB(): 
@@ -96,7 +96,6 @@ class UploadToDatabase(beam.DoFn):
             element: (element[0], all_label_Ids)
         """
         # TODO: need to figure out how to add the pipeline run's id inside the pipeline
-        # db = initialize_DB()
         doc_id = element[0]['id']
         subcollection_ref = self.db.collection(u'Images').document(doc_id).collection(u'Labels')
         for label in element[1]:

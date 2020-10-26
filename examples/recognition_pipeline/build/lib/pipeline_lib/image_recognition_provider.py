@@ -45,6 +45,7 @@ class ImageRecognitionProvider(ABC, beam.DoFn):
         raise NotImplementedError
 
 class GoogleVisionAPI(ImageRecognitionProvider):
+    
     def get_labels(self, element):
         client = vision_v1.ImageAnnotatorClient()
         features = [ {"type_": vision_v1.Feature.Type.LABEL_DETECTION} ]
