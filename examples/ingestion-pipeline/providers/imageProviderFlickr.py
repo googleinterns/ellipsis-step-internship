@@ -15,6 +15,7 @@
 
 from pipeline_lib.imageProviderInterface import ImageProviger
 from pipeline_lib.enums import ProviderType
+from pipeline_lib.enums import VisibilityType
 from pipeline_lib.imageAttributes import ImageAttributes
 import flickrapi
 
@@ -51,3 +52,10 @@ class FlickerProvider(ImageProviger):
             {'height':element.get('height_c'),
             'width':element.get('width_c')})
         return image_arrributes
+
+    provider_Id = 'Flicker_2020'
+    provider_virsion = '2.4.0'
+    provider_type = ProviderType.camera
+    enabled = True
+    visibility = VisibilityType.developerOnly
+

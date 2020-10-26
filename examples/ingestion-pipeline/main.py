@@ -16,9 +16,6 @@
 from __future__ import absolute_import
 import argparse
 import logging
-import re
-from google.cloud import vision
-from google.cloud import vision_v1
 from past.builtins import unicode
 import apache_beam as beam
 from apache_beam.io import WriteToText
@@ -29,7 +26,7 @@ from firebase_admin import credentials
 from firebase_admin import firestore
 import random
 import flickrapi
-import providers
+from providers import imageProviderFlickr
 
 def initialize_database(): 
     if not firebase_admin._apps:
@@ -42,7 +39,7 @@ class UploadToDatabase(beam.DoFn):
     def setup(self):
         self.db = initialize_database()
     def process(self, element):
-        #location = firestore.GeoPoint(latitude, longitude)
+        #TODO: convert location to firestore.GeoPoint
         doc_ref = self.db.collection(u'imagesDemoTal2').document()
         doc_ref.set({
             u'url': element.url,
@@ -53,20 +50,21 @@ class UploadToDatabase(beam.DoFn):
             {'format': element.format, u'resolution':element.resolution},
             u'attribution': element.attribution,
             u'random': random.randint(1,101)
+            #TODO: add subcollection pipeline run
         })
 
-#TODO: write a filtering function that takes into considration all attributes 
-#such as unvalied resulution date and more
-def filterd_images(element):
+#TODO: write a filtering function that takes into consideration all attributes
+#such as invalid resolution date and more
+def filtered_images(element):
     return element.url != None and element.location[0] != '0'
 
-#TODO: Find a way to make this more dinamic 
+#TODO: Find a way to make this more dynamic
 def get_image_provider(provider_name):
     if 'FlickerProvider' == provider_name:
-        return providers.imageProviderFlickr.FlickerProvider()
+        return imageProviderFlickr.FlickerProvider()
 
 def run(argv=None, save_main_session=True):
-  """Main entry point; defines and runs the wordcount pipeline."""
+  """Main entry point; defines and runs the image ingestion pipeline."""
   parser = argparse.ArgumentParser()
   parser.add_argument(
       '--input',
@@ -76,14 +74,9 @@ def run(argv=None, save_main_session=True):
   parser.add_argument(
       '--output',
       dest='output',
-      required=True,
       help='Output file to write results to.')
   known_args, pipeline_args = parser.parse_known_args(argv)
-
-  # We use the save_main_session option because one or more DoFn's in this
-  # workflow rely on global context (e.g., a module imported at module level).
   pipeline_options = PipelineOptions(pipeline_args)
-  pipeline_options.view_as(SetupOptions).save_main_session = save_main_session
 
   # The pipeline will be run on exiting the with block.
   with beam.Pipeline(options=pipeline_options) as p:
@@ -92,9 +85,11 @@ def run(argv=None, save_main_session=True):
     create_batch = (p | 'create' >> beam.Create([i for i in range(1, int(3)+1, 1)]) )
     images = create_batch | 'call API' >> beam.ParDo(ApiProvider.get_images)
     extracted_element = images | 'extract attributes' >> beam.Map(ApiProvider.get_image_attributes)
-    filtered_element = extracted_element | 'filter' >> beam.Filter(filterd_images) 
+    filtered_element = extracted_element | 'filter' >> beam.Filter(filtered_images) 
     filtered_element | 'upload' >> beam.ParDo(UploadToDatabase())
-    filtered_element | 'Write' >> WriteToText(known_args.output)
+
+    if known_args.output:
+        filtered_element | 'Write' >> WriteToText(known_args.output)
 
 if __name__ == '__main__':
   logging.getLogger().setLevel(logging.INFO)

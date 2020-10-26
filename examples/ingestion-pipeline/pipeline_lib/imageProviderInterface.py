@@ -51,7 +51,21 @@ class ImageProviger(ABC, apache_beam.DoFn):
         """
         pass
 
+
     @property
-    def image_type(self):
-        pass
+    def provider_id(self):
+        raise NotImplementedError
+    @property
+    def provider_virsion(self):
+        raise NotImplementedError
+    @property
+    def provider_type(self):
+        raise NotImplementedError
+    @property
+    def enabled(self):
+        raise NotImplementedError
+    @property
+    def visibility(self):
+        raise NotImplementedError
+
 

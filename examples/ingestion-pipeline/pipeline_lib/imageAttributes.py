@@ -13,6 +13,8 @@
   limitations under the License.
  """
 
+#TODO: add function that extracts color_depth and compression_ratio
+
 class ImageAttributes():
     """ This class presents the attrebutes we nead to extracy from each image."""
      

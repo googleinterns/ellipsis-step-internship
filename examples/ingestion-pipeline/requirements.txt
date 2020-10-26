@@ -1,3 +1,5 @@
 apache-beam==2.24.0
 firebase-admin==4.4.0
 flickrapi==2.4.0
+#TODO: fix git+git://github.com... requirement
+-e git+git://github.com/googleinterns/ellipsis-step-internship/tree/taltamir/examples/ingestion-pipeline@taltamir#egg=ingestion_pipeline_TALTAMIR&subdirectory=ingestion-pipeline
