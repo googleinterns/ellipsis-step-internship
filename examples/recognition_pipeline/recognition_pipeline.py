@@ -146,7 +146,7 @@ def run(argv=None, save_main_session=True):
         dataset = random_numbers | 'get images dataset' >> beam.ParDo(lambda x: get_dataset(x, x+9, ingestion_provider=ingestion_provider))
     # filtered_dataset = dataset | 'filter images' >> beam.Filter(is_eligible, provider.provider_Id) # need to add this back after having a relevant dataset from Tal's pipeline
     images_batch = dataset | 'combine to batches' >> beam.GroupBy(lambda doc: doc['random'])
-    labels_batch = images_batch | 'label by batch' >> beam.ParDo(provider.get_labels) 
+    labels_batch = images_batch | 'label by batch' >> beam.ParDo(provider) # labels the images by the process method of the provider
     labels = labels_batch | 'flatten lists' >> beam.FlatMap(lambda elements: elements)
     labels_Id = labels | 'redefine labels' >> beam.ParDo(RedefineLabels(), provider.provider_Id)
     # labels_Id | 'upload' >> beam.ParDo(UploadToDatabase())

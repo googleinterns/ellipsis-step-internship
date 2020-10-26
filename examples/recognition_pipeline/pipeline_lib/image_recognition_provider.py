@@ -45,9 +45,11 @@ class ImageRecognitionProvider(ABC, beam.DoFn):
         raise NotImplementedError
 
 class GoogleVisionAPI(ImageRecognitionProvider):
-    
-    def get_labels(self, element):
-        client = vision_v1.ImageAnnotatorClient()
+
+    def setup(self):
+        self.client = vision_v1.ImageAnnotatorClient()
+
+    def process(self, element):
         features = [ {"type_": vision_v1.Feature.Type.LABEL_DETECTION} ]
         requests = []
         results = []
@@ -60,10 +62,12 @@ class GoogleVisionAPI(ImageRecognitionProvider):
             requests.append(request)
             docs.append(doc)
         batchRequest = vision_v1.BatchAnnotateImagesRequest(requests=requests)
-        response = client.batch_annotate_images(request=batchRequest)
+        response = self.client.batch_annotate_images(request=batchRequest)
         for i, image_response in enumerate(response.responses):
             allLabels = [label.description for label in image_response.label_annotations]
             results.append([(docs[i], allLabels)])
         return results
+    
+    get_labels = process
     provider_Id='Google_Vision_API'
     provider_Version='2.0.0'
