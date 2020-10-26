@@ -61,7 +61,8 @@ class Flicker(beam.DoFn):
         photos=API.call_flicker(1)
         return (photos.attrib['pages'])
     def get_url(self, element):
-        return [(get_random_key(), element.get('url_c'))]
+        if element.get('url_c')!=None:
+            return [(get_random_key(), element.get('url_c'))]
 
 
 def get_random_key():
@@ -119,7 +120,7 @@ def run(argv=None, save_main_session=True):
     API=Flicker()
     createbatch = (p | 'create' >> beam.Create([1,2,3]) )
     images = createbatch | 'call Flicker API' >> beam.ParDo(API.call_flicker)
-    urls = images | 'get url' >> beam.ParDo(lambda  elament: API.get_url(elament))
+    urls = images | 'get url' >> beam.ParDo(API.get_url)
     imagesBatch = urls | 'combine' >> beam.GroupByKey()
     labelsBatch = imagesBatch | 'label by batch' >> beam.ParDo(GetLabelsByBatch()) 
     labels = labelsBatch | 'Flatten lists' >> beam.FlatMap(lambda elements: elements)
