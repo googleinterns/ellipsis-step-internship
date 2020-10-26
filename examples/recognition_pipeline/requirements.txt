@@ -1,4 +1,4 @@
 apache-beam==2.24.0
 firebase-admin==4.4.0
 google-cloud-vision==2.0.0
--e git+git://github.com/googleinterns/ellipsis-step-internship/examples/
+-e git+git://github.com/googleinterns/ellipsis-step-internship/tree/OfriAvieli/examples/recognition-pipeline@OfriAvieli#egg=recognition_pipeline_OFRI_AVIELI
