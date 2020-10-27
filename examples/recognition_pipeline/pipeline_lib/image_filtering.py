@@ -21,7 +21,7 @@ def is_eligible(image, provider):
     For each criteria of the providers requirements, checks if the image's attributes match the providers prerequisites.
     """
     for key, value in PREREQUISITES_MAP[provider].items():
-        if not is_supported(image['image_attributes'], key, value): # TODO: check if this is how tal named the map.
+        if not is_supported(image['imageAttributes'], key, value): # TODO: check if this is how tal named the map.
             return False
     return True
 
