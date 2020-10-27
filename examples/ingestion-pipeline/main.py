@@ -27,6 +27,10 @@ from firebase_admin import firestore
 import random
 import flickrapi
 from providers import imageProviderFlickr
+from datetime import datetime
+
+
+JOB_NAME = 'image-ingestion-job: ' + str(datetime.now()) #Global name for the job that will run
 
 def initialize_database(): 
     if not firebase_admin._apps:
@@ -39,24 +43,35 @@ class UploadToDatabase(beam.DoFn):
     def setup(self):
         self.db = initialize_database()
     def process(self, element):
-        #TODO: convert location to firestore.GeoPoint
-        doc_ref = self.db.collection(u'imagesDemoTal2').document()
+        location=firestore.GeoPoint(float(element.location[0]), float(element.location[1]))
+        doc_ref = self.db.collection(u'imagesDemoTal02').document()
+        sub_doc_ref= doc_ref.collection(u'pipelineRun').document()
         doc_ref.set({
+            #TODO:add geohash map.
             u'url': element.url,
-            u'coordinates': element.location,
+            u'coordinates': location,
             u'date_upload': element.date_upload,
             u'date_taken': element.date_taken,
             u'imageAttributes': 
             {'format': element.format, u'resolution':element.resolution},
             u'attribution': element.attribution,
             u'random': random.randint(1,101)
-            #TODO: add subcollection pipeline run
         })
+        #adding a doc to the sub collection (pipelinerun) in the image collection
+        sub_doc_ref.set({
+            u'coordinates': location,
+            u'provider_ID':imageProviderFlickr.FlickerProvider.provider_id,
+            u'provider_virsion': imageProviderFlickr.FlickerProvider.provider_virsion,
+            u'provider_type':imageProviderFlickr.FlickerProvider.provider_type.value,
+            u'provider_visibility':imageProviderFlickr.FlickerProvider.visibility.value,
+            u'pipeline_name': JOB_NAME
+        })
+
 
 #TODO: write a filtering function that takes into consideration all attributes
 #such as invalid resolution date and more
 def filtered_images(element):
-    return element.url != None and element.location[0] != '0'
+    return element.url != None and element.location[0] != 0
 
 #TODO: Find a way to make this more dynamic
 def get_image_provider(provider_name):
@@ -76,7 +91,7 @@ def run(argv=None, save_main_session=True):
       dest='output',
       help='Output file to write results to.')
   known_args, pipeline_args = parser.parse_known_args(argv)
-  pipeline_options = PipelineOptions(pipeline_args)
+  pipeline_options = PipelineOptions(pipeline_args,job_name=JOB_NAME)
 
   # The pipeline will be run on exiting the with block.
   with beam.Pipeline(options=pipeline_options) as p:

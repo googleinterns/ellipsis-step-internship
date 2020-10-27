@@ -44,7 +44,7 @@ class FlickerProvider(ImageProviger):
             ProviderType.satellite,
             element.get('dateupload'),
             element.get('datetaken'),
-            [element.get('latitude'),element.get('longitude')],
+            [float(element.get('latitude')),float(element.get('longitude'))],
             element.get('originalformat'),
             element.get('ownername'),
             element.get('height_c'),
@@ -53,7 +53,7 @@ class FlickerProvider(ImageProviger):
             'width':element.get('width_c')})
         return image_arrributes
 
-    provider_Id = 'Flicker_2020'
+    provider_id = 'Flicker_2020'
     provider_virsion = '2.4.0'
     provider_type = ProviderType.camera
     enabled = True

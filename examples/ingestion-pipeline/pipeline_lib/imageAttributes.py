@@ -31,10 +31,13 @@ class ImageAttributes():
         self.resolution= resolution
 
     def __str__(self):
-        return str(self.url)+ "\n" + \
-         str(self.location)+ "\n" +  \
-         str(self.attribution)+ "\n" + \
-         str(self.date_upload)+ "\n" 
+        return 'url: ' + str(self.url)+ "\n" + \
+         'loction: ' + str(self.location)+ "\n" +  \
+         'attribution: ' + str(self.attribution)+ "\n" + \
+         'date_upload: ' + str(self.date_upload)+ "\n" 
+
+  
+  
          
 
     

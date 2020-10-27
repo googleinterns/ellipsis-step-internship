@@ -1,7 +1,7 @@
 import setuptools 
 
 setuptools.setup(
-    name="ingestion-pipeline",
+    name="ingestion-pipeline_TALTAMIR",
     version="0.0.1",
     packages=setuptools.find_packages(),
     classifiers=[
