@@ -25,6 +25,7 @@ from __future__ import absolute_import
 import argparse
 import logging
 import random
+from datetime import datetime
 
 from past.builtins import unicode
 
@@ -44,6 +45,7 @@ from pipeline_lib.image_filtering import is_eligible
 from pipeline_lib.redefine_labels import RedefineLabels
 
 RANGE_OF_BATCH = 10 # Defines the range of the each batch for querying the database.
+collection_name = 'Images'
 
 def initialize_DB(): 
     """Initializes project's Firestore databse for writing and reading purposes.
@@ -84,9 +86,9 @@ class GetDataset(beam.DoFn):
         random_max = element+RANGE_OF_BATCH-1 # the higher limit for querying the database by the random field.
         # TODO: have different queries for ingestion provider and ingestion run once relevant data has been uploaded to Firestore by ingestion pipeline.
         if ingestion_provider:
-            query = self.db.collection(u'Images').where(u'attribution', u'==', ingestion_provider).where(u'random', u'>=', random_min).where(u'random', u'<=', random_max).stream()
+            query = self.db.collection(collection_name).where(u'attribution', u'==', ingestion_provider).where(u'random', u'>=', random_min).where(u'random', u'<=', random_max).stream()
         else:
-            query = self.db.collection(u'Images').where(u'attribution', u'==', ingestion_run).where(u'random', u'>=', random_min).where(u'random', u'<=', random_max).stream()
+            query = self.db.collection(collection_name).where(u'attribution', u'==', ingestion_run).where(u'random', u'>=', random_min).where(u'random', u'<=', random_max).stream()
         return [add_id_to_dict(doc) for doc in query]
 
 def add_id_to_dict(doc):
@@ -101,7 +103,7 @@ class UploadToDatabase(beam.DoFn):
     def setup(self):
         self.db = initialize_DB()
 
-    def process(self, element):
+    def process(self, element, run_id):
         """Updates the project's database to contain documents with the currect fields for each label in the Labels subcollection of each image.
 
         Args: 
@@ -109,29 +111,35 @@ class UploadToDatabase(beam.DoFn):
         """
         # TODO: need to figure out how to add the pipeline run's id inside the pipeline
         doc_id = element[0]['id']
-        subcollection_ref = self.db.collection(u'Images').document(doc_id).collection(u'Labels')
+        subcollection_ref = self.db.collection(collection_name).document(doc_id).collection(u'Labels')
         for label in element[1]:
-            subcollection_ref.document().set({
+            doc = subcollection_ref.document()
+            doc.set({
                 u'providerId': 'google_vision_api',
                 u'providerVersion': '2.0.0',
-                u'labelId': label,
+                u'labelName': label['name'],
                 u'visibility': 0,
                 u'parentImageId': doc_id,
-                u'pipelineRunId': 00,
+                u'pipelineRunId': run_id,
                 u'hashmap': element[0]['hashmap']
             })
+            if 'id' in label:
+                doc.set({
+                    u'labelId': label['id']
+                }, merge = True)
 
-def upload_to_pipeline_runs_collection(providerId):
+def upload_to_pipeline_runs_collection(provider_Id, run_Id):
     """ Uploads inforamtion about the pipeline run to the Firestore collection
     """
     # TODO: get start, end and quality of current pipeline run.
     db = initialize_DB()
     db.collection(u'RecognitionPipelineRuns').document().set({
-        u'providerId': providerId,
+        u'providerId': provider_Id,
         u'startDate': 00,
         u'endDate': 00,
         u'quality': 00,
-        u'visibility': 0
+        u'visibility': 0,
+        u'pipelineRunId': run_Id
     })
 
 def run(argv=None, save_main_session=True):
@@ -156,7 +164,8 @@ def run(argv=None, save_main_session=True):
       dest='output',
       help='Output file to write results to.')
   known_args, pipeline_args = parser.parse_known_args(argv)
-
+  job_name = 'recognition-pipeline-run-{date_time}'.format(date_time = datetime.now())
+ 
   pipeline_options = PipelineOptions(pipeline_args)
 
   with beam.Pipeline(options=pipeline_options) as p:
@@ -174,10 +183,10 @@ def run(argv=None, save_main_session=True):
     labels_batch = images_batch | 'label by batch' >> beam.ParDo(provider) # labels the images by the process method of the provider
     labels = labels_batch | 'flatten lists' >> beam.FlatMap(lambda elements: elements)
     labels_Id = labels | 'redefine labels' >> beam.ParDo(RedefineLabels(), provider.provider_Id)
-    labels_Id | 'upload' >> beam.ParDo(UploadToDatabase())
-    upload_to_pipeline_runs_collection(provider.provider_Id)
-    # TODO: add notification to admin team.
-    
+    labels_Id | 'upload' >> beam.ParDo(UploadToDatabase(), job_name)
+    upload_to_pipeline_runs_collection(provider.provider_Id, job_name)
+    # TODO: add notification to admin group for verifying labels.
+        
     if known_args.output: # For testing.
         def format_result(image, labels):
             return '%s: %s' % (image['url'], labels)

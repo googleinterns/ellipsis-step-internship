@@ -33,10 +33,11 @@ class RedefineLabels(beam.DoFn):
         Returns:
             [(dictionary of image properties, label ids list)] 
         """
-        all_label_Ids = []
+        all_labels_and_Ids = []
         for label in element[1]:
             if label in REDEFINE_LABELS[provider]: 
                 labelId = REDEFINE_LABELS[provider][label]
-                all_label_Ids.append(labelId)
-        if all_label_Ids:
-            return [(element[0], all_label_Ids)]
+                all_labels_and_Ids.append({'name': label, 'id': labelId})
+            else:
+               all_labels_and_Ids.append({'name': label}) 
+        return [(element[0], all_labels_and_Ids)]
