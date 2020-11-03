@@ -3,9 +3,9 @@
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
   You may obtain a copy of the License at
- 
+
     https://www.apache.org/licenses/LICENSE-2.0
- 
+
   Unless required by applicable law or agreed to in writing, software
   distributed under the License is distributed on an "AS IS" BASIS,
   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -14,16 +14,21 @@
 """
 
 import apache_beam as beam
+from pipeline_lib.firestore_database import initialize_db
 
-# TODO: Think about whether to do this in the same map, or change to ids inside the redefine method.
-LABEL_TO_ID = {'bag': 'GaveDiWni9CzOp6eYRDE'}
-REDEFINE_LABELS = {'Google_Vision_API':{'Bag': LABEL_TO_ID['bag'], 'Glass': LABEL_TO_ID['bag']}} #TODO: fill this map, need to think how do to that. 
+def get_redefine_map(recognition_provider_id):
+    db = initialize_db()
+    doc_dict = db.collection(u'RedefineMap').document(recognition_provider_id).get().to_dict()
+    return doc_dict['redefineMap']
 
+# pylint: disable=abstract-method
 class RedefineLabels(beam.DoFn):
-    """Converts parallelly the labels list returned from the provider to the corresponding label Id's.
+    """Converts parallelly the labels list returned from
+    the provider to the corresponding label Id's.
 
     """
-    def process(self, element, provider):
+    # pylint: disable=arguments-differ
+    def process(self, element, provider_id):
         """Uses the global redefine map to change the different labels to the project's label Ids.
 
         Args:
@@ -31,13 +36,14 @@ class RedefineLabels(beam.DoFn):
             provider: image recognition provider for the redefine map.
 
         Returns:
-            [(dictionary of image properties, label ids list)] 
+            [(dictionary of image properties, label ids list)]
         """
-        all_labels_and_Ids = []
+        all_labels_and_ids = []
         for label in element[1]:
-            if label in REDEFINE_LABELS[provider]: 
-                labelId = REDEFINE_LABELS[provider][label]
-                all_labels_and_Ids.append({'name': label, 'id': labelId})
+            redefine_map = get_redefine_map(provider_id)
+            if label in redefine_map:
+                for label_id in redefine_map[label]:
+                    all_labels_and_ids.append({'name': label, 'id': label_id})
             else:
-               all_labels_and_Ids.append({'name': label}) 
-        return [(element[0], all_labels_and_Ids)]
+                all_labels_and_ids.append({'name': label})
+        return [(element[0], all_labels_and_ids)]
