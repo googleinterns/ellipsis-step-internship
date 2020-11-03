@@ -87,7 +87,8 @@ def run(argv=None):
             # If the input was for specifing the images dataset was an ingestion provider.
             dataset = random_numbers | 'get images dataset' >> \
                 beam.ParDo(GetBatchedDataset(), ingestion_provider=ingestion_provider)
-        filtered_dataset = dataset | 'filter images' >> beam.Filter(recognition_provider.is_eligible)
+        filtered_dataset = dataset | 'filter images' >> \
+            beam.Filter(recognition_provider.is_eligible)
         images_batch = filtered_dataset | 'combine to batches' >> \
             beam.GroupBy(lambda doc: doc['random'])
         labelled_images_batch = images_batch | 'label by batch' >> \

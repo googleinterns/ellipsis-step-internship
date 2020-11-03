@@ -16,9 +16,10 @@
 import apache_beam as beam
 from pipeline_lib.firestore_database import initialize_db
 
+# pylint: disable=missing-function-docstring
 def get_redefine_map(recognition_provider_id):
     db = initialize_db()
-    doc_dict = db.collection(u'RedefineMap').document(recognition_provider_id).get().to_dict()
+    doc_dict = db.collection(u'RedefineMaps').document(recognition_provider_id).get().to_dict()
     return doc_dict['redefineMap']
 
 # pylint: disable=abstract-method

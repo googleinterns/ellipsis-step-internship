@@ -44,13 +44,13 @@ class GoogleVisionAPI(ImageRecognitionProvider):
         batch_request = vision_v1.BatchAnnotateImagesRequest(requests=requests)
         response = self.client.batch_annotate_images(request=batch_request)
         for i, image_response in enumerate(response.responses):
-            all_labels = [label.description for label in image_response.label_annotations]
+            all_labels = [label.description.lower() for label in image_response.label_annotations]
             results.append([(docs[i], all_labels)])
         return results
 
     get_labels = process
     prerequisites_map = {'format': FilterByFormat(\
         ['JPG', 'JPEG', 'PNG8', 'PNG24', 'GIF', 'BMP', 'WEBP', 'RAW', 'ICO', 'PDF', 'TIFF']),\
-            'resolution':FilterByResolution({'height':640, 'width': 480})}
+            'resolution':FilterByResolution({'height':480, 'width': 640})}
     provider_id='Google_Vision_API'
     provider_version='2.0.0'

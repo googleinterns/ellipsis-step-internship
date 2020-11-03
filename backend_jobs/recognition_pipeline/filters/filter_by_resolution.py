@@ -25,8 +25,9 @@ class FilterByResolution(FilterBy):
             than the minimum supported resolution supported by the provider.
 
         """
+        # TODO: Add resize option.
         min_length = self.prerequisites['height']
         min_width = self.prerequisites['width']
-        return int(image_attribute['width']) >= min_width and \
-          int(image_attribute['height']) >= min_length
+        return image_attribute['width'] >= min_width and \
+          image_attribute['height'] >= min_length
           
