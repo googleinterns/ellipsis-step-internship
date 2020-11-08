@@ -13,14 +13,13 @@
   limitations under the License.
  """
 
-#TODO: add function that extracts color_depth and compression_ratio
-
+from datetime import datetime
 from dataclasses import dataclass
 import enum
 
 class ProviderType(enum.Enum):
     """
-    This enum presents the diffrent imagery types
+    This enum represents the different imagery types
     """
     satellite = 1
     drone = 2
@@ -30,7 +29,7 @@ class ProviderType(enum.Enum):
 
 class VisibilityType (enum.Enum):
     """
-    This enum presents the diffrent visibility types
+    This enum represents the different visibility types
     """
     everyone = 1
     developerOnly = 2
@@ -40,13 +39,12 @@ class VisibilityType (enum.Enum):
 @dataclass
 class ImageAttributes():
     """
-    This class presents the attrebutes we need to extracy from each image.
+    This class consists of the attributes we need to extracy from each image.
     """
     id: str
     url: str
     provider_type: ProviderType
-    date_upload:str
-    date_taken:str
+    date_shot: datetime
     location:list
     attribution:str
     format:str

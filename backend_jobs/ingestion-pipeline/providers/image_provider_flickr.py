@@ -14,6 +14,8 @@
 """
 
 
+from datetime import datetime
+from pipeline_lib.database_functions import UploadToDatabase
 from pipeline_lib.image_provider_interface import ImageProvider
 from pipeline_lib.additional_classes import ProviderType
 from pipeline_lib.additional_classes import VisibilityType
@@ -45,18 +47,31 @@ class FlickrProvider(ImageProvider):
         print(photos.attrib)
         return photos.attrib['pages']
 
+
     def get_image_attributes(self, element):
         image_arrributes=ImageAttributes(
             url = element.get('url_c'),
             id =self.provider_name + element.get('id'),
             provider_type = ProviderType.camera,
-            date_upload=element.get('dateupload'),
-            date_taken=element.get('datetaken'),
+            date_shot=get_date(element),
             location=get_location(element),
             format=element.get('originalformat'),
             attribution=element.get('ownername'),
             resolution=get_resolution(element))
         return image_arrributes
+
+    def get_url_by_resolution(self, resolution, image_id):
+        if UploadToDatabase.doc_exists:
+            url = "" # get url 
+            max_resolution=resolution
+            flickr_resolution_map= {75:'s',100:'t',150	:'q',240:'m',320:'n',400:'w',
+            500:'',640:'z',800:'c',1024:'b',1600:'n',2048:'k'}
+            for key in flickr_resolution_map:
+                if  max_resolution <= key:
+                    if key == 500:
+                        return url[:-6]+url[-4:]
+                    return url[:-5]+flickr_resolution_map[key]+url[-4:]
+        return None
 
     provider_id = 'flickr_2020'
     provider_name ='flickr'
@@ -68,7 +83,8 @@ class FlickrProvider(ImageProvider):
 
 def get_location(element):
     """
-    This function gets location from metadata and if location eql (0,0) returns None.
+    This function gets a location from the given metadata,
+    if the location equals (0,0) the function returns None.
     """
     latitude=float(element.get('latitude'))
     longitude=float(element.get('longitude'))
@@ -80,7 +96,8 @@ def get_location(element):
 
 def get_resolution(element):
     """
-    This function gets location from metadata and if location eql (0,0) returns None.
+    This function gets a resolution from the given metadata,
+    if the resolution equals None the function returns None.
     """
     height=element.get('height_c')
     width=element.get('width_c')
@@ -89,3 +106,12 @@ def get_resolution(element):
     else:
         resolution={'height':int(height),'width':int(width)}
     return resolution
+
+def get_date(element):
+    """ 
+    This function extracts the date the image was taken from the metadata
+    and converts it to a datetime format.
+    """
+    date_taken = element.get('datetaken')
+    datetime_date_taken = datetime.strptime(date_taken, '%Y-%m-%d %H:%M:%S')
+    return datetime_date_taken

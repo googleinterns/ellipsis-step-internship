@@ -19,13 +19,14 @@ import firebase_admin
 from firebase_admin import credentials
 from firebase_admin import firestore
 import geohash2
+from datetime import datetime
 
-IMAGES_COLLECTION=u'imagesIngested1'
+IMAGES_COLLECTION=u'imagesIngested24'
 IMAGES_SUB_COLLECTION=u'pipelineRun'
 
 def initialize_database():
     """
-    Initializes project's database for writing/reading/updating/deleting purposes.
+    Initializes the project's database for writing/reading/updating/deleting purposes.
     """
     if not firebase_admin._apps:
         firebase_admin.initialize_app(credentials.ApplicationDefault(), {
@@ -35,18 +36,27 @@ def initialize_database():
 
 class UploadToDatabase(beam.DoFn):
     """
-    Uploads in parallell the information that was extracted from each
+    Uploads in asynchronously the information that was extracted from each
     image to the project's database.
     """
     def setup(self):
         self.db = initialize_database()
 
+    def get_ref_collection(self):
+        return self.db.collection(IMAGES_COLLECTION)
+
+    def doc_exists(self, image_id):
+        doc_ref = self.db.collection(IMAGES_COLLECTION).document(image_id)
+        doc = doc_ref.get()
+        return doc.exists
+
     def process(self, element,provider):
         """
-        Adds/Updates the project's database to contain documents with image attreddutes
-        and a sub collection with information on the pipelinerun and the provider
+        Adds/Updates the project's database to contain documents with image attributes.
+        In addition it adds for each image a sub collection with information
+        on the pipelinerun and the provider.
         Args:
-            element: ImageAttrebbute field
+            element: ImageAttribute field
         """
         #TODO: add visibility and logic
         doc_ref = self.db.collection(IMAGES_COLLECTION).document(element.id)
@@ -58,7 +68,7 @@ class UploadToDatabase(beam.DoFn):
             ingested_runs.append('2')
             ingested_providers = doc.to_dict()[u'ingestedProviders']
             ingested_providers.append('f')
-            #TODO : add an if statemen addrasing if provider already are in ingestedProviders
+            #TODO : add an if statemen addrasing whether provider already exists in ingestedProviders
             doc_ref.update({
                u'ingestedRuns':ingested_runs,
                u'ingestedProviders': ingested_providers
@@ -73,8 +83,9 @@ class UploadToDatabase(beam.DoFn):
                 u'ingestedProviders':[provider.provider_id],
                 u'ingestedRuns':[1],
                 u'coordinates': geo_point_location,
-                u'dateIngested': element.date_upload,
-                u'dateShot': element.date_taken,
+                u'dateIngested': datetime.now(),
+                u'dateShot': element.date_shot,
+                u'dateFields':get_date_fields(element.date_shot),
                 u'geoHashes': get_geo_hashes_map(element.location),
                 u'imageAttributes':{
                     u'format': element.format,
@@ -82,7 +93,7 @@ class UploadToDatabase(beam.DoFn):
                 u'attribution': element.attribution,
                 u'random': random.randint(1,101)
             })
-        #adding a doc to the sub collection (pipelinerun) in the image collection
+        #Adding a doc to the sub collection (pipelinerun) in an image collection
         sub_doc_ref.set({
             u'coordinates': element.location,
             u'provider_ID':provider.provider_id,
@@ -95,11 +106,21 @@ class UploadToDatabase(beam.DoFn):
 
 def get_geo_hashes_map(location):
     """
-    This function given a location (lat,long) calculates the geohash
-    and bields a map containing the different lengths
+    This function, given a location (lat,long), calculates the geohash
+    and builds a map containing a geohash in different lengths.
     """
     geo_hashes_map={}
     geohash=geohash2.encode(location[0],location[1])
     for i in range(1,10,1):
         geo_hashes_map['hash'+str(i)]= geohash[0:i]
     return geo_hashes_map
+
+def get_date_fields(date):
+    """
+    This function converts a datetime object to a map object contaning the date
+    """
+    year=date.year
+    month=date.month
+    day=date.day
+    date_fields={'year':year,'month':month,'day':day}
+    return date_fields

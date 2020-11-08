@@ -16,13 +16,15 @@
 from abc import ABC
 import apache_beam as beam
 
+"""
+Each image provider that is added to the platform will inherit from the ImageProviders class.
+This class is incharge of:
+* returning images from the provider
+* calculting the num of baches we want to run in parallel
+* extarcting additional metadata.
+"""
 
 class ImageProvider(ABC, beam.DoFn):
-    """
-    Each image provider that is added to the platform will inherit from ImageProviders class.
-    In order to provide images there is a function that returns a list of images,
-    and a function that returns the num of batches we call the images.
-    """
 
     def get_images(self, num_of_batches, num_of_images, query_arguments):
         """
@@ -30,8 +32,8 @@ class ImageProvider(ABC, beam.DoFn):
         and receives a list of images
         Args:
             num_of_batches: the number of the batches we want to run in parallel
-            num_of_images
-            query_arguments
+            num_of_images: the amount of images we retrieve
+            query_arguments: a map object contaning arguments we retrieve images by
         Returns:
             list of images with info on the images.
         """
@@ -39,6 +41,8 @@ class ImageProvider(ABC, beam.DoFn):
     def get_num_of_batches(self, query_arguments):
         """
         This function is incharge of calculating the amount of batches we want to call
+        Args:
+            query_arguments: a map object contaning arguments we retrieve batches by
         Returns:
             num_of_batches: number
         """
@@ -47,13 +51,15 @@ class ImageProvider(ABC, beam.DoFn):
         """
         This function is incharge of exracting the metadata from each image
         Returns:
-            imageAttributs: ImageAttributs- a class that contains all the info on the image
+            imageAttributes: ImageAttributes- a class that contains all the info on the image
         """
 
-    def get_url_by_resultion(self, resultion, url):
+    def get_url_by_resolution(self, resolution, image_id):
         """
+        This function gets a resolution and an image_id, and generates a new url
+        with the required resolution
         Returns:
-            url:
+            url: a url reffering to the image in the requested resolution
         """
 
     # pylint: disable=missing-function-docstring

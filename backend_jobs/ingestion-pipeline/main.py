@@ -20,7 +20,7 @@ import apache_beam as beam
 from apache_beam.io import WriteToText
 from apache_beam.options.pipeline_options import PipelineOptions
 from providers import image_provider_flickr
-from pipeline_lib import upload_to_database
+from pipeline_lib import database_functions
 
 #JOB_NAME = 'image-ingestion-job'# + str(datetime.now()) #Global name for the job that will run
 IMAGE_PROVIDERS = {'FlickrProvider': image_provider_flickr.FlickrProvider}
@@ -31,7 +31,11 @@ IMAGE_PROVIDERS = {'FlickrProvider': image_provider_flickr.FlickrProvider}
 #such as invalid resolution date and more
 def filtered_images(element):
     """ * """
-    return element.url is not None and element.location is not None and element.format is not None
+    return (element.url is not None and
+    element.location is not None and
+    element.format is not None and
+    element.resolution['width'] >100 and
+    element.resolution['height'] > 100)
 
 def get_image_provider(provider_name):
     """ * """
@@ -65,7 +69,7 @@ def run(argv=None):
         query_by_arguments_map={'tag':known_args.input_query_tag}
         num_of_batches= api_provider.get_num_of_batches(query_by_arguments_map)
         create_batch = (pipeline | 'create' >> beam.Create(
-            [i for i in range(1, int(2)+1, 1)]) )
+            [i for i in range(1, int(1)+1, 1)]) )
         images = create_batch | 'call API' >> beam.ParDo(
             api_provider.get_images,
             api_provider.num_of_images,
@@ -74,10 +78,13 @@ def run(argv=None):
             api_provider.get_image_attributes)
         filtered_elements = extracted_elements | 'filter' >> beam.Filter(filtered_images)
         filtered_elements | 'upload' >> beam.ParDo(
-            upload_to_database.UploadToDatabase(),api_provider)
+            database_functions.UploadToDatabase(),api_provider)
 
         if known_args.output:
             filtered_elements | 'Write' >> WriteToText(known_args.output)
+            url="http_c.png"
+            print(url)
+            print(api_provider.get_url_by_resolution(500,url))
 
 if __name__ == '__main__':
     logging.getLogger().setLevel(logging.INFO)
