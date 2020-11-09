@@ -21,7 +21,7 @@ from firebase_admin import credentials
 from firebase_admin import firestore
 import geohash2
 
-IMAGES_COLLECTION=u'imagesIngested25'
+IMAGES_COLLECTION=u'imagesIngested26'
 IMAGES_SUB_COLLECTION=u'pipelineRun'
 
 def initialize_database():
@@ -42,9 +42,6 @@ class UploadToDatabase(beam.DoFn):
     def setup(self):
         self.database_firebase = initialize_database()
 
-    def get_ref_collection(self):
-        return self.database_firebase.collection(IMAGES_COLLECTION)
-
     def get_doc(self, image_id):
         doc_ref = self.database_firebase.collection(IMAGES_COLLECTION).document(image_id)
         doc = doc_ref.get()
@@ -58,10 +55,10 @@ class UploadToDatabase(beam.DoFn):
         Args:
             element: ImageAttribute field
         """
-        #TODO: add visibility and logic
         doc_ref = self.database_firebase.collection(IMAGES_COLLECTION).document(element.id)
         doc = doc_ref.get()
-        sub_doc_ref= doc_ref.collection(IMAGES_SUB_COLLECTION).document()
+        sub_collection_ref= doc_ref.collection(IMAGES_SUB_COLLECTION)
+        sub_collection_doc_ref= sub_collection_ref.document()
         if doc.exists:
             #doc found- image has bean ingested already
             ingested_runs = doc.to_dict()[u'ingestedRuns']
@@ -71,7 +68,8 @@ class UploadToDatabase(beam.DoFn):
                 ingested_providers.append(provider.provider_id)
             doc_ref.update({
                u'ingestedRuns':ingested_runs,
-               u'ingestedProviders': ingested_providers
+               u'ingestedProviders': ingested_providers,
+               u'visibility': get_max_visibility(provider.visibility,sub_collection_ref),
             })
         else:
             #doc not found- image has not bean ingested already
@@ -91,10 +89,11 @@ class UploadToDatabase(beam.DoFn):
                     u'format': element.format,
                     u'resolution':element.resolution},
                 u'attribution': element.attribution,
-                u'random': random.randint(1,101)
+                u'random': random.randint(1,101),
+                u'visibility': provider.visibility.value,
             })
         #Adding a doc to the sub collection (pipelinerun) in an image collection
-        sub_doc_ref.set({
+        sub_collection_doc_ref.set({
             u'coordinates': element.location,
             u'provider_ID':provider.provider_id,
             u'provider_version': provider.provider_version,
@@ -103,6 +102,17 @@ class UploadToDatabase(beam.DoFn):
             u'pipeline_run': job_name
         })
 
+def get_max_visibility(provider_visibility,sub_collection_ref):
+    """
+    This function, given a provider_visibility and a sub_collection_ref,
+    calculates what is the highest visibility with in the subcollection and the provider_visibility
+    """
+    max_visibility=provider_visibility.value
+    for doc in sub_collection_ref.stream():
+        doc_visibility=doc.to_dict()[u'provider_visibility']
+        if doc_visibility > max_visibility:
+            max_visibility = doc_visibility
+    return max_visibility
 
 def get_geo_hashes_map(location):
     """

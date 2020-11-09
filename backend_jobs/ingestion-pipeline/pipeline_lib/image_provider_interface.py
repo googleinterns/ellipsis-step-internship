@@ -53,6 +53,8 @@ class ImageProvider(ABC, beam.DoFn):
     def get_image_attributes(self, element):
         """
         This function is incharge of exracting the metadata from each image
+        Args:
+            element:the image we get from the get_images function
         Returns:
             imageAttributes: ImageAttributes- a class that contains all the info on the image
         """
@@ -62,6 +64,9 @@ class ImageProvider(ABC, beam.DoFn):
         """
         This function gets a resolution and an image_id, and generates a new url
         with the required resolution
+        Args:
+            resolution: map object in the format {'height':int(height),'width':int(width)}
+            image_id: str in the format providername+number
         Returns:
             url: a url reffering to the image in the requested resolution
         """

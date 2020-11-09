@@ -31,9 +31,10 @@ class VisibilityType (enum.Enum):
     """
     This enum represents the different visibility types
     """
-    everyone = 1
+    nobody = 1
     developerOnly = 2
-    nobody = 3
+    everyone = 3
+
 
 
 @dataclass
