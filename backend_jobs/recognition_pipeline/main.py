@@ -42,7 +42,7 @@ NAME_TO_PROVIDER = {'Google_Vision_API': google_vision_api.GoogleVisionAPI()}
 def get_provider(provider_name):
     """ Creates an object of type ImageRecognitionProvider by the specific provider input.
 
-    """ 
+    """
     if provider_name in NAME_TO_PROVIDER:
         return NAME_TO_PROVIDER[provider_name]
     raise ValueError('{provider} is an unknown image recognition provider'\
