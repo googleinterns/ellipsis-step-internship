@@ -39,6 +39,7 @@ class GetBatchedDataset(beam.DoFn):
 
     """
     def setup(self):
+        # pylint: disable=attribute-defined-outside-init
         self.db = initialize_db()
 
     # pylint: disable=arguments-differ
@@ -79,6 +80,7 @@ class UploadToDatabase(beam.DoFn):
 
     """
     def setup(self):
+        # pylint: disable=attribute-defined-outside-init
         self.db = initialize_db()
 
     # pylint: disable=arguments-differ
@@ -112,6 +114,7 @@ def upload_to_pipeline_runs_collection(provider_id, run_id):
     """ Uploads inforamtion about the pipeline run to the Firestore collection
 
     """
+    # pylint: disable=fixme
     # TODO: get start, end and quality of current pipeline run.
     db = initialize_db()
     db.collection(u'RecognitionPipelineRuns').document().set({

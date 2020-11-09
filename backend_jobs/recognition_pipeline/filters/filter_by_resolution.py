@@ -14,7 +14,9 @@
 """
 
 from pipeline_lib.filter_by import FilterBy
-# from ingestion-pipeline.main import get_image_provider TODO: add this after merging with Tal's branch
+# from ingestion-pipeline.main import get_image_provider
+# pylint: disable=fixme
+# TODO: add this after merging with Tal's branch
 
 class FilterByResolution(FilterBy):
     """ Checks if the image has a high enough resolution.
@@ -34,6 +36,7 @@ class FilterByResolution(FilterBy):
             return True
         return self.change_url_by_resolution(image)
 
+    # pylint: disable=unused-argument
     def change_url_by_resolution(self, image):
         """ Returns True iff the image's url was changed to a supported resolution
 
@@ -43,12 +46,11 @@ class FilterByResolution(FilterBy):
           dictionary to be the correct one and returns True.
           Otherwise, the image cannot be supported and returns False.
       """
-        """ TODO: add this after merging with Tal's branch
-        for provider_name in image['ingestedProviders']:
-            provider = get_image_provider(provider_name)
-            resize_url = provider.get_url_by_resolution(self.prerequisites)
-            if resize_url:
-              image['url'] = resize_url
-              return True
-      """
+        # TODO: add this after merging with Tal's branch
+        # for provider_name in image['ingestedProviders']:
+        #     provider = get_image_provider(provider_name)
+        #     resize_url = provider.get_url_by_resolution(self.prerequisites)
+        #     if resize_url:
+        #       image['url'] = resize_url
+        #       return True
         return False
