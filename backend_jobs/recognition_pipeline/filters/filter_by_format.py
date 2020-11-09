@@ -23,7 +23,7 @@ class FilterByFormat(FilterBy):
     def is_supported(self, image):
         """ Returns True iff image's format is in list of allowed formats.
 
-      """
+        """
         image_attribute = image['imageAttributes']['format']
         return image_attribute.upper() in self.prerequisites
  

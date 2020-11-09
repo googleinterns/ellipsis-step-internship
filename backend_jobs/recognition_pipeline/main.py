@@ -48,6 +48,13 @@ def get_provider(provider_name):
     raise ValueError('{provider} is an unknown image recognition provider'\
         .format(provider = provider_name))
 
+def get_timestamp_id():
+    """ Returns a string with only numbers as time id.
+    The string will be used as a unique id for each dataflow job.
+
+    """
+    return str(datetime.timestamp(datetime.now())).replace('.','')
+
 def run(argv=None):
     """Main entry point, defines and runs the image recognition pipeline."""
     parser = argparse.ArgumentParser()
@@ -69,9 +76,9 @@ def run(argv=None):
         dest='output',
         help='Output file to write results to for testing.')
     known_args, pipeline_args = parser.parse_known_args(argv)
-    job_name = 'recognition-pipeline-run-{date_time}'.format(date_time = datetime.now())
+    job_name = 'recognition{time_id}'.format(time_id = get_timestamp_id())
 
-    pipeline_options = PipelineOptions(pipeline_args)
+    pipeline_options = PipelineOptions(pipeline_args, job_name=job_name)
 
     with beam.Pipeline(options=pipeline_options) as p:
         ingestion_run = known_args.input_ingestion_run

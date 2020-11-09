@@ -34,7 +34,7 @@ class RedefineLabels(beam.DoFn):
 
         Args:
             element: tuple of dictionary of image properties and list of labels.
-            provider: image recognition provider for the redefine map.
+            provider_id: image recognition provider for the redefine map.
 
         Returns:
             [(dictionary of image properties, label ids list)]

@@ -20,7 +20,7 @@ import apache_beam as beam
 RANGE_OF_BATCH = 10
 # Defines the range of the random field to query the databse by batches, \
 # each batch covers all documents with random value of X up to value of X+RANGE_OF_BATCH
-COLLECTION_NAME = 'imagesIngested25'
+COLLECTION_NAME = 'test'
 
 def initialize_db():
     """Initializes project's Firestore database for writing and reading purposes.
@@ -69,8 +69,10 @@ class GetBatchedDataset(beam.DoFn):
                     where(u'random', u'>=', random_min).where(u'random', u'<=', random_max).stream()
         return [add_id_to_dict(doc) for doc in query]
 
-# pylint: disable=missing-function-docstring
 def add_id_to_dict(doc):
+    """ Adds the document's id to the document's fields dictionary.
+
+    """
     full_dict = doc.to_dict()
     full_dict['id'] = doc.id
     return full_dict
