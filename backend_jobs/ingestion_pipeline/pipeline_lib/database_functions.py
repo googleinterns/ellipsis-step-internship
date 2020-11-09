@@ -42,11 +42,6 @@ class UploadToDatabase(beam.DoFn):
     def setup(self):
         self.database_firebase = initialize_database()
 
-    def get_doc(self, image_id):
-        doc_ref = self.database_firebase.collection(IMAGES_COLLECTION).document(image_id)
-        doc = doc_ref.get()
-        return doc
-
     def process(self, element,provider,job_name):
         """
         Adds/Updates the project's database to contain documents with image attributes.
@@ -137,3 +132,9 @@ def get_date_fields(date):
     day=date.day
     date_fields={'year':year,'month':month,'day':day}
     return date_fields
+
+def get_doc_by_id(image_id):
+    database_firebase = initialize_database()
+    doc_ref = database_firebase.collection(IMAGES_COLLECTION).document(image_id)
+    doc = doc_ref.get()
+    return doc

@@ -15,7 +15,7 @@
 
 
 from datetime import datetime
-from pipeline_lib.database_functions import UploadToDatabase
+from pipeline_lib.database_functions import get_doc_by_id
 from pipeline_lib.image_provider_interface import ImageProvider
 from pipeline_lib.additional_classes import ProviderType
 from pipeline_lib.additional_classes import VisibilityType
@@ -60,8 +60,7 @@ class FlickrProvider(ImageProvider):
         return image_arrributes
 
     def get_url_by_resolution(self, resolution, image_id):
-        database_firebase = UploadToDatabase()
-        doc = database_firebase.get_doc(image_id)
+        doc = get_doc_by_id(image_id)
         if doc.exists:
             url = doc.to_dict()[u'url']
             max_resolution =  max(resolution['height'],resolution['width'])
