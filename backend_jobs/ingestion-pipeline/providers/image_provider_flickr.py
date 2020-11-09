@@ -47,7 +47,6 @@ class FlickrProvider(ImageProvider):
         print(photos.attrib)
         return photos.attrib['pages']
 
-
     def get_image_attributes(self, element):
         image_arrributes=ImageAttributes(
             url = element.get('url_c'),
@@ -61,16 +60,18 @@ class FlickrProvider(ImageProvider):
         return image_arrributes
 
     def get_url_by_resolution(self, resolution, image_id):
-        if UploadToDatabase.doc_exists:
-            url = "" # get url 
-            max_resolution=resolution
-            flickr_resolution_map= {75:'s',100:'t',150	:'q',240:'m',320:'n',400:'w',
+        database_firebase = UploadToDatabase()
+        doc = database_firebase.get_doc(image_id)
+        if doc.exists:
+            url = doc.to_dict()[u'url']
+            max_resolution =  max(resolution['height'],resolution['width'])
+            flickr_resolution_map = {75:'s',100:'t',150	:'q',240:'m',320:'n',400:'w',
             500:'',640:'z',800:'c',1024:'b',1600:'n',2048:'k'}
             for key in flickr_resolution_map:
                 if  max_resolution <= key:
                     if key == 500:
-                        return url[:-6]+url[-4:]
-                    return url[:-5]+flickr_resolution_map[key]+url[-4:]
+                        return url[:-6] + url[-4:]
+                    return url[:-5] + flickr_resolution_map[key] + url[-4:]
         return None
 
     provider_id = 'flickr_2020'
@@ -108,7 +109,7 @@ def get_resolution(element):
     return resolution
 
 def get_date(element):
-    """ 
+    """
     This function extracts the date the image was taken from the metadata
     and converts it to a datetime format.
     """

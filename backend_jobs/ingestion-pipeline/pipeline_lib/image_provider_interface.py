@@ -13,7 +13,7 @@
   limitations under the License.
  """
 
-from abc import ABC
+from abc import ABC, abstractmethod
 import apache_beam as beam
 
 """
@@ -26,6 +26,7 @@ This class is incharge of:
 
 class ImageProvider(ABC, beam.DoFn):
 
+    @abstractmethod
     def get_images(self, num_of_batches, num_of_images, query_arguments):
         """
         This function is incharge of callind an API/Image provider source
@@ -38,6 +39,7 @@ class ImageProvider(ABC, beam.DoFn):
             list of images with info on the images.
         """
 
+    @abstractmethod
     def get_num_of_batches(self, query_arguments):
         """
         This function is incharge of calculating the amount of batches we want to call
@@ -47,6 +49,7 @@ class ImageProvider(ABC, beam.DoFn):
             num_of_batches: number
         """
 
+    @abstractmethod
     def get_image_attributes(self, element):
         """
         This function is incharge of exracting the metadata from each image
@@ -54,6 +57,7 @@ class ImageProvider(ABC, beam.DoFn):
             imageAttributes: ImageAttributes- a class that contains all the info on the image
         """
 
+    @abstractmethod
     def get_url_by_resolution(self, resolution, image_id):
         """
         This function gets a resolution and an image_id, and generates a new url

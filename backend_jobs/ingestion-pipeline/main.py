@@ -14,6 +14,7 @@
  """
 
 from __future__ import absolute_import
+from datetime import datetime
 import argparse
 import logging
 import apache_beam as beam
@@ -22,15 +23,14 @@ from apache_beam.options.pipeline_options import PipelineOptions
 from providers import image_provider_flickr
 from pipeline_lib import database_functions
 
-#JOB_NAME = 'image-ingestion-job'# + str(datetime.now()) #Global name for the job that will run
+#Global name for the job that will run
+JOB_NAME = 'ingestion' + str(int(datetime.timestamp(datetime.now())))
 IMAGE_PROVIDERS = {'FlickrProvider': image_provider_flickr.FlickrProvider}
-
 
 # pylint: disable=fixme
 #TODO: write a filtering function that takes into consideration all attributes
 #such as invalid resolution date and more
 def filtered_images(element):
-    """ * """
     return (element.url is not None and
     element.location is not None and
     element.format is not None and
@@ -38,11 +38,12 @@ def filtered_images(element):
     element.resolution['height'] > 100)
 
 def get_image_provider(provider_name):
-    """ * """
     return IMAGE_PROVIDERS[provider_name]()
 
 def run(argv=None):
-    """Main entry point; defines and runs the image ingestion pipeline."""
+    """
+    Main entry point; defines and runs the image ingestion pipeline.
+    """
     parser = argparse.ArgumentParser()
     parser.add_argument(
         '--input_provider_name',
@@ -59,7 +60,7 @@ def run(argv=None):
         dest='output',
         help='Output file to write results to.')
     known_args, pipeline_args = parser.parse_known_args(argv)
-    pipeline_options = PipelineOptions(pipeline_args)#,job_name=JOB_NAME)
+    pipeline_options = PipelineOptions(pipeline_args,job_name=JOB_NAME)
 
     # The pipeline will be run on exiting the with block.
     # pylint: disable=expression-not-assigned
@@ -78,13 +79,11 @@ def run(argv=None):
             api_provider.get_image_attributes)
         filtered_elements = extracted_elements | 'filter' >> beam.Filter(filtered_images)
         filtered_elements | 'upload' >> beam.ParDo(
-            database_functions.UploadToDatabase(),api_provider)
+            database_functions.UploadToDatabase(),api_provider,JOB_NAME)
 
         if known_args.output:
             filtered_elements | 'Write' >> WriteToText(known_args.output)
-            url="http_c.png"
-            print(url)
-            print(api_provider.get_url_by_resolution(500,url))
+
 
 if __name__ == '__main__':
     logging.getLogger().setLevel(logging.INFO)

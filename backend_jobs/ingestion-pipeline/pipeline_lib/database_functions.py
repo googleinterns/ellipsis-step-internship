@@ -14,14 +14,14 @@
 """
 
 import random
+from datetime import datetime
 import apache_beam as beam
 import firebase_admin
 from firebase_admin import credentials
 from firebase_admin import firestore
 import geohash2
-from datetime import datetime
 
-IMAGES_COLLECTION=u'imagesIngested24'
+IMAGES_COLLECTION=u'imagesIngested25'
 IMAGES_SUB_COLLECTION=u'pipelineRun'
 
 def initialize_database():
@@ -40,17 +40,17 @@ class UploadToDatabase(beam.DoFn):
     image to the project's database.
     """
     def setup(self):
-        self.db = initialize_database()
+        self.database_firebase = initialize_database()
 
     def get_ref_collection(self):
-        return self.db.collection(IMAGES_COLLECTION)
+        return self.database_firebase.collection(IMAGES_COLLECTION)
 
-    def doc_exists(self, image_id):
-        doc_ref = self.db.collection(IMAGES_COLLECTION).document(image_id)
+    def get_doc(self, image_id):
+        doc_ref = self.database_firebase.collection(IMAGES_COLLECTION).document(image_id)
         doc = doc_ref.get()
-        return doc.exists
+        return doc
 
-    def process(self, element,provider):
+    def process(self, element,provider,job_name):
         """
         Adds/Updates the project's database to contain documents with image attributes.
         In addition it adds for each image a sub collection with information
@@ -59,22 +59,22 @@ class UploadToDatabase(beam.DoFn):
             element: ImageAttribute field
         """
         #TODO: add visibility and logic
-        doc_ref = self.db.collection(IMAGES_COLLECTION).document(element.id)
+        doc_ref = self.database_firebase.collection(IMAGES_COLLECTION).document(element.id)
         doc = doc_ref.get()
         sub_doc_ref= doc_ref.collection(IMAGES_SUB_COLLECTION).document()
         if doc.exists:
             #doc found- image has bean ingested already
             ingested_runs = doc.to_dict()[u'ingestedRuns']
-            ingested_runs.append('2')
+            ingested_runs.append(job_name)
             ingested_providers = doc.to_dict()[u'ingestedProviders']
-            ingested_providers.append('f')
-            #TODO : add an if statemen addrasing whether provider already exists in ingestedProviders
+            if provider.provider_id not in ingested_providers:
+                ingested_providers.append(provider.provider_id)
             doc_ref.update({
                u'ingestedRuns':ingested_runs,
                u'ingestedProviders': ingested_providers
             })
         else:
-            #No such document!
+            #doc not found- image has not bean ingested already
             geo_point_location=firestore.GeoPoint(
                 float(element.location[0]),
                 float(element.location[1]))
@@ -100,7 +100,7 @@ class UploadToDatabase(beam.DoFn):
             u'provider_version': provider.provider_version,
             u'provider_type':element.provider_type.value,
             u'provider_visibility': provider.visibility.value,
-            u'pipeline_run': 1
+            u'pipeline_run': job_name
         })
 
 
