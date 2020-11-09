@@ -105,7 +105,8 @@ class UploadToDatabase(beam.DoFn):
                 u'visibility': 0,
                 u'parentImageId': doc_id,
                 u'pipelineRunId': run_id,
-                u'hashmap': element[0]['geoHashes']
+                u'hashmap': element[0]['geoHashes'],
+                u'random': element[0]['random']
             })
             if 'id' in label:
                 doc.set({
