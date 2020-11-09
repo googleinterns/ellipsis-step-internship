@@ -38,7 +38,7 @@ def initialize_database():
 
 class UploadToDatabase(beam.DoFn):
     """
-    Uploads in asynchronously the information that was extracted from each
+    Uploads asynchronously the information that was extracted from each
     image to the project's database.
     """
     def setup(self):
@@ -51,68 +51,66 @@ class UploadToDatabase(beam.DoFn):
         on the pipelinerun and the provider.
         Args:
             element: ImageAttribute field
-            provider: the provider we are runing now
-            job_name: the job name that we are runing now
+            provider: the provider we are running now
+            job_name: the job name that we are running now
         """
         doc_ref = self.database_firebase.collection(IMAGES_COLLECTION).document(element.id)
         doc = doc_ref.get()
         sub_collection_ref= doc_ref.collection(IMAGES_SUB_COLLECTION)
         sub_collection_doc_ref= sub_collection_ref.document()
         if doc.exists:
-            #doc found- image has bean ingested already
-            ingested_runs = doc.to_dict()[u'ingestedRuns']
-            ingested_runs.append(job_name)
-            ingested_providers = doc.to_dict()[u'ingestedProviders']
-            if provider.provider_id not in ingested_providers:
-                ingested_providers.append(provider.provider_id)
-            doc_ref.update({
-               u'ingestedRuns':ingested_runs,
-               u'ingestedProviders': ingested_providers,
-               u'visibility': get_max_visibility(provider.visibility,sub_collection_ref),
-            })
+            #doc found- image has been ingested already
+            update_document(provider,doc, doc_ref,job_name)
         else:
-            #doc not found- image has not bean ingested already
-            geo_point_coordinates=cloud_firestore.GeoPoint(
-                float(element.coordinates['latitude']),
-                float(element.coordinates['longitude']))
-            doc_ref.set({
-                u'url': element.url,
-                u'ingestedProviders':[provider.provider_id],
-                u'ingestedRuns':[1],
-                u'coordinates': geo_point_coordinates,
-                u'dateIngested': datetime.now(),
-                u'dateShot': element.date_shot,
-                u'dateFields':get_date_fields(element.date_shot),
-                u'geoHashes': get_geo_hashes_map(element.coordinates),
-                u'imageAttributes':{
-                    u'format': element.format,
-                    u'resolution':element.resolution},
-                u'attribution': element.attribution,
-                u'random': random.randint(1,101),
-                u'visibility': provider.visibility.value,
-            })
-        #Adding a doc to the sub collection (pipelinerun) in an image collection
-        sub_collection_doc_ref.set({
-            u'coordinates': element.coordinates,
-            u'provider_ID':provider.provider_id,
-            u'provider_version': provider.provider_version,
-            u'provider_type':element.provider_type.value,
-            u'provider_visibility': provider.visibility.value,
-            u'pipeline_run': job_name,
-            u'geoHashes': get_geo_hashes_map(element.coordinates),
-        })
+            #doc not found- image has not been ingested already
+            add_document(element, provider, doc_ref)
+        upload_sub_collection(element, provider, job_name, sub_collection_doc_ref)
 
-def get_max_visibility(provider_visibility,sub_collection_ref):
-    """
-    This function, given a provider_visibility and a sub_collection_ref,
-    calculates what is the highest visibility with in the subcollection and the provider_visibility
-    """
-    max_visibility=provider_visibility.value
-    for doc in sub_collection_ref.stream():
-        doc_visibility=doc.to_dict()[u'provider_visibility']
-        if doc_visibility > max_visibility:
-            max_visibility = doc_visibility
-    return max_visibility
+def add_document(element, provider, doc_ref):
+    geo_point_coordinates=cloud_firestore.GeoPoint(
+        float(element.coordinates['latitude']),
+        float(element.coordinates['longitude']))
+    doc_ref.set({
+        u'url': element.url,
+        u'ingestedProviders':[provider.provider_id],
+        u'ingestedRuns':[1],
+        u'coordinates': geo_point_coordinates,
+        u'dateIngested': datetime.now(),
+        u'dateShot': element.date_shot,
+        u'dateFields':get_date_fields(element.date_shot),
+        u'geoHashes': get_geo_hashes_map(element.coordinates),
+        u'imageAttributes':{
+            u'format': element.format,
+            u'resolution':element.resolution},
+        u'attribution': element.attribution,
+        u'random': random.randint(1,101),
+        u'visibility': provider.visibility.value,
+    })
+
+def update_document(provider,doc, doc_ref,job_name):
+    ingested_runs = doc.to_dict()[u'ingestedRuns']
+    ingested_runs.append(job_name)
+    ingested_providers = doc.to_dict()[u'ingestedProviders']
+    if provider.provider_id not in ingested_providers:
+        ingested_providers.append(provider.provider_id)
+    doc_ref.update({
+        u'ingestedRuns':ingested_runs,
+        u'ingestedProviders': ingested_providers,
+        u'visibility': max(provider.visibility, doc.to_dict()[u'visibility']),
+    })
+
+def upload_sub_collection(element, provider,job_name, sub_collection_doc_ref):
+    #Adding a doc to the sub collection (pipelinerun) in an image collection
+    sub_collection_doc_ref.set({
+        u'coordinates': element.coordinates,
+        u'provider_ID':provider.provider_id,
+        u'provider_version': provider.provider_version,
+        u'provider_type':element.provider_type.value,
+        u'provider_visibility': provider.visibility.value,
+        u'pipeline_run': job_name,
+        u'geoHashes': get_geo_hashes_map(element.coordinates),
+    })
+
 
 def get_geo_hashes_map(coordinates):
     """
