@@ -12,11 +12,11 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  """
+ # pylint: disable=pointless-string-statement
 
 from abc import ABC, abstractmethod
 import apache_beam as beam
 
-# pylint: disable=pointless-string-statement
 """
 Each image provider that is added to the platform will inherit from the ImageProviders class.
 This class is incharge of:
