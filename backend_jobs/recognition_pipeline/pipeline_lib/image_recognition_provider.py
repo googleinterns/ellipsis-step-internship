@@ -43,7 +43,7 @@ class ImageRecognitionProvider(ABC, beam.DoFn):
         """
         for criteria, criteria_filter in self.prerequisites_map.items():
             if criteria not in image['imageAttributes'] or \
-                not criteria_filter.is_supported(image['imageAttributes'][criteria]):
+                not criteria_filter.is_supported(image):
                 # If the image doesn't have this property stored or
                 # the property doesn't meet the perequisites then it is not supported.
                 return False

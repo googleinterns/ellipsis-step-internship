@@ -45,7 +45,8 @@ def get_provider(provider_name):
     """ 
     if provider_name in NAME_TO_PROVIDER:
         return NAME_TO_PROVIDER[provider_name]
-    raise ValueError('{provider} is an unknown image recognition provider'.format(provider = provider_name))
+    raise ValueError('{provider} is an unknown image recognition provider'\
+        .format(provider = provider_name))
 
 def run(argv=None):
     """Main entry point, defines and runs the image recognition pipeline."""
@@ -93,8 +94,8 @@ def run(argv=None):
             beam.GroupBy(lambda doc: doc['random'])
         labelled_images_batch = images_batch | 'label by batch' >> \
             beam.ParDo(recognition_provider)
-            # labels the images by the process method of the provider
-        labelled_images = labelled_images_batch | 'flatten lists' >> \
+            # labels the images by the process method of the provider.
+        labelled_images = labelled_images_batch | \
             beam.FlatMap(lambda elements: elements)
         labels_id = labelled_images | 'redefine labels' >> \
             beam.ParDo(RedefineLabels(), recognition_provider.provider_id)
@@ -105,7 +106,7 @@ def run(argv=None):
             send_email_to_notify_admins(job_name=job_name, ingestion_run=ingestion_run)
         else:
             send_email_to_notify_admins(job_name=job_name, ingestion_provider=ingestion_provider)
- 
+
         if known_args.output: # For testing.
             def format_result(image, labels):
                 return '%s: %s' % (image['url'], labels)

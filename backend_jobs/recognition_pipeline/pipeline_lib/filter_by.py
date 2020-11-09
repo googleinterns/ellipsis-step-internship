@@ -23,12 +23,12 @@ class FilterBy(ABC):
         self.prerequisites = prerequisites
 
     @abstractmethod
-    def is_supported(self, image_attribute):
+    def is_supported(self, image):
         """Checks if the images arribute is supported by the
         provider's prerequisites for a specific criteria.
 
           Args:
-              image_attribute: The image's propery which needs to be checked.
+              image: The image's dictionary which needs to be checked.
 
           Returns:
               True iff the image attribute matches the provider's prerequisite.

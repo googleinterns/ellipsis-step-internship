@@ -20,7 +20,7 @@ import apache_beam as beam
 RANGE_OF_BATCH = 10
 # Defines the range of the random field to query the databse by batches, \
 # each batch covers all documents with random value of X up to value of X+RANGE_OF_BATCH
-COLLECTION_NAME = 'imagesIngested4'
+COLLECTION_NAME = 'imagesIngested25'
 
 def initialize_db():
     """Initializes project's Firestore database for writing and reading purposes.
@@ -58,8 +58,6 @@ class GetBatchedDataset(beam.DoFn):
         random_min = element
         random_max = element+RANGE_OF_BATCH-1
         # the higher limit for querying the database by the random field.
-        # TODO: have different queries for ingestion provider and ingestion run once
-        # relevant data has been uploaded to Firestore by ingestion pipeline.
         if ingestion_run:
             query = self.db.collection(COLLECTION_NAME).\
                 where(u'ingestedRuns',u'array_contains', ingestion_run).\
@@ -91,7 +89,6 @@ class UploadToDatabase(beam.DoFn):
         Args:
             element: tuple of image document dict and a list of all label Ids.
         """
-        # TODO: need to figure out how to add the pipeline run's id inside the pipeline
         doc_id = element[0]['id']
         subcollection_ref = self.db.collection(COLLECTION_NAME).document(doc_id).\
             collection(u'Labels')
