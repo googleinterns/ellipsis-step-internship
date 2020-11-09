@@ -19,11 +19,13 @@ import apache_beam as beam
 import firebase_admin
 from firebase_admin import credentials
 from firebase_admin import firestore
+from google.cloud import firestore as cloud_firestore
 import geohash2
 
-IMAGES_COLLECTION=u'imagesIngested26'
+IMAGES_COLLECTION=u'test2'
 IMAGES_SUB_COLLECTION=u'pipelineRun'
 
+# pylint: disable=protected-access,attribute-defined-outside-init,arguments-differ,abstract-method
 def initialize_database():
     """
     Initializes the project's database for writing/reading/updating/deleting purposes.
@@ -42,7 +44,7 @@ class UploadToDatabase(beam.DoFn):
     def setup(self):
         self.database_firebase = initialize_database()
 
-    def process(self, element,provider,job_name):
+    def process(self, element, provider, job_name):
         """
         Adds/Updates the project's database to contain documents with image attributes.
         In addition it adds for each image a sub collection with information
@@ -70,7 +72,7 @@ class UploadToDatabase(beam.DoFn):
             })
         else:
             #doc not found- image has not bean ingested already
-            geo_point_coordinates=firestore.GeoPoint(
+            geo_point_coordinates=cloud_firestore.GeoPoint(
                 float(element.coordinates['latitude']),
                 float(element.coordinates['longitude']))
             doc_ref.set({
@@ -134,6 +136,9 @@ def get_date_fields(date):
     return date_fields
 
 def get_doc_by_id(image_id):
+    """
+    This function given a id returns a the doc in IMAGES_COLLECTION
+    """
     database_firebase = initialize_database()
     doc_ref = database_firebase.collection(IMAGES_COLLECTION).document(image_id)
     doc = doc_ref.get()

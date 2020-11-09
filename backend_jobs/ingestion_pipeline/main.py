@@ -27,10 +27,10 @@ from pipeline_lib import database_functions
 JOB_NAME = 'ingestion' + str(int(datetime.timestamp(datetime.now())))
 IMAGE_PROVIDERS = {'FlickrProvider': image_provider_flickr.FlickrProvider}
 
-# pylint: disable=fixme
-#TODO: write a filtering function that takes into consideration all attributes
-#such as invalid resolution date and more
 def filtered_images(element):
+    """
+    This function returns true if the image standes in all of the requirement's. e.g.:; url != none
+    """
     return (element.url is not None and
     element.coordinates is not None and
     element.format is not None and
@@ -38,6 +38,9 @@ def filtered_images(element):
     element.resolution['height'] > 100)
 
 def get_image_provider(provider_name):
+    """
+    This function given a provider's name returns a pointer to the provider's function.
+    """
     return IMAGE_PROVIDERS[provider_name]()
 
 def run(argv=None):
@@ -70,7 +73,7 @@ def run(argv=None):
         query_by_arguments_map={'tag':known_args.input_query_tag}
         num_of_batches= api_provider.get_num_of_batches(query_by_arguments_map)
         create_batch = (pipeline | 'create' >> beam.Create(
-            [i for i in range(1, int(1)+1, 1)]) )
+            [i for i in range(1, int(num_of_batches)+1, 1)]) )
         images = create_batch | 'call API' >> beam.ParDo(
             api_provider.get_images,
             api_provider.num_of_images,

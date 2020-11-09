@@ -16,6 +16,7 @@
 from abc import ABC, abstractmethod
 import apache_beam as beam
 
+# pylint: disable=pointless-string-statement
 """
 Each image provider that is added to the platform will inherit from the ImageProviders class.
 This class is incharge of:
@@ -25,6 +26,9 @@ This class is incharge of:
 """
 
 class ImageProvider(ABC, beam.DoFn):
+    """
+    ImageProvider is an interface that all the image ingestion provider's inherit from
+    """
 
     @abstractmethod
     def get_images(self, num_of_batches, num_of_images, query_arguments):
