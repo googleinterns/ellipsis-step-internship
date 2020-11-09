@@ -32,7 +32,7 @@ IMAGE_PROVIDERS = {'FlickrProvider': image_provider_flickr.FlickrProvider}
 #such as invalid resolution date and more
 def filtered_images(element):
     return (element.url is not None and
-    element.location is not None and
+    element.coordinates is not None and
     element.format is not None and
     element.resolution['width'] >100 and
     element.resolution['height'] > 100)

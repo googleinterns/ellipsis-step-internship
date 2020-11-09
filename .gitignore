@@ -3,12 +3,12 @@
 
 .vscode
 webapp/maps_heatmaps/.firebase/hosting.cHVibGlj.cache
-backend_jobs/ingestion-pipeline/dist
-backend_jobs/ingestion-pipeline/ingestion_pipeline_TALTAMIR.egg-info
-backend_jobs/ingestion-pipeline/.vscode/settings.json
+backend_jobs/ingestion_pipeline/dist
+backend_jobs/ingestion_pipeline/ingestion_pipeline_TALTAMIR.egg-info
+backend_jobs/ingestion_pipeline/.vscode/settings.json
 examples/.vscode/settings.json
-backend_jobs/ingestion-pipeline/__pycache__
-backend_jobs/ingestion-pipeline/pipeline_lib/__pycache__
-backend_jobs/ingestion-pipeline/providers/__pycache__
+backend_jobs/ingestion_pipeline/__pycache__
+backend_jobs/ingestion_pipeline/pipeline_lib/__pycache__
+backend_jobs/ingestion_pipeline/providers/__pycache__
 examples/pipeline-demo/.vscode/settings.json
 examples/pipeline-demo/__pycache__

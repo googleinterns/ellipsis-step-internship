@@ -53,7 +53,7 @@ class FlickrProvider(ImageProvider):
             id =self.provider_name + element.get('id'),
             provider_type = ProviderType.camera,
             date_shot=get_date(element),
-            location=get_location(element),
+            coordinates=get_coordinates(element),
             format=element.get('originalformat'),
             attribution=element.get('ownername'),
             resolution=get_resolution(element))
@@ -82,18 +82,18 @@ class FlickrProvider(ImageProvider):
     visibility = VisibilityType.developerOnly
     num_of_images =100
 
-def get_location(element):
+def get_coordinates(element):
     """
-    This function gets a location from the given metadata,
-    if the location equals (0,0) the function returns None.
+    This function gets coordinates from the given metadata,
+    if the coordinates equals (0,0) the function returns None.
     """
     latitude=float(element.get('latitude'))
     longitude=float(element.get('longitude'))
     if (latitude==0.0 and longitude==0.0):
-        location=None
+        coordinates=None
     else:
-        location=[latitude,longitude]
-    return location
+        coordinates={'latitude':latitude,'longitude':longitude}
+    return coordinates
 
 def get_resolution(element):
     """

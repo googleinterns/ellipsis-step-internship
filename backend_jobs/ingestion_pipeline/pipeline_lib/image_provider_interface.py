@@ -63,12 +63,12 @@ class ImageProvider(ABC, beam.DoFn):
     def get_url_by_resolution(self, resolution, image_id):
         """
         This function gets a resolution and an image_id, and generates a new url
-        with the required resolution
+        with the closest fit required resolution
         Args:
             resolution: map object in the format {'height':int(height),'width':int(width)}
             image_id: str in the format providername+number
         Returns:
-            url: a url reffering to the image in the requested resolution
+            url: a url reffering to the image with the closest fit resolution
         """
 
     # pylint: disable=missing-function-docstring

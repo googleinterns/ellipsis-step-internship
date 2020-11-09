@@ -54,6 +54,8 @@ class UploadToDatabase(beam.DoFn):
         on the pipelinerun and the provider.
         Args:
             element: ImageAttribute field
+            provider: the provider we are runing now
+            job_name: the job name that we are runing now
         """
         doc_ref = self.database_firebase.collection(IMAGES_COLLECTION).document(element.id)
         doc = doc_ref.get()
@@ -73,18 +75,18 @@ class UploadToDatabase(beam.DoFn):
             })
         else:
             #doc not found- image has not bean ingested already
-            geo_point_location=firestore.GeoPoint(
-                float(element.location[0]),
-                float(element.location[1]))
+            geo_point_coordinates=firestore.GeoPoint(
+                float(element.coordinates['latitude']),
+                float(element.coordinates['longitude']))
             doc_ref.set({
                 u'url': element.url,
                 u'ingestedProviders':[provider.provider_id],
                 u'ingestedRuns':[1],
-                u'coordinates': geo_point_location,
+                u'coordinates': geo_point_coordinates,
                 u'dateIngested': datetime.now(),
                 u'dateShot': element.date_shot,
                 u'dateFields':get_date_fields(element.date_shot),
-                u'geoHashes': get_geo_hashes_map(element.location),
+                u'geoHashes': get_geo_hashes_map(element.coordinates),
                 u'imageAttributes':{
                     u'format': element.format,
                     u'resolution':element.resolution},
@@ -94,12 +96,13 @@ class UploadToDatabase(beam.DoFn):
             })
         #Adding a doc to the sub collection (pipelinerun) in an image collection
         sub_collection_doc_ref.set({
-            u'coordinates': element.location,
+            u'coordinates': element.coordinates,
             u'provider_ID':provider.provider_id,
             u'provider_version': provider.provider_version,
             u'provider_type':element.provider_type.value,
             u'provider_visibility': provider.visibility.value,
-            u'pipeline_run': job_name
+            u'pipeline_run': job_name,
+            u'geoHashes': get_geo_hashes_map(element.coordinates),
         })
 
 def get_max_visibility(provider_visibility,sub_collection_ref):
@@ -114,13 +117,13 @@ def get_max_visibility(provider_visibility,sub_collection_ref):
             max_visibility = doc_visibility
     return max_visibility
 
-def get_geo_hashes_map(location):
+def get_geo_hashes_map(coordinates):
     """
-    This function, given a location (lat,long), calculates the geohash
+    This function, given a coordinates (lat,long), calculates the geohash
     and builds a map containing a geohash in different lengths.
     """
     geo_hashes_map={}
-    geohash=geohash2.encode(location[0],location[1])
+    geohash=geohash2.encode(coordinates['latitude'],coordinates['longitude'])
     for i in range(1,10,1):
         geo_hashes_map['hash'+str(i)]= geohash[0:i]
     return geo_hashes_map

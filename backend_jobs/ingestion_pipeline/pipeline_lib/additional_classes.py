@@ -36,7 +36,6 @@ class VisibilityType (enum.Enum):
     everyone = 3
 
 
-
 @dataclass
 class ImageAttributes():
     """
@@ -46,8 +45,8 @@ class ImageAttributes():
     url: str
     provider_type: ProviderType
     date_shot: datetime
-    location:list
     attribution:str
     format:str
     resolution: {}
+    coordinates: {}
     #TODO: add compression_ratio:str and color_depth:str
