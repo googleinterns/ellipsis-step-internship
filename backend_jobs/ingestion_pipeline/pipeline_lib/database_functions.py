@@ -22,7 +22,7 @@ from firebase_admin import firestore
 from google.cloud import firestore as cloud_firestore
 import geohash2
 
-IMAGES_COLLECTION=u'test2'
+IMAGES_COLLECTION=u'test3'
 IMAGES_SUB_COLLECTION=u'pipelineRun'
 
 # pylint: disable=protected-access,attribute-defined-outside-init,arguments-differ,abstract-method
@@ -64,6 +64,7 @@ class UploadToDatabase(beam.DoFn):
         else:
             #doc not found- image has not been ingested already
             add_document(element, provider, doc_ref)
+        #Adding a doc to the sub collection (pipelinerun) in the image collection
         upload_sub_collection(element, provider, job_name, sub_collection_doc_ref)
 
 def add_document(element, provider, doc_ref):
@@ -100,7 +101,6 @@ def update_document(provider,doc, doc_ref,job_name):
     })
 
 def upload_sub_collection(element, provider,job_name, sub_collection_doc_ref):
-    #Adding a doc to the sub collection (pipelinerun) in an image collection
     sub_collection_doc_ref.set({
         u'coordinates': element.coordinates,
         u'provider_ID':provider.provider_id,

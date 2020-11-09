@@ -19,7 +19,7 @@ import enum
 
 class ProviderType(enum.Enum):
     """
-    This enum represents the different imagery types
+    This enum represents the different imagery types.
     """
     satellite = 1
     drone = 2
@@ -39,14 +39,14 @@ class VisibilityType (enum.Enum):
 @dataclass
 class ImageAttributes():
     """
-    This class consists of the attributes we need to extracy from each image.
+    This class consists of the attributes we need to extract from each image.
     """
     id: str
     url: str
     provider_type: ProviderType
     date_shot: datetime
-    attribution:str
-    format:str
+    attribution: str
+    format: str
     resolution: {}
     coordinates: {}
     #TODO: add compression_ratio:str and color_depth:str

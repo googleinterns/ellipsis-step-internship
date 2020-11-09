@@ -33,7 +33,7 @@ class ImageProvider(ABC, beam.DoFn):
     @abstractmethod
     def get_images(self, num_of_batches, num_of_images, query_arguments):
         """
-        This function is incharge of callind an API/Image provider source
+        This function is incharge of calling an API/Image provider source
         and receives a list of images
         Args:
             num_of_batches: the number of the batches we want to run in parallel

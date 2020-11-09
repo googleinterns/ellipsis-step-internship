@@ -23,25 +23,31 @@ from apache_beam.options.pipeline_options import PipelineOptions
 from providers import image_provider_flickr
 from pipeline_lib import database_functions
 
-#Global name for the job that will run
-JOB_NAME = 'ingestion' + str(int(datetime.timestamp(datetime.now())))
+
 IMAGE_PROVIDERS = {'FlickrProvider': image_provider_flickr.FlickrProvider}
 
 def filtered_images(element):
     """
-    This function returns true if the image standes in all of the requirement's. e.g.:; url != none
+    This function returns true if the image stands in all of the requirement's. e.g.:; url != none
     """
-    return (element.url is not None and
-    element.coordinates is not None and
-    element.format is not None and
-    element.resolution['width'] >100 and
-    element.resolution['height'] > 100)
+    return element.url  and \
+        element.coordinates and \
+        element.format and \
+        element.resolution['width'] >100 and \
+        element.resolution['height'] > 100
 
 def get_image_provider(provider_name):
     """
-    This function given a provider's name returns a pointer to the provider's function.
+    This function returns a pointer to the provider's function, given a provider's name .
     """
     return IMAGE_PROVIDERS[provider_name]()
+
+def get_timestamp():
+    """
+    This function returns a unique id for each dataflow job.
+    The id is created from datetime.now() and includes only numbers.
+    """
+    return str(datetime.timestamp(datetime.now())).replace('.','')
 
 def run(argv=None):
     """
@@ -63,7 +69,8 @@ def run(argv=None):
         dest='output',
         help='Output file to write results to.')
     known_args, pipeline_args = parser.parse_known_args(argv)
-    pipeline_options = PipelineOptions(pipeline_args,job_name=JOB_NAME)
+    job_name = 'ingestion' + get_timestamp()
+    pipeline_options = PipelineOptions(pipeline_args,job_name=job_name)
 
     # The pipeline will be run on exiting the with block.
     # pylint: disable=expression-not-assigned
@@ -73,7 +80,7 @@ def run(argv=None):
         query_by_arguments_map={'tag':known_args.input_query_tag}
         num_of_batches= api_provider.get_num_of_batches(query_by_arguments_map)
         create_batch = (pipeline | 'create' >> beam.Create(
-            [i for i in range(1, int(num_of_batches)+1, 1)]) )
+            [i for i in range(1, int(num_of_batches)+1)]) )
         images = create_batch | 'call API' >> beam.ParDo(
             api_provider.get_images,
             api_provider.num_of_images,
@@ -82,7 +89,7 @@ def run(argv=None):
             api_provider.get_image_attributes)
         filtered_elements = extracted_elements | 'filter' >> beam.Filter(filtered_images)
         filtered_elements | 'upload' >> beam.ParDo(
-            database_functions.UploadToDatabase(),api_provider,JOB_NAME)
+            database_functions.UploadToDatabase(),api_provider,job_name)
 
         if known_args.output:
             filtered_elements | 'Write' >> WriteToText(known_args.output)
