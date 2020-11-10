@@ -7,7 +7,7 @@ on:
     branches: [ master ]
 
 jobs:
-  build-examples:
+  build:
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -31,8 +31,9 @@ jobs:
       uses: fylein/python-pylint-github-action@master
       with:
         args: pylint --help
-  
-  
+        
+        
+        
   build-recognition-pipeline:
     runs-on: ubuntu-latest
     strategy:
