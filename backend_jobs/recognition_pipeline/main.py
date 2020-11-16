@@ -37,15 +37,15 @@ from pipeline_lib.firestore_database import\
     GetBatchedImageDataset, StoreInDatabase, upload_to_pipeline_runs_collection, get_redefine_map
 
 
-NAME_TO_PROVIDER = {'Google_Vision_API': google_vision_api.GoogleVisionAPI()}
+_NAME_TO_PROVIDER = {'Google_Vision_API': google_vision_api.GoogleVisionAPI()}
 # Maps recognition provider names to an object of the provider.
 
 def get_provider(provider_name):
     """ Returns an object of type ImageRecognitionProvider by the specific provider input.
 
     """
-    if provider_name in NAME_TO_PROVIDER:
-        return NAME_TO_PROVIDER[provider_name]
+    if provider_name in _NAME_TO_PROVIDER:
+        return _NAME_TO_PROVIDER[provider_name]
     raise ValueError('{provider} is an unknown image recognition provider'\
         .format(provider = provider_name))
 
@@ -56,14 +56,30 @@ def get_timestamp_id():
     """
     return str(datetime.timestamp(datetime.now())).replace('.','')
 
+def _validate_args(args):
+    """ Checks whether the pipeline's arguments are valid.
+    If not - throws an error.
+
+    """
+    if bool(args.input_ingestion_pipelinerun_id) == bool(args.input_ingestion_provider):
+        raise ValueError('pipeline requires exactly one of out of ingestion pipeline run \
+            and ingestion provider - zero or two were given')
+    if args.input_ingestion_pipelinerun_id and not isinstance(args.input_ingestion_pipelinerun_id, str):
+        raise ValueError('ingestion pipeline run id is not a string')
+    if args.input_ingestion_provider and not isinstance(args.input_ingestion_provider, str):
+        raise ValueError('ingestion pipeline provider id is not a string')
+    if not isinstance(args.input_recognition_provider, str):
+        raise ValueError('recognition provider is not a string')
+    
+
 def run(argv=None):
     """Main entry point, defines and runs the image recognition pipeline.
     
     Input: either ingestion run id or ingestion provider id.
     The input is used for querying the database for image ingested by
     either one of the optional inputs.
-    """
 
+    """
     parser = argparse.ArgumentParser()
     parser.add_argument(
         '--input-ingestion-pipelinerun-id',
@@ -89,6 +105,7 @@ def run(argv=None):
     recognition_provider = get_provider(known_args.input_recognition_provider)
     # Creating an object of type ImageRecognitionProvider
     # for the specific image recognition provider input.
+    _validate_args(known_args)
     job_name = 'RECOGNITION-{time_id}-{recognition_provider}'.format(time_id = get_timestamp_id(),\
         recognition_provider = recognition_provider.provider_id.replace('-','').upper())
     pipeline_options = PipelineOptions(pipeline_args, job_name=job_name)
@@ -108,6 +125,7 @@ def run(argv=None):
         images_batch = filtered_dataset | 'combine to batches' >> \
             beam.GroupBy(lambda doc: int(doc['random']*100)) |\
                 beam.ParDo(lambda element: [element[1]])
+        # TODO: devide better to batches (so we wont have too many images in one batch)
         labelled_images_batch = images_batch | 'label by batch' >> \
             beam.ParDo(recognition_provider)
             # Labels the images by the process method of the provider.
@@ -117,11 +135,11 @@ def run(argv=None):
         labels_id = labelled_images | 'redefine labels' >> \
             beam.ParDo(RedefineLabels(), redefine_map)
         # pylint: disable=expression-not-assigned
-        # labels_id | 'upload' >> beam.ParDo(StoreInDatabase(), job_name, recognition_provider.provider_id)
-        # if ingestion_run:
-        #     send_email_to_notify_admins(job_name=job_name, ingestion_run=ingestion_run)
-        # else:
-        #     send_email_to_notify_admins(job_name=job_name, ingestion_provider=ingestion_provider)
+        labels_id | 'store in database' >> beam.ParDo(StoreInDatabase(), job_name, recognition_provider.provider_id)
+        if ingestion_run:
+            send_email_to_notify_admins(job_name=job_name, ingestion_run=ingestion_run)
+        else:
+            send_email_to_notify_admins(job_name=job_name, ingestion_provider=ingestion_provider)
 
         if known_args.output: # For testing.
             def format_result(image, labels):
