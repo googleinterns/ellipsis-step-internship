@@ -24,15 +24,17 @@ class ImageRecognitionProvider(ABC, beam.DoFn):
     an Id property and the latest version.
     """
     @abstractmethod
-    def get_labels(self, element):
+    def label_images(self, element):
         """Labels a batch of images from dataset using a specific recognition provider.
 
         Args:
-            element: a tuple of a random number and a list of images information dictionaries.
+            element: a list of images information dictionaries.
 
         Returns:
             list of lists in which each inner list is a tuple of a image dictionary
-            and all labels recognixed in it by the provider.
+            and all labels recognized in it by the provider.
+            For example: [[({url:string, imageAttributes:map, etc.},
+            ['dog', 'fur])], [(another image's dictionary, ['cat', 'fur'])]]
         """
 
     def is_eligible(self, image):
@@ -40,6 +42,11 @@ class ImageRecognitionProvider(ABC, beam.DoFn):
 
         For each criteria of the providers requirements,
         checks if the image's attributes match the providers prerequisites.
+
+        Args:
+            image: a dictionary if all image's Firebase document's fields.
+            One of them being 'imageAttributes' which is a map of
+            all the image's attributes and their values.
         """
         for criteria, criteria_filter in self.prerequisites_map.items():
             if criteria not in image['imageAttributes'] or \
@@ -51,16 +58,22 @@ class ImageRecognitionProvider(ABC, beam.DoFn):
         return True
 
     @property
-    # pylint: disable=missing-function-docstring
     def prerequisites_map(self):
+        """ A map of an attribute criteria and a FilterBy object
+        that filters by the corresponding attribute.
+        For example: {'Format':FilterByFormat(['JPG'])}.
+        """
         raise NotImplementedError
 
     @property
-    # pylint: disable=missing-function-docstring
     def provider_id(self):
+        """ A string of the image recognition provider's id.
+        """
         raise NotImplementedError
 
     @property
-    # pylint: disable=missing-function-docstring
     def provider_version(self):
+        """ A string of the image recognition provider's version.
+        """
         raise NotImplementedError
+    

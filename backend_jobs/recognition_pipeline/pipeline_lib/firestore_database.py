@@ -16,11 +16,12 @@ import firebase_admin
 from firebase_admin import credentials
 from firebase_admin import firestore
 import apache_beam as beam
+from pipeline_lib.constants import *
 
-RANGE_OF_BATCH = 10
-# Defines the range of the random field to query the databse by batches, \
+RANGE_OF_BATCH = 0.1
+# Defines the range of the random field to query the database by batches, \
 # each batch covers all documents with random value of X up to value of X+RANGE_OF_BATCH
-COLLECTION_NAME = 'test'
+INVISIBLE = 0
 
 def initialize_db():
     """Initializes project's Firestore database for writing and reading purposes.
@@ -29,13 +30,22 @@ def initialize_db():
     # pylint: disable=protected-access
     if not firebase_admin._apps:
         firebase_admin.initialize_app(credentials.ApplicationDefault(), {
-        'projectId': 'step-project-ellispis',
+        PROJECT_ID: 'step-project-ellispis',
         })
     return firestore.client()
 
 # pylint: disable=abstract-method
-class GetBatchedDataset(beam.DoFn):
-    """Queries the project's database to get the image dataset to label.
+class GetBatchedImageDataset(beam.DoFn):
+    """Gets the images data set by batches as requested by
+    the pipeline's input from the project's Firestore database.
+
+    Input:
+       integer index between 0 and 9.
+
+    Output:
+        generator of image's documents in a dictionary form.
+        Each image is represented by a dict containing all the fields
+        in the database and their values.
 
     """
     def setup(self):
@@ -48,26 +58,27 @@ class GetBatchedDataset(beam.DoFn):
         the ingestion_provider within a random range (by batch).
 
         Args:
-            element: the lower limit for querying the database by the random field.
+            element: the index used for querying the database by the random field.
             ingestion_provider: the input of the pipeline, determines the images dataset.
             ingestion_run: the input of the pipeline, determines the dataset.
 
         Returns:
-            A list of dictionaries with all the information (fields and id)
-            of each one of the Firestore query's image documents.
+            A generator of dictionaries with all the information (fields and id)
+            of each one of the Firestore data set's image documents.
         """
-        random_min = element
-        random_max = element+RANGE_OF_BATCH-1
+        random_min = element*RANGE_OF_BATCH
+        # the lower limit for querying the database by the random field.
+        random_max = random_min+RANGE_OF_BATCH
         # the higher limit for querying the database by the random field.
         if ingestion_run:
-            query = self.db.collection(COLLECTION_NAME).\
-                where(u'ingestedRuns',u'array_contains', ingestion_run).\
-                    where(u'random', u'>=', random_min).where(u'random', u'<=', random_max).stream()
+            query = self.db.collection(IMAGES_COLLECTION_NAME).\
+                where(INGESTED_RUNS,u'array_contains', ingestion_run).\
+                    where(RANDOM, u'>=', random_min).where(RANDOM, u'<', random_max).stream()
         else:
-            query = self.db.collection(COLLECTION_NAME).\
-                where(u'ingestedProviders', u'array_contains', ingestion_provider).\
-                    where(u'random', u'>=', random_min).where(u'random', u'<=', random_max).stream()
-        return [add_id_to_dict(doc) for doc in query]
+            query = self.db.collection(IMAGES_COLLECTION_NAME).\
+                where(INGESTED_PROVIDERS, u'array_contains', ingestion_provider).\
+                    where(RANDOM, u'>=', random_min).where(RANDOM, u'<', random_max).stream()
+        return (add_id_to_dict(doc) for doc in query)
 
 def add_id_to_dict(doc):
     """ Adds the document's id to the document's fields dictionary.
@@ -77,8 +88,14 @@ def add_id_to_dict(doc):
     full_dict['id'] = doc.id
     return full_dict
 
-class UploadToDatabase(beam.DoFn):
-    """Uploads parallelly the label information to the project's database.
+# pylint: disable=missing-function-docstring
+def get_redefine_map(recognition_provider_id):
+    db = initialize_db()
+    doc_dict = db.collection(REDEFINE_MAPS_COLLECTION_NAME).document(recognition_provider_id).get().to_dict()
+    return doc_dict[REDEFINE_MAP]
+
+class StoreInDatabase(beam.DoFn):
+    """Stores parallelly the label information in the project's database.
 
     """
     def setup(self):
@@ -86,45 +103,45 @@ class UploadToDatabase(beam.DoFn):
         self.db = initialize_db()
 
     # pylint: disable=arguments-differ
-    def process(self, element, run_id):
+    def process(self, element, run_id, provider_id):
         """Updates the project's database to contain documents with the currect fields
         for each label in the Labels subcollection of each image.
 
         Args:
-            element: tuple of image document dict and a list of all label Ids.
+            element: tuple of image document dict and a list of all label names and Ids.
         """
-        doc_id = element[0]['id']
-        subcollection_ref = self.db.collection(COLLECTION_NAME).document(doc_id).\
-            collection(u'Labels')
+        image_doc = element[0]
+        doc_id = image_doc['id']
+        subcollection_ref = self.db.collection(IMAGES_COLLECTION_NAME).document(doc_id).\
+            collection(LABELS_COLLECTION_NAME)
         for label in element[1]:
             doc = subcollection_ref.document()
             doc.set({
-                u'providerId': 'google_vision_api',
-                u'providerVersion': '2.0.0',
-                u'labelName': label['name'],
-                u'visibility': 0,
-                u'parentImageId': doc_id,
-                u'pipelineRunId': run_id,
-                u'hashmap': element[0]['geoHashes'],
-                u'random': element[0]['random']
+                PROVIDER_ID: provider_id,
+                PROVIDER_VERSION: '2.0.0',
+                LABEL_NAME: label['name'],
+                VISIBILITY: INVISIBLE,
+                PARENT_IMAGE_ID: doc_id,
+                PIPELINE_RUN_ID: run_id,
+                HASHMAP: image_doc['geoHashes'],
+                RANDOM: image_doc['random']
             })
             if 'id' in label:
                 doc.set({
-                    u'labelId': label['id']
+                    LABEL_ID: label['id']
                 }, merge = True)
 
 def upload_to_pipeline_runs_collection(provider_id, run_id):
-    """ Uploads inforamtion about the pipeline run to the Firestore collection
+    """ Uploads information about the pipeline run to the Firestore collection
 
     """
     # pylint: disable=fixme
     # TODO: get start, end and quality of current pipeline run.
     db = initialize_db()
-    db.collection(u'RecognitionPipelineRuns').document().set({
-        u'providerId': provider_id,
-        u'startDate': 00,
-        u'endDate': 00,
-        u'quality': 00,
-        u'visibility': 0,
-        u'pipelineRunId': run_id
+    db.collection(PIPELINE_RUNS_COLLECTION_NAME).document().set({
+        PROVIDER_ID: provider_id,
+        START_DATE: 00,
+        END_DATE: 00,
+        VISIBILITY: INVISIBLE,
+        PIPELINE_RUN_ID: run_id
     })

@@ -1,6 +1,3 @@
-.idea/
-*.iml
-
 webapp/maps_heatmaps/.firebase/hosting.cHVibGlj.cache
 backend_jobs/recognition_pipeline/.vscode/settings.json
 backend_jobs/recognition_pipeline/__pycache__/*

@@ -14,13 +14,6 @@
 """
 
 import apache_beam as beam
-from pipeline_lib.firestore_database import initialize_db
-
-# pylint: disable=missing-function-docstring
-def get_redefine_map(recognition_provider_id):
-    db = initialize_db()
-    doc_dict = db.collection(u'RedefineMaps').document(recognition_provider_id).get().to_dict()
-    return doc_dict['redefineMap']
 
 # pylint: disable=abstract-method
 class RedefineLabels(beam.DoFn):
@@ -28,8 +21,9 @@ class RedefineLabels(beam.DoFn):
     the provider to the corresponding label Id's.
 
     """
+
     # pylint: disable=arguments-differ
-    def process(self, element, provider_id):
+    def process(self, element, redefine_map):
         """Uses the global redefine map to change the different labels to the project's label Ids.
 
         Args:
@@ -41,7 +35,7 @@ class RedefineLabels(beam.DoFn):
         """
         all_labels_and_ids = []
         for label in element[1]:
-            redefine_map = get_redefine_map(provider_id)
+            # redefine_map = get_redefine_map(provider_id)
             if label in redefine_map:
                 for label_id in redefine_map[label]:
                     all_labels_and_ids.append({'name': label, 'id': label_id})

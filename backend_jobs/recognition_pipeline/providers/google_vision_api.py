@@ -34,7 +34,7 @@ class GoogleVisionAPI(ImageRecognitionProvider):
         requests = []
         results = []
         docs = []
-        for doc in element[1]:
+        for doc in element:
             url = doc['url']
             image = vision_v1.Image()
             image.source.image_uri = url
@@ -47,10 +47,10 @@ class GoogleVisionAPI(ImageRecognitionProvider):
             all_labels = [label.description.lower() for label in image_response.label_annotations]
             results.append([(docs[i], all_labels)])
         return results
-
-    get_labels = process
+        
+    label_images = process
     prerequisites_map = {'format': FilterByFormat(\
         ['JPG', 'JPEG', 'PNG8', 'PNG24', 'GIF', 'BMP', 'WEBP', 'RAW', 'ICO', 'PDF', 'TIFF']),\
-            'resolution':FilterByResolution({'height':480, 'width': 640})}
+            'resolution': FilterByResolution({'height':480, 'width': 640})}
     provider_id='Google_Vision_API'
     provider_version='2.0.0'

@@ -29,18 +29,19 @@ from datetime import datetime
 import apache_beam as beam
 from apache_beam.io import WriteToText
 from apache_beam.options.pipeline_options import PipelineOptions
-
+# from apache_beam.runners.dataflow.internal.apiclient import DataflowApplicationClient
 from providers import google_vision_api
 from pipeline_lib.redefine_labels import RedefineLabels
 from pipeline_lib.notify_admins import send_email_to_notify_admins
 from pipeline_lib.firestore_database import\
-    GetBatchedDataset, UploadToDatabase, upload_to_pipeline_runs_collection
+    GetBatchedImageDataset, StoreInDatabase, upload_to_pipeline_runs_collection, get_redefine_map
+
 
 NAME_TO_PROVIDER = {'Google_Vision_API': google_vision_api.GoogleVisionAPI()}
 # Maps recognition provider names to an object of the provider.
 
 def get_provider(provider_name):
-    """ Creates an object of type ImageRecognitionProvider by the specific provider input.
+    """ Returns an object of type ImageRecognitionProvider by the specific provider input.
 
     """
     if provider_name in NAME_TO_PROVIDER:
@@ -56,11 +57,17 @@ def get_timestamp_id():
     return str(datetime.timestamp(datetime.now())).replace('.','')
 
 def run(argv=None):
-    """Main entry point, defines and runs the image recognition pipeline."""
+    """Main entry point, defines and runs the image recognition pipeline.
+    
+    Input: either ingestion run id or ingestion provider id.
+    The input is used for querying the database for image ingested by
+    either one of the optional inputs.
+    """
+
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        '--input-ingestion-run',
-        dest='input_ingestion_run',
+        '--input-ingestion-pipelinerun-id',
+        dest='input_ingestion_pipelinerun_id',
         help='Input of ingestion pipeline run for images dataset.')
     parser.add_argument(
         '--input-ingestion-provider',
@@ -74,52 +81,57 @@ def run(argv=None):
     parser.add_argument(
         '--output',
         dest='output',
+        required = False, # Optional - only for development reasons.
         help='Output file to write results to for testing.')
     known_args, pipeline_args = parser.parse_known_args(argv)
-    job_name = 'recognition{time_id}'.format(time_id = get_timestamp_id())
-
+    ingestion_run = known_args.input_ingestion_pipelinerun_id
+    ingestion_provider = known_args.input_ingestion_provider
+    recognition_provider = get_provider(known_args.input_recognition_provider)
+    # Creating an object of type ImageRecognitionProvider
+    # for the specific image recognition provider input.
+    job_name = 'RECOGNITION-{time_id}-{recognition_provider}'.format(time_id = get_timestamp_id(),\
+        recognition_provider = recognition_provider.provider_id.replace('-','').upper())
     pipeline_options = PipelineOptions(pipeline_args, job_name=job_name)
 
-    with beam.Pipeline(options=pipeline_options) as p:
-        ingestion_run = known_args.input_ingestion_run
-        ingestion_provider = known_args.input_ingestion_provider
-        recognition_provider = get_provider(known_args.input_recognition_provider)
-        # Creating an object of type ImageRecognitionProvider
-        # for the specific image recognition provider input
-        random_numbers = p | 'create' >> beam.Create([(1+10*i) for i in range(10)])
+    with beam.Pipeline(options=pipeline_options) as pipeline:
+        indices_for_batching = pipeline | 'create' >> beam.Create([i for i in range(10)])
         if ingestion_run:
             # If the input was for specifing the images dataset was an ingestion run.
-            dataset = random_numbers | 'get images dataset' >> \
-                beam.ParDo(GetBatchedDataset(), ingestion_run=ingestion_run)
+            dataset = indices_for_batching | 'get images dataset' >> \
+                beam.ParDo(GetBatchedImageDataset(), ingestion_run=ingestion_run)
         else:
             # If the input was for specifing the images dataset was an ingestion provider.
-            dataset = random_numbers | 'get images dataset' >> \
-                beam.ParDo(GetBatchedDataset(), ingestion_provider=ingestion_provider)
+            dataset = indices_for_batching | 'get images dataset' >> \
+                beam.ParDo(GetBatchedImageDataset(), ingestion_provider=ingestion_provider)
         filtered_dataset = dataset | 'filter images' >> \
             beam.Filter(recognition_provider.is_eligible)
         images_batch = filtered_dataset | 'combine to batches' >> \
-            beam.GroupBy(lambda doc: doc['random'])
+            beam.GroupBy(lambda doc: int(doc['random']*100)) |\
+                beam.ParDo(lambda element: [element[1]])
         labelled_images_batch = images_batch | 'label by batch' >> \
             beam.ParDo(recognition_provider)
-            # labels the images by the process method of the provider.
+            # Labels the images by the process method of the provider.
         labelled_images = labelled_images_batch | \
             beam.FlatMap(lambda elements: elements)
+        redefine_map = get_redefine_map(recognition_provider.provider_id)
         labels_id = labelled_images | 'redefine labels' >> \
-            beam.ParDo(RedefineLabels(), recognition_provider.provider_id)
+            beam.ParDo(RedefineLabels(), redefine_map)
         # pylint: disable=expression-not-assigned
-        labels_id | 'upload' >> beam.ParDo(UploadToDatabase(), job_name)
-        upload_to_pipeline_runs_collection(recognition_provider.provider_id, job_name)
-        if ingestion_run:
-            send_email_to_notify_admins(job_name=job_name, ingestion_run=ingestion_run)
-        else:
-            send_email_to_notify_admins(job_name=job_name, ingestion_provider=ingestion_provider)
+        # labels_id | 'upload' >> beam.ParDo(StoreInDatabase(), job_name, recognition_provider.provider_id)
+        # if ingestion_run:
+        #     send_email_to_notify_admins(job_name=job_name, ingestion_run=ingestion_run)
+        # else:
+        #     send_email_to_notify_admins(job_name=job_name, ingestion_provider=ingestion_provider)
 
         if known_args.output: # For testing.
             def format_result(image, labels):
                 return '%s: %s' % (image['url'], labels)
             output = labels_id | 'Format' >> beam.MapTuple(format_result)
             output | 'Write' >> WriteToText(known_args.output)
-
+    upload_to_pipeline_runs_collection(recognition_provider.provider_id, job_name)
+    # TODO: add access to job id with dataflow
+    # print(DataflowApplicationClient(pipeline_options).job_id_for_name(job_name))
+    
 if __name__ == '__main__':
     logging.getLogger().setLevel(logging.INFO)
     run()
