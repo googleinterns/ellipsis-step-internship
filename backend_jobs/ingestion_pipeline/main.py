@@ -24,23 +24,25 @@ from providers import image_provider_flickr
 from pipeline_lib import database_functions
 
 
-IMAGE_PROVIDERS = {'FlickrProvider': image_provider_flickr.FlickrProvider}
+#This map provides all the Providers.ImageProviders in the platform
+_IMAGE_PROVIDERS = {'FlickrProvider': image_provider_flickr.FlickrProvider}
 
-def filtered_images(element):
+def is_valid_image(image):
     """
-    This function returns true if the image stands in all of the requirement's. e.g.:; url != none
+    This function returns whether the given image satisfies minimum requirements of the platform
+     e.g.:; url != none
     """
-    return element.url  and \
-        element.coordinates and \
-        element.format and \
-        element.resolution['width'] >100 and \
-        element.resolution['height'] > 100
+    return image.url  and \
+        image.coordinates and \
+        image.format and \
+        image.resolution['width'] > 100 and \
+        image.resolution['height'] > 100
 
-def get_image_provider(provider_name):
+def _get_image_provider(provider_name):
     """
-    This function returns a pointer to the provider's function, given a provider's name .
+    This function returns the ImageProvider for the given provider name.
     """
-    return IMAGE_PROVIDERS[provider_name]()
+    return _IMAGE_PROVIDERS[provider_name]()
 
 def get_timestamp():
     """
@@ -56,40 +58,39 @@ def run(argv=None):
     parser = argparse.ArgumentParser()
     parser.add_argument(
         '--input_provider_name',
-        dest='input_provider_name',
-        default='FlickrProvider',
-        help='Provider name to process.')
+        dest = 'input_provider_name',
+        default = 'FlickrProvider',
+        help = 'Provider name to process.')
     parser.add_argument(
-        '--input_query_tag',
-        dest='input_query_tag',
-        default='cat',
-        help='label ro query by.')
+        '--input_provider_args',
+        dest = 'input_provider_args',
+        default = 'all',
+        help = 'label to query by.')
     parser.add_argument(
         '--output',
-        dest='output',
-        help='Output file to write results to.')
+        dest = 'output',
+        help = 'Output file to write results to.')
     known_args, pipeline_args = parser.parse_known_args(argv)
-    job_name = 'ingestion' + get_timestamp()
-    pipeline_options = PipelineOptions(pipeline_args,job_name=job_name)
+    job_name = 'ingestion-' + get_timestamp()
+    pipeline_options = PipelineOptions(pipeline_args, job_name=job_name)
 
     # The pipeline will be run on exiting the with block.
     # pylint: disable=expression-not-assigned
     with beam.Pipeline(options=pipeline_options) as pipeline:
 
-        api_provider= get_image_provider(known_args.input_provider_name)
-        query_by_arguments_map={'tag':known_args.input_query_tag}
-        num_of_batches= api_provider.get_num_of_batches(query_by_arguments_map)
-        create_batch = (pipeline | 'create' >> beam.Create(
-            [i for i in range(1, int(num_of_batches)+1)]) )
-        images = create_batch | 'call API' >> beam.ParDo(
-            api_provider.get_images,
-            api_provider.num_of_images,
-            query_by_arguments_map)
-        extracted_elements = images | 'extract attributes' >> beam.Map(
-            api_provider.get_image_attributes)
-        filtered_elements = extracted_elements | 'filter' >> beam.Filter(filtered_images)
-        filtered_elements | 'upload' >> beam.ParDo(
-            database_functions.UploadToDatabase(),api_provider,job_name)
+        image_provider = _get_image_provider(known_args.input_provider_name)
+        query_by_arguments_map = {'tag':known_args.input_provider_args}
+        num_of_batches = image_provider.get_num_of_pages(query_by_arguments_map)
+        create_batch = (pipeline | 'create' >> \
+            beam.Create([i for i in range(1, int(num_of_batches)+1)]) )
+        images = create_batch | 'call API' >> \
+            beam.ParDo(image_provider.get_images, query_by_arguments_map)
+        extracted_elements = images | 'extract attributes' >> \
+            beam.Map(image_provider.get_image_attributes)
+        filtered_elements = extracted_elements | 'filter' >> \
+            beam.Filter(is_valid_image)
+        filtered_elements | 'upload' >> \
+            beam.ParDo(database_functions.StoreImageAttributeDoFn(), image_provider,job_name)
 
         if known_args.output:
             filtered_elements | 'Write' >> WriteToText(known_args.output)
@@ -98,4 +99,3 @@ def run(argv=None):
 if __name__ == '__main__':
     logging.getLogger().setLevel(logging.INFO)
     run()
-    

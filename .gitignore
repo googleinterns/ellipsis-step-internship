@@ -10,5 +10,6 @@ examples/.vscode/settings.json
 backend_jobs/ingestion_pipeline/__pycache__
 backend_jobs/ingestion_pipeline/pipeline_lib/__pycache__
 backend_jobs/ingestion_pipeline/providers/__pycache__
+backend_jobs/ingestion_pipeline/build
 examples/pipeline-demo/.vscode/settings.json
 examples/pipeline-demo/__pycache__

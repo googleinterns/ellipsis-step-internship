@@ -17,36 +17,33 @@ from datetime import datetime
 from dataclasses import dataclass
 import enum
 
-class ProviderType(enum.Enum):
+class ImageType(enum.Enum):
     """
     This enum represents the different imagery types.
     """
-    satellite = 1
-    drone = 2
-    live_feed = 3
-    camera = 4
+    SATELLITE = 1
+    DRONE = 2
+    LIVE_FEED = 3
+    CAMERA = 4
 
 
 class VisibilityType (enum.Enum):
     """
     This enum represents the different visibility types
     """
-    nobody = 1
-    developerOnly = 2
-    everyone = 3
+    NOBODY = 1
+    EVERYONE = 2
 
 
 @dataclass
 class ImageAttributes():
+    """ This class consists of the attributes we need to extract from each image.
     """
-    This class consists of the attributes we need to extract from each image.
-    """
-    id: str
+    image_id: str
     url: str
-    provider_type: ProviderType
+    image_type: ImageType
     date_shot: datetime
     attribution: str
     format: str
-    resolution: {}
-    coordinates: {}
-    #TODO: add compression_ratio:str and color_depth:str
+    resolution: {} # type {'height':int, 'width':int}
+    coordinates: {} # type {'latitude':float, 'longitude':float}

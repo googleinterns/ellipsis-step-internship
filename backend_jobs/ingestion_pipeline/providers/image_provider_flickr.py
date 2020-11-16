@@ -17,9 +17,9 @@
 from datetime import datetime
 from pipeline_lib.database_functions import get_doc_by_id
 from pipeline_lib.image_provider_interface import ImageProvider
-from pipeline_lib.additional_classes import ProviderType
-from pipeline_lib.additional_classes import VisibilityType
-from pipeline_lib.additional_classes import ImageAttributes
+from pipeline_lib.data_types import ImageType
+from pipeline_lib.data_types import VisibilityType
+from pipeline_lib.data_types import ImageAttributes
 import flickrapi
 
 
@@ -27,39 +27,38 @@ class FlickrProvider(ImageProvider):
     """
     This class is an implementation for the ImageProvider interface.
     """
-    def get_images(self, num_of_batches, num_of_images, query_arguments):
+    def get_images(self, num_of_page, query_arguments):
         flickr = flickrapi.FlickrAPI(
             '2d00397e012c30ccc33ca4fdc05a5c98',
             'e36a277c77f09fdd',
-            cache=True)
+            cache = True)
         photos = flickr.photos.search(text=query_arguments['tag'],
                      tag_mode = 'all',
                      tags = query_arguments['tag'],
                      extras = 'url_c, geo, date_upload, date_taken, original_format,\
                       owner_name, original_format',
-                     per_page = num_of_images,
-                     page = num_of_batches,
+                     per_page = self.num_of_images,
+                     page = num_of_page,
                      sort = 'relevance')
         return photos[0]
 
-    def get_num_of_batches(self,query_arguments):
-        photos = self.get_images(1, self.num_of_images,query_arguments)
-        print(photos.attrib)
-        return photos.attrib['pages']
+    def get_num_of_pages(self, query_arguments):
+        photos = self.get_images(1, query_arguments)
+        return int(photos.attrib['pages'])
 
     def get_image_attributes(self, element):
         image_arrributes=ImageAttributes(
             url = element.get('url_c'),
-            id =self.provider_name + element.get('id'),
-            provider_type = ProviderType.camera,
-            date_shot=get_date(element),
-            coordinates=get_coordinates(element),
-            format=element.get('originalformat'),
-            attribution=element.get('ownername'),
-            resolution=get_resolution(element))
+            image_id = self._genarate_image_id_with_prefix(element.get('id')),
+            image_type = ImageType.CAMERA,
+            date_shot = get_date(element),
+            coordinates = get_coordinates(element),
+            format = element.get('originalformat'),
+            attribution = element.get('ownername'),
+            resolution = get_resolution(element))
         return image_arrributes
 
-    def get_url_by_resolution(self, resolution, image_id):
+    def get_url_for_max_resolution(self, resolution, image_id):
         doc = get_doc_by_id(image_id)
         if doc.exists:
             url = doc.to_dict()[u'url']
@@ -73,13 +72,16 @@ class FlickrProvider(ImageProvider):
                     return url[:-5] + flickr_resolution_map[key] + url[-4:]
         return None
 
+    def _genarate_image_id_with_prefix(self, image_id):
+        return str(self.provider_id + image_id)
+
     provider_id = 'flickr_2020'
     provider_name ='flickr'
     provider_version = '2.4.0'
-    provider_type = ProviderType.camera
+    image_type = ImageType.CAMERA
     enabled = True
-    visibility = VisibilityType.developerOnly
-    num_of_images =100
+    visibility = VisibilityType.NOBODY
+    num_of_images = 100
 
 def get_coordinates(element):
     """

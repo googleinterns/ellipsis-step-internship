@@ -17,62 +17,75 @@
 from abc import ABC, abstractmethod
 import apache_beam as beam
 
-"""
-Each image provider that is added to the platform will inherit from the ImageProviders class.
-This class is incharge of:
-* returning images from the provider
-* calculting the num of baches we want to run in parallel
-* extarcting additional metadata.
+""" Each ImageProvider that is added to the platform will inherit from the ImageProviders class.
+This class is in charge of:
+* returning images from the provider.
+* calculating the number of batches we want to run in parallel.
+* extracting additional metadata.
 """
 
 class ImageProvider(ABC, beam.DoFn):
-    """
-    ImageProvider is an interface that all the image ingestion provider's inherit from
+    """ ImageProvider is an interface that all the image ingestion providers inherit from.
     """
 
     @abstractmethod
-    def get_images(self, num_of_batches, num_of_images, query_arguments):
-        """
-        This function is incharge of calling an API/Image provider source
-        and receives a list of images
+    def get_images(self, num_of_page, query_arguments):
+        """ This function is in charge of calling an API/Image provider source
+        and returns a list of images.
+
         Args:
-            num_of_batches: the number of the batches we want to run in parallel
-            num_of_images: the amount of images we retrieve
-            query_arguments: a map object contaning arguments we retrieve images by
+            num_of_batches: the number of the batches we want to run in parallel.
+            num_of_images: the amount of images we retrieve.
+            query_arguments: a map object contaning arguments we retrieve images by.
+
         Returns:
             list of images with info on the images.
         """
 
     @abstractmethod
-    def get_num_of_batches(self, query_arguments):
-        """
-        This function is incharge of calculating the amount of batches we want to call
+    def get_num_of_pages(self, query_arguments):
+        """ This function is in charge of calculating the amount of pages we want to retrieve.
+
         Args:
-            query_arguments: a map object contaning arguments we retrieve batches by
+            query_arguments: a map object contaning arguments we retrieve images by.
+
         Returns:
             num_of_batches: number
         """
 
     @abstractmethod
     def get_image_attributes(self, element):
-        """
-        This function is incharge of exracting the metadata from each image
+        """ This function is in charge of extracting the metadata from each image.
+
         Args:
-            element:the image we get from the get_images function
+            element: the image we get from the get_images function.
+
         Returns:
-            imageAttributes: ImageAttributes- a class that contains all the info on the image
+            imageAttributes: An ImageAttributes class that contains all the information on the image.
         """
 
     @abstractmethod
-    def get_url_by_resolution(self, resolution, image_id):
-        """
-        This function gets a resolution and an image_id, and generates a new url
-        with the closest fit required resolution
+    def get_url_for_max_resolution(self, resolution, image_id):
+        """ This function gets a resolution and an image_id, and generates a new url
+        with the closest below fit required resolution.
+
         Args:
-            resolution: map object in the format {'height':int(height),'width':int(width)}
-            image_id: str in the format providername+number
+            resolution: A dict representing closest height and width.
+            For example {'height': 480, 'width': 640}
+            image_id: str in the format providername + number
+
         Returns:
-            url: a url reffering to the image with the closest fit resolution
+            url: A url referring to the image with the closest fit resolution.
+        """
+
+    def _genarate_image_id_with_prefix(self, image_id):
+        """ This function gets a image_id and and adds a unique provider prefix.
+
+        Args:
+            image_id: The unique id the provider provides.
+
+        Returns:
+            new_image_id: Unique id with provider id as prefix.
         """
 
     # pylint: disable=missing-function-docstring
@@ -86,7 +99,7 @@ class ImageProvider(ABC, beam.DoFn):
     def provider_version(self):
         raise NotImplementedError
     @property
-    def provider_type(self):
+    def image_type(self):
         raise NotImplementedError
     @property
     def enabled(self):
