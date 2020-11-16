@@ -16,7 +16,8 @@ import firebase_admin
 from firebase_admin import credentials
 from firebase_admin import firestore
 import apache_beam as beam
-from pipeline_lib.constants import *
+#from pipeline_lib.constants import *
+from backend_jobs.package import constants
 
 RANGE_OF_BATCH = 0.1
 # Defines the range of the random field to query the database by batches, \
@@ -30,7 +31,7 @@ def initialize_db():
     # pylint: disable=protected-access
     if not firebase_admin._apps:
         firebase_admin.initialize_app(credentials.ApplicationDefault(), {
-        PROJECT_ID: 'step-project-ellispis',
+        constants.PROJECT_ID: 'step-project-ellispis',
         })
     return firestore.client()
 
@@ -131,17 +132,4 @@ class StoreInDatabase(beam.DoFn):
                     LABEL_ID: label['id']
                 }, merge = True)
 
-def upload_to_pipeline_runs_collection(provider_id, run_id):
-    """ Uploads information about the pipeline run to the Firestore collection
 
-    """
-    # pylint: disable=fixme
-    # TODO: get start, end and quality of current pipeline run.
-    db = initialize_db()
-    db.collection(PIPELINE_RUNS_COLLECTION_NAME).document().set({
-        PROVIDER_ID: provider_id,
-        START_DATE: 00,
-        END_DATE: 00,
-        VISIBILITY: INVISIBLE,
-        PIPELINE_RUN_ID: run_id
-    })

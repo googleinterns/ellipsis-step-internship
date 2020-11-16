@@ -16,7 +16,7 @@ PROJECT_ID = 'projectId'
 
 # Constant collection names:
 IMAGES_COLLECTION_NAME = 'test'
-PIPELINE_RUNS_COLLECTION_NAME = 'RecognitionPipelineRuns'
+PIPELINE_RUNS_COLLECTION_NAME = 'PipelineRuns'
 LABELS_COLLECTION_NAME = 'Labels'
 REDEFINE_MAPS_COLLECTION_NAME = 'RedefineMaps'
 
@@ -35,3 +35,5 @@ HASHMAP = 'hashmap'
 START_DATE = 'startDate'
 END_DATE = 'endDate'
 REDEFINE_MAP = 'redefineMap'
+
+INVISIBLE = 0

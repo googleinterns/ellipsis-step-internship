@@ -8,6 +8,11 @@ examples/pipeline-demo/__pycache__
 examples/.vscode/settings.json
 examples/pipeline-demo/.vscode/settings.json
 
+backend_jobs/pipeline_utils.py/__pycache__
+backend_jobs/pipeline_BACKEND_JOBS.egg-info
+backend_jobs/dist
+backend_jobs/build
+
 backend_jobs/ingestion_pipeline/dist
 backend_jobs/ingestion_pipeline/ingestion_pipeline_TALTAMIR.egg-info
 backend_jobs/ingestion_pipeline/.vscode/settings.json
