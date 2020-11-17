@@ -96,13 +96,16 @@ def _upload_sub_collection(element, provider,job_name, sub_collection_doc_ref):
         constants.HASHMAP: get_geo_hashes_map(element.coordinates),
     })
 
-
 def get_geo_hashes_map(coordinates):
     """ This function, given a coordinates (lat,long), calculates the geohash
     and builds a map containing a geohash in different lengths.
 
+    Args:
+        coordinates: Coordinates in the format {'latitude':float,'longitude':float}.
+
     Returns:
-        map object
+        A dict contaning geohash in all the diffrent lengths
+        e.g.: {'hash1':'d', 'hash2':'dp', 'hash3':'dph', ... 'hash10':'dph1qz7y88',}.
     """
     geo_hashes_map={}
     geohash=geohash2.encode(coordinates['latitude'],coordinates['longitude'])
@@ -111,24 +114,16 @@ def get_geo_hashes_map(coordinates):
     return geo_hashes_map
 
 def get_date_fields(date):
-    """ This function converts a datetime object to a map object contaning the date
+    """ This function converts a datetime object to a map object contaning the date.
+
+    Args:
+        date: Type datetime.
 
     Returns:
-        map object in the format {'year':int,'month':int,'day':int}
+        map object in the format {'year':int, 'month':int, 'day':int}.
     """
     year = date.year
     month = date.month
     day = date.day
     date_fields = {'year': year, 'month': month, 'day': day}
     return date_fields
-
-def get_doc_by_id(image_id):
-    """ This function given a id returns a the doc in IMAGES_COLLECTION
-
-    Returns:
-        document
-    """
-    database_firebase = firestore_database.initialize_db()
-    doc_ref = database_firebase.collection(constants.IMAGES_COLLECTION_NAME).document(image_id)
-    doc = doc_ref.get()
-    return doc

@@ -25,7 +25,7 @@ from backend_jobs.pipeline_utils import utils
 
 
 #This map provides all the Providers.ImageProviders in the platform
-_IMAGE_PROVIDERS = {'FlickrProvider': image_provider_flickr.FlickrProvider()}
+IMAGE_PROVIDERS = {'FlickrProvider': image_provider_flickr.FlickrProvider}
 
 def _validate_args(args):
     """ Checks whether the pipeline's arguments are valid.
@@ -36,9 +36,8 @@ def _validate_args(args):
         raise ValueError('ingestion provider is not a string')
 
 def is_valid_image(image):
-    """
-    This function returns whether the given image satisfies minimum requirements of the platform
-     e.g.:; url != none
+    """ This function returns whether the given image satisfies minimum requirements of the platform
+    e.g.:; url != none
     """
     return image.url  and \
         image.coordinates and \
@@ -47,8 +46,7 @@ def is_valid_image(image):
         image.resolution['height'] > 100
 
 def run(argv=None):
-    """
-    Main entry point; defines and runs the image ingestion pipeline.
+    """ Main entry point; defines and runs the image ingestion pipeline.
     """
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -68,7 +66,11 @@ def run(argv=None):
         help = 'Output file to write results to.')
     known_args, pipeline_args = parser.parse_known_args(argv)
     _validate_args(known_args)
-    image_provider = utils.get_provider(known_args.input_provider_name, _IMAGE_PROVIDERS)
+    image_provider = utils.get_provider(
+        IMAGE_PROVIDERS,
+        known_args.input_provider_name,
+        known_args.input_provider_args)
+
     if not image_provider.enabled:
         raise ValueError('ingestion provider is not enabled')
 
@@ -79,13 +81,11 @@ def run(argv=None):
     # pylint: disable=expression-not-assigned
     with apache_beam.Pipeline(options=pipeline_options) as pipeline:
 
-      
-        query_by_arguments_map = image_provider.parse_query_by_args(known_args.input_provider_args)
-        num_of_batches = image_provider.get_num_of_pages(query_by_arguments_map)
+        num_of_batches = image_provider.get_num_of_pages()
         create_batch = (pipeline | 'create' >> \
             apache_beam.Create([i for i in range(1, int(3)+1)]) )
         images = create_batch | 'call API' >> \
-            apache_beam.ParDo(image_provider.get_images, query_by_arguments_map)
+            apache_beam.ParDo(image_provider.get_images)
         extracted_elements = images | 'extract attributes' >> \
             apache_beam.Map(image_provider.get_image_attributes)
         filtered_elements = extracted_elements | 'filter' >> \
@@ -95,6 +95,8 @@ def run(argv=None):
 
         if known_args.output:
             filtered_elements | 'Write' >> WriteToText(known_args.output)
+
+    
 
 
 if __name__ == '__main__':
