@@ -74,12 +74,6 @@ def add_id_to_dict(doc):
     full_dict['id'] = doc.id
     return full_dict
 
-# pylint: disable=missing-function-docstring
-def get_redefine_map(recognition_provider_id):
-    db = initialize_db()
-    doc_dict = db.collection(constants.REDEFINE_MAPS_COLLECTION_NAME).document(recognition_provider_id).get().to_dict()
-    return doc_dict[constants.REDEFINE_MAP]
-
 class StoreInDatabase(beam.DoFn):
     """Stores parallelly the label information in the project's database.
 
@@ -94,7 +88,8 @@ class StoreInDatabase(beam.DoFn):
         for each label in the Labels subcollection of each image.
 
         Args:
-            element: tuple of image document dict and a list of all label names and Ids.
+            element: tuple of image document dict and a list of all labels.
+
         """
         image_doc = element[0]
         doc_id = image_doc['id']
@@ -105,16 +100,10 @@ class StoreInDatabase(beam.DoFn):
             doc.set({
                 constants.PROVIDER_ID: provider_id,
                 constants.PROVIDER_VERSION: '2.0.0',
-                constants.LABEL_NAME: label['name'],
+                constants.LABEL_NAME: label,
                 constants.VISIBILITY: constants.INVISIBLE,
                 constants.PARENT_IMAGE_ID: doc_id,
                 constants.PIPELINE_RUN_ID: run_id,
-                constants.HASHMAP: image_doc['geoHashes'],
-                constants.RANDOM: image_doc['random']
+                constants.HASHMAP: image_doc[constants.HASHMAP], # redundant for development reasons.
+                constants.RANDOM: image_doc[constants.RANDOM] # redundant for development reasons.
             })
-            if 'id' in label:
-                doc.set({
-                    constants.LABEL_ID: label['id']
-                }, merge = True)
-
-

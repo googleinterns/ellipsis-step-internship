@@ -48,7 +48,7 @@ class FilterByResolution(FilterBy):
       """
         for provider_name in image['ingestedProviders']:
             provider = get_provider(provider_name, IMAGE_PROVIDERS)
-            resize_url = provider.get_url_by_resolution(self.prerequisites, image['id'])
+            resize_url = provider.get_url_for_max_resolution(self.prerequisites, image['id'])
             if resize_url:
                 image['url'] = resize_url
                 return True
