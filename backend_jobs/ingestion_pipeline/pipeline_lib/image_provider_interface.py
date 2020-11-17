@@ -28,7 +28,7 @@ class ImageProvider(ABC, apache_beam.DoFn):
     """ ImageProvider is an interface that all the image ingestion providers inherit from.
     """
     @abstractmethod
-    def __init__(self, query_arguments):
+    def __init__(self, query_arguments=None):
         """ This function is in charge of calling an API/Image provider source
         and returns a iterable collection of images.
 
