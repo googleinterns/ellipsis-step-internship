@@ -31,30 +31,30 @@ from apache_beam.io import WriteToText
 from apache_beam.options.pipeline_options import PipelineOptions
 # from apache_beam.runners.dataflow.internal.apiclient import DataflowApplicationClient
 from providers import google_vision_api
-from pipeline_lib.redefine_labels import RedefineLabels
+from backend_jobs.recognition_pipeline.pipeline_lib.redefine_labels import RedefineLabels
 from pipeline_lib.notify_admins import send_email_to_notify_admins
-from pipeline_lib.firestore_database import\
-    GetBatchedImageDataset, StoreInDatabase, upload_to_pipeline_runs_collection, get_redefine_map
-
+from backend_jobs.recognition_pipeline.pipeline_lib.firestore_database import\
+    GetBatchedImageDataset, StoreInDatabase, get_redefine_map
+from backend_jobs.pipeline_utils.firestore_database import upload_to_pipeline_runs_collection
+from backend_jobs.pipeline_utils.utils import get_provider, get_timestamp_id
 
 NAME_TO_PROVIDER = {'Google_Vision_API': google_vision_api.GoogleVisionAPI()}
 # Maps recognition provider names to an object of the provider.
 
-def get_provider(provider_name):
-    """ Returns an object of type ImageRecognitionProvider by the specific provider input.
+def _validate_args(args):
+    """ Checks whether the pipeline's arguments are valid.
+    If not - throws an error.
 
     """
-    if provider_name in NAME_TO_PROVIDER:
-        return NAME_TO_PROVIDER[provider_name]
-    raise ValueError('{provider} is an unknown image recognition provider'\
-        .format(provider = provider_name))
-
-def get_timestamp_id():
-    """ Returns a string with only numbers as time id.
-    The string will be used as a unique id for each dataflow job.
-
-    """
-    return str(datetime.timestamp(datetime.now())).replace('.','')
+    if bool(args.input_ingestion_pipelinerun_id) == bool(args.input_ingestion_provider):
+        raise ValueError('pipeline requires exactly one of out of ingestion pipeline run \
+            and ingestion provider - zero or two were given')
+    if args.input_ingestion_pipelinerun_id and not isinstance(args.input_ingestion_pipelinerun_id, str):
+        raise ValueError('ingestion pipeline run id is not a string')
+    if args.input_ingestion_provider and not isinstance(args.input_ingestion_provider, str):
+        raise ValueError('ingestion pipeline provider id is not a string')
+    if not isinstance(args.input_recognition_provider, str):
+        raise ValueError('recognition provider is not a string')
 
 def run(argv=None):
     """Main entry point, defines and runs the image recognition pipeline.
@@ -84,9 +84,10 @@ def run(argv=None):
         required = False, # Optional - only for development reasons.
         help='Output file to write results to for testing.')
     known_args, pipeline_args = parser.parse_known_args(argv)
+    _validate_args(known_args)
     ingestion_run = known_args.input_ingestion_pipelinerun_id
     ingestion_provider = known_args.input_ingestion_provider
-    recognition_provider = get_provider(known_args.input_recognition_provider)
+    recognition_provider = get_provider(known_args.input_recognition_provider, NAME_TO_PROVIDER)
     # Creating an object of type ImageRecognitionProvider
     # for the specific image recognition provider input.
     job_name = 'RECOGNITION-{time_id}-{recognition_provider}'.format(time_id = get_timestamp_id(),\

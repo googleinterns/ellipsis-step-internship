@@ -35,5 +35,7 @@ HASHMAP = 'hashmap'
 START_DATE = 'startDate'
 END_DATE = 'endDate'
 REDEFINE_MAP = 'redefineMap'
+LABELS = 'labels'
 
 INVISIBLE = 0
+VISIBLE = 1

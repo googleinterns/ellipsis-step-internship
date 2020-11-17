@@ -25,7 +25,7 @@ from pipeline_lib import database_functions
 
 
 #This map provides all the Providers.ImageProviders in the platform
-_IMAGE_PROVIDERS = {'FlickrProvider': image_provider_flickr.FlickrProvider}
+IMAGE_PROVIDERS = {'FlickrProvider': image_provider_flickr.FlickrProvider}
 
 def is_valid_image(image):
     """

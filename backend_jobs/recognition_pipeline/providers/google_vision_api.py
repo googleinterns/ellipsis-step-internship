@@ -14,9 +14,9 @@
 """
 
 from google.cloud import vision_v1
-from pipeline_lib.image_recognition_provider import ImageRecognitionProvider
-from filters.filter_by_format import FilterByFormat
-from filters.filter_by_resolution import FilterByResolution
+from backend_jobs.recognition_pipeline.pipeline_lib.image_recognition_provider import ImageRecognitionProvider
+from backend_jobs.recognition_pipeline.filters.filter_by_format import FilterByFormat
+from backend_jobs.recognition_pipeline.filters.filter_by_resolution import FilterByResolution
 
 # pylint: disable=abstract-method
 class GoogleVisionAPI(ImageRecognitionProvider):
@@ -47,7 +47,7 @@ class GoogleVisionAPI(ImageRecognitionProvider):
             all_labels = [label.description.lower() for label in image_response.label_annotations]
             results.append([(docs[i], all_labels)])
         return results
-        
+ 
     label_images = process
     prerequisites_map = {'format': FilterByFormat(\
         ['JPG', 'JPEG', 'PNG8', 'PNG24', 'GIF', 'BMP', 'WEBP', 'RAW', 'ICO', 'PDF', 'TIFF']),\

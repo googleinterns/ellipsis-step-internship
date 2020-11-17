@@ -12,28 +12,13 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 """
-import firebase_admin
-from firebase_admin import credentials
-from firebase_admin import firestore
 import apache_beam as beam
-#from pipeline_lib.constants import *
-from backend_jobs.package import constants
+from backend_jobs.pipeline_utils import constants
+from backend_jobs.pipeline_utils.firestore_database import initialize_db
 
 RANGE_OF_BATCH = 0.1
 # Defines the range of the random field to query the database by batches, \
 # each batch covers all documents with random value of X up to value of X+RANGE_OF_BATCH
-INVISIBLE = 0
-
-def initialize_db():
-    """Initializes project's Firestore database for writing and reading purposes.
-
-    """
-    # pylint: disable=protected-access
-    if not firebase_admin._apps:
-        firebase_admin.initialize_app(credentials.ApplicationDefault(), {
-        constants.PROJECT_ID: 'step-project-ellispis',
-        })
-    return firestore.client()
 
 # pylint: disable=abstract-method
 class GetBatchedImageDataset(beam.DoFn):
@@ -72,13 +57,13 @@ class GetBatchedImageDataset(beam.DoFn):
         random_max = random_min+RANGE_OF_BATCH
         # the higher limit for querying the database by the random field.
         if ingestion_run:
-            query = self.db.collection(IMAGES_COLLECTION_NAME).\
-                where(INGESTED_RUNS,u'array_contains', ingestion_run).\
-                    where(RANDOM, u'>=', random_min).where(RANDOM, u'<', random_max).stream()
+            query = self.db.collection(constants.IMAGES_COLLECTION_NAME).\
+                where(constants.INGESTED_RUNS,u'array_contains', ingestion_run).\
+                    where(constants.RANDOM, u'>=', random_min).where(constants.RANDOM, u'<', random_max).stream()
         else:
-            query = self.db.collection(IMAGES_COLLECTION_NAME).\
-                where(INGESTED_PROVIDERS, u'array_contains', ingestion_provider).\
-                    where(RANDOM, u'>=', random_min).where(RANDOM, u'<', random_max).stream()
+            query = self.db.collection(constants.IMAGES_COLLECTION_NAME).\
+                where(constants.INGESTED_PROVIDERS, u'array_contains', ingestion_provider).\
+                    where(constants.RANDOM, u'>=', random_min).where(constants.RANDOM, u'<', random_max).stream()
         return (add_id_to_dict(doc) for doc in query)
 
 def add_id_to_dict(doc):
@@ -92,8 +77,8 @@ def add_id_to_dict(doc):
 # pylint: disable=missing-function-docstring
 def get_redefine_map(recognition_provider_id):
     db = initialize_db()
-    doc_dict = db.collection(REDEFINE_MAPS_COLLECTION_NAME).document(recognition_provider_id).get().to_dict()
-    return doc_dict[REDEFINE_MAP]
+    doc_dict = db.collection(constants.REDEFINE_MAPS_COLLECTION_NAME).document(recognition_provider_id).get().to_dict()
+    return doc_dict[constants.REDEFINE_MAP]
 
 class StoreInDatabase(beam.DoFn):
     """Stores parallelly the label information in the project's database.
@@ -113,23 +98,23 @@ class StoreInDatabase(beam.DoFn):
         """
         image_doc = element[0]
         doc_id = image_doc['id']
-        subcollection_ref = self.db.collection(IMAGES_COLLECTION_NAME).document(doc_id).\
-            collection(LABELS_COLLECTION_NAME)
+        subcollection_ref = self.db.collection(constants.IMAGES_COLLECTION_NAME).document(doc_id).\
+            collection(constants.LABELS_COLLECTION_NAME)
         for label in element[1]:
             doc = subcollection_ref.document()
             doc.set({
-                PROVIDER_ID: provider_id,
-                PROVIDER_VERSION: '2.0.0',
-                LABEL_NAME: label['name'],
-                VISIBILITY: INVISIBLE,
-                PARENT_IMAGE_ID: doc_id,
-                PIPELINE_RUN_ID: run_id,
-                HASHMAP: image_doc['geoHashes'],
-                RANDOM: image_doc['random']
+                constants.PROVIDER_ID: provider_id,
+                constants.PROVIDER_VERSION: '2.0.0',
+                constants.LABEL_NAME: label['name'],
+                constants.VISIBILITY: constants.INVISIBLE,
+                constants.PARENT_IMAGE_ID: doc_id,
+                constants.PIPELINE_RUN_ID: run_id,
+                constants.HASHMAP: image_doc['geoHashes'],
+                constants.RANDOM: image_doc['random']
             })
             if 'id' in label:
                 doc.set({
-                    LABEL_ID: label['id']
+                    constants.LABEL_ID: label['id']
                 }, merge = True)
 
 
