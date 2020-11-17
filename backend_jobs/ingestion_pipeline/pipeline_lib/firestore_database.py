@@ -59,7 +59,7 @@ def _add_document(element, provider, job_name, doc_ref):
         float(element.coordinates['longitude']))
     doc_ref.set({
         constants.URL: element.url,
-        constants.INGESTED_PROVIDERS: [provider.provider_id],
+        constants.INGESTED_PROVIDERS: [provider.provider_name],
         constants.INGESTED_RUNS: [job_name],
         constants.COORDINATES: geo_point_coordinates,
         constants.DATE_INGESTED: datetime.now(),
@@ -78,8 +78,8 @@ def _update_document(provider,doc, doc_ref,job_name):
     ingested_runs = doc.to_dict()[constants.INGESTED_RUNS]
     ingested_runs.append(job_name)
     ingested_providers = doc.to_dict()[constants.INGESTED_PROVIDERS]
-    if provider.provider_id not in ingested_providers:
-        ingested_providers.append(provider.provider_id)
+    if provider.provider_name not in ingested_providers:
+        ingested_providers.append(provider.provider_name)
     doc_ref.update({
         constants.INGESTED_RUNS:ingested_runs,
         constants.INGESTED_PROVIDERS: ingested_providers,
@@ -89,6 +89,7 @@ def _update_document(provider,doc, doc_ref,job_name):
 def _upload_sub_collection(element, provider,job_name, sub_collection_doc_ref):
     sub_collection_doc_ref.set({
         constants.PROVIDER_ID:provider.provider_id,
+        constants.PROVIDER_NAME:provider.provider_name,
         constants.PROVIDER_VERSION: provider.provider_version,
         constants.PROVIDER_VISIBILITY: provider.visibility.value,
         constants.PIPELINE_RUN_ID: job_name,

@@ -25,7 +25,15 @@ from backend_jobs.pipeline_utils import utils
 
 
 #This map provides all the Providers.ImageProviders in the platform
-IMAGE_PROVIDERS = {'FlickrProvider': image_provider_flickr.FlickrProvider}
+_IMAGE_PROVIDERS = {'FlickrProvider': image_provider_flickr.FlickrProvider()}
+
+def _validate_args(args):
+    """ Checks whether the pipeline's arguments are valid.
+    If not - throws an error.
+
+    """
+    if not isinstance(args.input_provider_name, str):
+        raise ValueError('ingestion provider is not a string')
 
 def is_valid_image(image):
     """
@@ -51,13 +59,19 @@ def run(argv=None):
     parser.add_argument(
         '--input_provider_args',
         dest = 'input_provider_args',
-        default = 'all',
-        help = 'label to query by.')
+        default = '',
+        help = 'args to query by provider.')
     parser.add_argument(
         '--output',
         dest = 'output',
+        required = False, # Optional - only for development reasons.
         help = 'Output file to write results to.')
     known_args, pipeline_args = parser.parse_known_args(argv)
+    _validate_args(known_args)
+    image_provider = utils.get_provider(known_args.input_provider_name, _IMAGE_PROVIDERS)
+    if not image_provider.enabled:
+        raise ValueError('ingestion provider is not enabled')
+
     job_name = 'ingestion-' + utils.get_timestamp_id()
     pipeline_options = PipelineOptions(pipeline_args, job_name=job_name)
 
@@ -65,11 +79,11 @@ def run(argv=None):
     # pylint: disable=expression-not-assigned
     with apache_beam.Pipeline(options=pipeline_options) as pipeline:
 
-        image_provider = utils.get_provider(known_args.input_provider_name, _IMAGE_PROVIDERS)
-        query_by_arguments_map = {'tag':known_args.input_provider_args}
+      
+        query_by_arguments_map = image_provider.parse_query_by_args(known_args.input_provider_args)
         num_of_batches = image_provider.get_num_of_pages(query_by_arguments_map)
         create_batch = (pipeline | 'create' >> \
-            apache_beam.Create([i for i in range(1, int(num_of_batches)+1)]) )
+            apache_beam.Create([i for i in range(1, int(3)+1)]) )
         images = create_batch | 'call API' >> \
             apache_beam.ParDo(image_provider.get_images, query_by_arguments_map)
         extracted_elements = images | 'extract attributes' >> \

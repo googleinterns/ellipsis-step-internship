@@ -21,15 +21,14 @@ from backend_jobs.ingestion_pipeline.pipeline_lib.data_types import ImageType
 from backend_jobs.ingestion_pipeline.pipeline_lib.data_types import VisibilityType
 from backend_jobs.ingestion_pipeline.pipeline_lib.data_types import ImageAttributes
 
+_FLICKR_API_KEY = '2d00397e012c30ccc33ca4fdc05a5c98'
+_FLICKR_SECRET_KEY =  'e36a277c77f09fdd'
 
 class FlickrProvider(ImageProvider):
     """ This class is an implementation for the ImageProvider interface.
     """
     def get_images(self, num_of_page, query_arguments):
-        flickr = flickrapi.FlickrAPI(
-            '2d00397e012c30ccc33ca4fdc05a5c98',
-            'e36a277c77f09fdd',
-            cache = True)
+        flickr = flickrapi.FlickrAPI(_FLICKR_API_KEY, _FLICKR_SECRET_KEY, cache = True)
         photos = flickr.photos.search(text=query_arguments['tag'],
                      tag_mode = 'all',
                      tags = query_arguments['tag'],
@@ -70,11 +69,16 @@ class FlickrProvider(ImageProvider):
                     return url[:-5] + flickr_resolution_map[key] + url[-4:]
         return None
 
+    def parse_query_by_args(self, args):
+        if args is not None:
+            return {'tag': args}
+        return {'tag': 'all'}
+
     def _genarate_image_id_with_prefix(self, image_id):
         return str(self.provider_id + image_id)
 
-    provider_id = 'flickr_2020'
-    provider_name ='flickr'
+    provider_id = 'FlickrProvider-2020'
+    provider_name ='FlickrProvider'
     provider_version = '2.4.0'
     image_type = ImageType.CAMERA
     enabled = True
@@ -82,8 +86,14 @@ class FlickrProvider(ImageProvider):
     num_of_images = 100
 
 def get_coordinates(element):
-    """ This function gets coordinates from the given metadata,
+    """ This function extracts coordinates from the image element,
     if the coordinates equals (0,0) the function returns None.
+
+    Args:
+        element: A dict cuntianing all the image attributes.
+
+    Returns:
+        Coordinates in the format {'latitude':float,'longitude':float}.
     """
     latitude=float(element.get('latitude'))
     longitude=float(element.get('longitude'))
@@ -94,8 +104,14 @@ def get_coordinates(element):
     return coordinates
 
 def get_resolution(element):
-    """ This function gets a resolution from the given metadata,
+    """ This function extracts resolution from the image element,
     if the resolution equals None the function returns None.
+
+    Args:
+        element: A dict cuntianing all the image attributes.
+
+    Returns:
+        Resolution in the format {'height':int,'width':int}.
     """
     height=element.get('height_c')
     width=element.get('width_c')
@@ -106,8 +122,14 @@ def get_resolution(element):
     return resolution
 
 def get_date(element):
-    """ This function extracts the date the image was taken from the metadata
+    """ This function extracts the date the image was taken from the image element
     and converts it to a datetime format.
+
+    Args:
+        element: A dict cuntianing all the image attributes.
+
+    Returns:
+        Date the image was taken in the format of datatime.
     """
     date_taken = element.get('datetaken')
     datetime_date_taken = datetime.strptime(date_taken, '%Y-%m-%d %H:%M:%S')
