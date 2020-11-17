@@ -45,5 +45,7 @@ IMAGE_ATTRIBUTES = 'imageAttributes'
 FORMAT = 'format'
 RESOLUTION = 'resolution'
 ATTRIBUTION = 'attribution'
+LABELS = 'labels'
 
 INVISIBLE = 0
+VISIBLE = 1

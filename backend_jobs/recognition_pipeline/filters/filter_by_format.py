@@ -13,7 +13,7 @@
   limitations under the License.
 """
 
-from pipeline_lib.filter_by import FilterBy
+from backend_jobs.recognition_pipeline.pipeline_lib.filter_by import FilterBy
 
 class FilterByFormat(FilterBy):
     """ Checks if the image is in a correct format.
