@@ -15,9 +15,7 @@
 
 from backend_jobs.recognition_pipeline.pipeline_lib.filter_by import FilterBy
 from backend_jobs.pipeline_utils.utils import get_provider
-from backend_jobs.ingestion_pipeline.main import IMAGE_PROVIDERS 
-# pylint: disable=fixme
-# TODO: add this after merging with Tal's branch
+from backend_jobs.ingestion_pipeline.main import IMAGE_PROVIDERS
 
 class FilterByResolution(FilterBy):
     """ Checks if the image has a high enough resolution.
@@ -47,8 +45,8 @@ class FilterByResolution(FilterBy):
           Otherwise, the image cannot be supported and returns False.
       """
         for provider_name in image['ingestedProviders']:
-            provider = get_provider(provider_name, IMAGE_PROVIDERS)
-            resize_url = provider.get_url_for_max_resolution(self.prerequisites, image['id'])
+            provider = get_provider(IMAGE_PROVIDERS, provider_name)
+            resize_url = provider.get_url_for_max_resolution(self.prerequisites, image)
             if resize_url:
                 image['url'] = resize_url
                 return True

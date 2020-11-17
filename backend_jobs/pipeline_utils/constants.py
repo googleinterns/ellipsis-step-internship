@@ -15,7 +15,7 @@
 PROJECT_ID = 'projectId'
 
 # Constant collection names:
-IMAGES_COLLECTION_NAME = 'test'
+IMAGES_COLLECTION_NAME = 'Images'
 PIPELINE_RUNS_COLLECTION_NAME = 'PipelineRuns'
 LABELS_COLLECTION_NAME = 'Labels'
 LABELTAGS_COLLECTION_NAME = 'LabelTags'

@@ -16,9 +16,8 @@ import apache_beam as beam
 from backend_jobs.pipeline_utils import constants
 from backend_jobs.pipeline_utils.firestore_database import initialize_db
 
+# Defines the range of the random field to query the database by batches.
 RANGE_OF_BATCH = 0.1
-# Defines the range of the random field to query the database by batches, \
-# each batch covers all documents with random value of X up to value of X+RANGE_OF_BATCH
 
 # pylint: disable=abstract-method
 class GetBatchedImageDataset(beam.DoFn):
@@ -52,10 +51,10 @@ class GetBatchedImageDataset(beam.DoFn):
             A generator of dictionaries with all the information (fields and id)
             of each one of the Firestore data set's image documents.
         """
-        random_min = element*RANGE_OF_BATCH
         # the lower limit for querying the database by the random field.
-        random_max = random_min+RANGE_OF_BATCH
+        random_min = element*RANGE_OF_BATCH
         # the higher limit for querying the database by the random field.
+        random_max = random_min+RANGE_OF_BATCH
         if ingestion_run:
             query = self.db.collection(constants.IMAGES_COLLECTION_NAME).\
                 where(constants.INGESTED_RUNS,u'array_contains', ingestion_run).\
