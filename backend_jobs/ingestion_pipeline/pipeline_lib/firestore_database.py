@@ -13,38 +13,22 @@
   limitations under the License.
 """
 
-import random
+
 from datetime import datetime
-import apache_beam as beam
-import firebase_admin
-from firebase_admin import credentials
-from firebase_admin import firestore
-from google.cloud import firestore as cloud_firestore
+import random
+import apache_beam
 import geohash2
-
-_IMAGES_COLLECTION = u'test'
-_PIPELINE_COLLECTION = u'IngestionPipelineRun'
-_IMAGES_SUB_COLLECTION = u'pipelineRun'
-
-# pylint: disable=protected-access,attribute-defined-outside-init,arguments-differ,abstract-method
-def initialize_database():
-    """ Initializes the projects database for writing/reading/updating/deleting purposes.
-
-    Returns: 
-    """
-    if not firebase_admin._apps:
-        firebase_admin.initialize_app(credentials.ApplicationDefault(), {
-        'projectId': 'step-project-ellispis',
-        })
-    return firestore.client()
+from google.cloud import firestore
+from backend_jobs.pipeline_utils import firestore_database
+from backend_jobs.pipeline_utils import constants
 
 
-class StoreImageAttributeDoFn(beam.DoFn):
+class StoreImageAttributeDoFn(apache_beam.DoFn):
     """ Stores asynchronously the entity of ImageAttributes type from each image in the
     projects database.
     """
     def setup(self):
-        self.database_firebase = initialize_database()
+        self.database_firebase = firestore_database.initialize_db()
 
     def process(self, element, provider, job_name):
         """ Adds/Updates the projects database to contain documents with image attributes.
@@ -56,9 +40,9 @@ class StoreImageAttributeDoFn(beam.DoFn):
             provider: the provider we are running now
             job_name: the job name that we are running now
         """
-        doc_ref = self.database_firebase.collection(_IMAGES_COLLECTION).document(element.image_id)
+        doc_ref = self.database_firebase.collection(constants.IMAGES_COLLECTION_NAME).document(element.image_id)
         doc = doc_ref.get()
-        sub_collection_ref = doc_ref.collection(_IMAGES_SUB_COLLECTION)
+        sub_collection_ref = doc_ref.collection(constants.PIPELINE_RUNS_COLLECTION_NAME)
         sub_collection_doc_ref = sub_collection_ref.document()
         if doc.exists:
             #doc found- image has been ingested already
@@ -70,46 +54,45 @@ class StoreImageAttributeDoFn(beam.DoFn):
         _upload_sub_collection(element, provider, job_name, sub_collection_doc_ref)
 
 def _add_document(element, provider, job_name, doc_ref):
-    geo_point_coordinates = cloud_firestore.GeoPoint(
+    geo_point_coordinates = firestore.GeoPoint(
         float(element.coordinates['latitude']),
         float(element.coordinates['longitude']))
     doc_ref.set({
-        u'url': element.url,
-        u'ingestedProviders': [provider.provider_id],
-        u'ingestedRuns': [job_name],
-        u'coordinates': geo_point_coordinates,
-        u'dateIngested': datetime.now(),
-        u'dateShot': element.date_shot,
-        u'dateFields':get_date_fields(element.date_shot),
-        u'geoHashes': get_geo_hashes_map(element.coordinates),
-        u'imageAttributes':{
-            u'format': element.format,
-            u'resolution':element.resolution},
-        u'attribution': element.attribution,
-        u'random': random.random(),
-        u'visibility': provider.visibility.value,
+        constants.URL: element.url,
+        constants.INGESTED_PROVIDERS: [provider.provider_id],
+        constants.INGESTED_RUNS: [job_name],
+        constants.COORDINATES: geo_point_coordinates,
+        constants.DATE_INGESTED: datetime.now(),
+        constants.DATE_SHOT: element.date_shot,
+        constants.DATE_FIELDS:get_date_fields(element.date_shot),
+        constants.HASHMAP: get_geo_hashes_map(element.coordinates),
+        constants.IMAGE_ATTRIBUTES:{
+            constants.FORMAT: element.format,
+            constants.RESOLUTION:element.resolution},
+        constants.ATTRIBUTION: element.attribution,
+        constants.RANDOM: random.random(),
+        constants.VISIBILITY: provider.visibility.value,
     })
 
 def _update_document(provider,doc, doc_ref,job_name):
-    ingested_runs = doc.to_dict()[u'ingestedRuns']
+    ingested_runs = doc.to_dict()[constants.INGESTED_RUNS]
     ingested_runs.append(job_name)
-    ingested_providers = doc.to_dict()[u'ingestedProviders']
+    ingested_providers = doc.to_dict()[constants.INGESTED_PROVIDERS]
     if provider.provider_id not in ingested_providers:
         ingested_providers.append(provider.provider_id)
     doc_ref.update({
-        u'ingestedRuns':ingested_runs,
-        u'ingestedProviders': ingested_providers,
-        u'visibility': max(provider.visibility.value, doc.to_dict()[u'visibility']),
+        constants.INGESTED_RUNS:ingested_runs,
+        constants.INGESTED_PROVIDERS: ingested_providers,
+        constants.VISIBILITY: max(provider.visibility.value, doc.to_dict()[constants.VISIBILITY]),
     })
 
 def _upload_sub_collection(element, provider,job_name, sub_collection_doc_ref):
     sub_collection_doc_ref.set({
-        u'coordinates': element.coordinates,
-        u'providerId':provider.provider_id,
-        u'providerVersion': provider.provider_version,
-        u'providerVisibility': provider.visibility.value,
-        u'pipelineRun': job_name,
-        u'geoHashes': get_geo_hashes_map(element.coordinates),
+        constants.PROVIDER_ID:provider.provider_id,
+        constants.PROVIDER_VERSION: provider.provider_version,
+        constants.PROVIDER_VISIBILITY: provider.visibility.value,
+        constants.PIPELINE_RUN_ID: job_name,
+        constants.HASHMAP: get_geo_hashes_map(element.coordinates),
     })
 
 
@@ -144,7 +127,7 @@ def get_doc_by_id(image_id):
     Returns:
         document
     """
-    database_firebase = initialize_database()
-    doc_ref = database_firebase.collection(_IMAGES_COLLECTION).document(image_id)
+    database_firebase = firestore_database.initialize_db()
+    doc_ref = database_firebase.collection(constants.IMAGES_COLLECTION_NAME).document(image_id)
     doc = doc_ref.get()
     return doc

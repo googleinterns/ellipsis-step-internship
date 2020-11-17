@@ -15,7 +15,7 @@
  # pylint: disable=pointless-string-statement
 
 from abc import ABC, abstractmethod
-import apache_beam as beam
+import apache_beam
 
 """ Each ImageProvider that is added to the platform will inherit from the ImageProviders class.
 This class is in charge of:
@@ -24,7 +24,7 @@ This class is in charge of:
 * extracting additional metadata.
 """
 
-class ImageProvider(ABC, beam.DoFn):
+class ImageProvider(ABC, apache_beam.DoFn):
     """ ImageProvider is an interface that all the image ingestion providers inherit from.
     """
 
@@ -58,10 +58,10 @@ class ImageProvider(ABC, beam.DoFn):
         """ This function is in charge of extracting the metadata from each image.
 
         Args:
-            element: the image we get from the get_images function.
+            element: The image we get from the get_images function.
 
         Returns:
-            imageAttributes: An ImageAttributes class that contains all the information on the image.
+            imageAttributes:An ImageAttributes class that contains all the information on the image.
         """
 
     @abstractmethod

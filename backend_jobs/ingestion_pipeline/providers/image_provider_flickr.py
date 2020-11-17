@@ -13,19 +13,17 @@
   limitations under the License.
 """
 
-
 from datetime import datetime
-from pipeline_lib.database_functions import get_doc_by_id
-from pipeline_lib.image_provider_interface import ImageProvider
-from pipeline_lib.data_types import ImageType
-from pipeline_lib.data_types import VisibilityType
-from pipeline_lib.data_types import ImageAttributes
 import flickrapi
+from backend_jobs.ingestion_pipeline.pipeline_lib.firestore_database import get_doc_by_id
+from backend_jobs.ingestion_pipeline.pipeline_lib.image_provider_interface import ImageProvider
+from backend_jobs.ingestion_pipeline.pipeline_lib.data_types import ImageType
+from backend_jobs.ingestion_pipeline.pipeline_lib.data_types import VisibilityType
+from backend_jobs.ingestion_pipeline.pipeline_lib.data_types import ImageAttributes
 
 
 class FlickrProvider(ImageProvider):
-    """
-    This class is an implementation for the ImageProvider interface.
+    """ This class is an implementation for the ImageProvider interface.
     """
     def get_images(self, num_of_page, query_arguments):
         flickr = flickrapi.FlickrAPI(
@@ -84,8 +82,7 @@ class FlickrProvider(ImageProvider):
     num_of_images = 100
 
 def get_coordinates(element):
-    """
-    This function gets coordinates from the given metadata,
+    """ This function gets coordinates from the given metadata,
     if the coordinates equals (0,0) the function returns None.
     """
     latitude=float(element.get('latitude'))
@@ -97,8 +94,7 @@ def get_coordinates(element):
     return coordinates
 
 def get_resolution(element):
-    """
-    This function gets a resolution from the given metadata,
+    """ This function gets a resolution from the given metadata,
     if the resolution equals None the function returns None.
     """
     height=element.get('height_c')
@@ -110,8 +106,7 @@ def get_resolution(element):
     return resolution
 
 def get_date(element):
-    """
-    This function extracts the date the image was taken from the metadata
+    """ This function extracts the date the image was taken from the metadata
     and converts it to a datetime format.
     """
     date_taken = element.get('datetaken')

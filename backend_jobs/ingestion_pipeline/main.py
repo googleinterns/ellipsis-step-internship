@@ -14,14 +14,14 @@
  """
 
 from __future__ import absolute_import
-from datetime import datetime
 import argparse
 import logging
-import apache_beam as beam
+import apache_beam
 from apache_beam.io import WriteToText
 from apache_beam.options.pipeline_options import PipelineOptions
-from providers import image_provider_flickr
-from pipeline_lib import database_functions
+from backend_jobs.ingestion_pipeline.providers import image_provider_flickr
+from backend_jobs.ingestion_pipeline.pipeline_lib import firestore_database
+from backend_jobs.pipeline_utils import utils
 
 
 #This map provides all the Providers.ImageProviders in the platform
@@ -37,19 +37,6 @@ def is_valid_image(image):
         image.format and \
         image.resolution['width'] > 100 and \
         image.resolution['height'] > 100
-
-def _get_image_provider(provider_name):
-    """
-    This function returns the ImageProvider for the given provider name.
-    """
-    return _IMAGE_PROVIDERS[provider_name]()
-
-def get_timestamp():
-    """
-    This function returns a unique id for each dataflow job.
-    The id is created from datetime.now() and includes only numbers.
-    """
-    return str(datetime.timestamp(datetime.now())).replace('.','')
 
 def run(argv=None):
     """
@@ -71,26 +58,26 @@ def run(argv=None):
         dest = 'output',
         help = 'Output file to write results to.')
     known_args, pipeline_args = parser.parse_known_args(argv)
-    job_name = 'ingestion-' + get_timestamp()
+    job_name = 'ingestion-' + utils.get_timestamp_id()
     pipeline_options = PipelineOptions(pipeline_args, job_name=job_name)
 
     # The pipeline will be run on exiting the with block.
     # pylint: disable=expression-not-assigned
-    with beam.Pipeline(options=pipeline_options) as pipeline:
+    with apache_beam.Pipeline(options=pipeline_options) as pipeline:
 
-        image_provider = _get_image_provider(known_args.input_provider_name)
+        image_provider = utils.get_provider(known_args.input_provider_name, _IMAGE_PROVIDERS)
         query_by_arguments_map = {'tag':known_args.input_provider_args}
         num_of_batches = image_provider.get_num_of_pages(query_by_arguments_map)
         create_batch = (pipeline | 'create' >> \
-            beam.Create([i for i in range(1, int(num_of_batches)+1)]) )
+            apache_beam.Create([i for i in range(1, int(num_of_batches)+1)]) )
         images = create_batch | 'call API' >> \
-            beam.ParDo(image_provider.get_images, query_by_arguments_map)
+            apache_beam.ParDo(image_provider.get_images, query_by_arguments_map)
         extracted_elements = images | 'extract attributes' >> \
-            beam.Map(image_provider.get_image_attributes)
+            apache_beam.Map(image_provider.get_image_attributes)
         filtered_elements = extracted_elements | 'filter' >> \
-            beam.Filter(is_valid_image)
+            apache_beam.Filter(is_valid_image)
         filtered_elements | 'upload' >> \
-            beam.ParDo(database_functions.StoreImageAttributeDoFn(), image_provider,job_name)
+            apache_beam.ParDo(firestore_database.StoreImageAttributeDoFn(), image_provider,job_name)
 
         if known_args.output:
             filtered_elements | 'Write' >> WriteToText(known_args.output)

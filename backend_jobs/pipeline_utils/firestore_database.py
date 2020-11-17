@@ -15,7 +15,7 @@
 import firebase_admin
 from firebase_admin import credentials
 from firebase_admin import firestore
-from backend_jobs.package import constants
+from backend_jobs.pipeline_utils import constants
 
 def initialize_db():
     """Initializes project's Firestore database for writing and reading purposes.
