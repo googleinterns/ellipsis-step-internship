@@ -25,7 +25,7 @@ from backend_jobs.pipeline_utils import utils
 
 
 #This map provides all the Providers.ImageProviders in the platform
-_IMAGE_PROVIDERS = {'FlickrProvider': image_provider_flickr.FlickrProvider()}
+IMAGE_PROVIDERS = {'FlickrProvider': image_provider_flickr.FlickrProvider()}
 
 def _validate_args(args):
     """ Checks whether the pipeline's arguments are valid.
@@ -68,7 +68,7 @@ def run(argv=None):
         help = 'Output file to write results to.')
     known_args, pipeline_args = parser.parse_known_args(argv)
     _validate_args(known_args)
-    image_provider = utils.get_provider(known_args.input_provider_name, _IMAGE_PROVIDERS)
+    image_provider = utils.get_provider(known_args.input_provider_name, IMAGE_PROVIDERS)
     if not image_provider.enabled:
         raise ValueError('ingestion provider is not enabled')
 

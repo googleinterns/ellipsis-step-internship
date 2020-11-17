@@ -14,9 +14,8 @@
 """
 
 from google.cloud import vision_v1
-from backend_jobs.recognition_pipeline.pipeline_lib.image_recognition_provider import ImageRecognitionProvider
-from backend_jobs.recognition_pipeline.filters.filter_by_format import FilterByFormat
-from backend_jobs.recognition_pipeline.filters.filter_by_resolution import FilterByResolution
+from backend_jobs.recognition_pipeline.pipeline_lib.image_recognition_provider\
+    import ImageRecognitionProvider
 
 # pylint: disable=abstract-method
 class GoogleVisionAPI(ImageRecognitionProvider):
@@ -30,15 +29,28 @@ class GoogleVisionAPI(ImageRecognitionProvider):
 
     # pylint: disable=arguments-differ
     def process(self, element):
+        images_and_labels = []
+        for i in range(0, len(element), 2000): # The provider supports a batch of max 2000 images.
+            images_and_labels.extend(self.get_labels_of_batch(element[i:2000+i]))
+        return images_and_labels
+
+    def get_labels_of_batch(self, image_docs):
+        """ Labels the images in the batch using one call to the Google Vision API.
+
+        Args:
+            image_docs: list of up to 2000 image docs represented by dictionaries.
+
+        """
         features = [ {"type_": vision_v1.Feature.Type.LABEL_DETECTION} ]
         requests = []
         results = []
         docs = []
-        for doc in element:
+        i = 0
+        for doc in image_docs:
             url = doc['url']
             image = vision_v1.Image()
             image.source.image_uri = url
-            request = vision_v1.AnnotateImageRequest(image= image, features=features)
+            request = vision_v1.AnnotateImageRequest(image= image, features= features)
             requests.append(request)
             docs.append(doc)
         batch_request = vision_v1.BatchAnnotateImagesRequest(requests=requests)
@@ -47,10 +59,10 @@ class GoogleVisionAPI(ImageRecognitionProvider):
             all_labels = [label.description.lower() for label in image_response.label_annotations]
             results.append([(docs[i], all_labels)])
         return results
- 
+    
     label_images = process
-    prerequisites_map = {'format': FilterByFormat(\
-        ['JPG', 'JPEG', 'PNG8', 'PNG24', 'GIF', 'BMP', 'WEBP', 'RAW', 'ICO', 'PDF', 'TIFF']),\
-            'resolution': FilterByResolution({'height':480, 'width': 640})}
+    _resolution_prerequisites = {'height':480, 'width': 640}
+    _format_prerequisites =  ['JPG', 'JPEG', 'PNG8', 'PNG24', 'GIF', \
+        'BMP', 'WEBP', 'RAW', 'ICO', 'PDF', 'TIFF']
     provider_id='Google_Vision_API'
     provider_version='2.0.0'

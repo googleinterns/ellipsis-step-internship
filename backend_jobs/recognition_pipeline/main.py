@@ -31,10 +31,9 @@ from apache_beam.io import WriteToText
 from apache_beam.options.pipeline_options import PipelineOptions
 # from apache_beam.runners.dataflow.internal.apiclient import DataflowApplicationClient
 from providers import google_vision_api
-from backend_jobs.recognition_pipeline.pipeline_lib.redefine_labels import RedefineLabels
 from pipeline_lib.notify_admins import send_email_to_notify_admins
 from backend_jobs.recognition_pipeline.pipeline_lib.firestore_database import\
-    GetBatchedImageDataset, StoreInDatabase, get_redefine_map
+    GetBatchedImageDataset, StoreInDatabase
 from backend_jobs.pipeline_utils.firestore_database import upload_to_pipeline_runs_collection
 from backend_jobs.pipeline_utils.utils import get_provider, get_timestamp_id
 
@@ -91,7 +90,7 @@ def run(argv=None):
     # Creating an object of type ImageRecognitionProvider
     # for the specific image recognition provider input.
     job_name = 'RECOGNITION-{time_id}-{recognition_provider}'.format(time_id = get_timestamp_id(),\
-        recognition_provider = recognition_provider.provider_id.replace('-','').upper())
+        recognition_provider = recognition_provider.provider_id.replace('_','-').upper())
     pipeline_options = PipelineOptions(pipeline_args, job_name=job_name)
 
     with beam.Pipeline(options=pipeline_options) as pipeline:
@@ -114,11 +113,8 @@ def run(argv=None):
             # Labels the images by the process method of the provider.
         labelled_images = labelled_images_batch | \
             beam.FlatMap(lambda elements: elements)
-        redefine_map = get_redefine_map(recognition_provider.provider_id)
-        labels_id = labelled_images | 'redefine labels' >> \
-            beam.ParDo(RedefineLabels(), redefine_map)
         # pylint: disable=expression-not-assigned
-        # labels_id | 'upload' >> beam.ParDo(StoreInDatabase(), job_name, recognition_provider.provider_id)
+        labelled_images | 'upload' >> beam.ParDo(StoreInDatabase(), job_name, recognition_provider.provider_id)
         # if ingestion_run:
         #     send_email_to_notify_admins(job_name=job_name, ingestion_run=ingestion_run)
         # else:
@@ -127,7 +123,7 @@ def run(argv=None):
         if known_args.output: # For testing.
             def format_result(image, labels):
                 return '%s: %s' % (image['url'], labels)
-            output = labels_id | 'Format' >> beam.MapTuple(format_result)
+            output = labelled_images | 'Format' >> beam.MapTuple(format_result)
             output | 'Write' >> WriteToText(known_args.output)
     upload_to_pipeline_runs_collection(recognition_provider.provider_id, job_name)
     # TODO: add access to job id with dataflow
