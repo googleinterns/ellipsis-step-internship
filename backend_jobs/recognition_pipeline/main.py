@@ -38,7 +38,7 @@ from backend_jobs.recognition_pipeline.pipeline_lib.firestore_database import\
 from backend_jobs.pipeline_utils.firestore_database import upload_to_pipeline_runs_collection
 from backend_jobs.pipeline_utils.utils import get_provider, get_timestamp_id
 
-NAME_TO_PROVIDER = {'Google_Vision_API': google_vision_api.GoogleVisionAPI()}
+NAME_TO_PROVIDER = {'Google_Vision_API': google_vision_api.GoogleVisionAPI}
 # Maps recognition provider names to an object of the provider.
 
 def _validate_args(args):
