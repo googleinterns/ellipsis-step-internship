@@ -26,8 +26,9 @@ _FLICKR_SECRET_KEY =  'e36a277c77f09fdd'
 class FlickrProvider(ImageProvider):
     """ This class is an implementation for the ImageProvider interface.
     """
-    def __init__(self, query_arguments):
-        self.query_arguments={'tag': query_arguments}
+    def __init__(self, query_arguments=None):
+        if query_arguments is not None:
+            self.query_arguments={'tag': query_arguments}
 
     def get_images(self, num_of_page):
         flickr = flickrapi.FlickrAPI(_FLICKR_API_KEY, _FLICKR_SECRET_KEY, cache = True)
@@ -70,10 +71,9 @@ class FlickrProvider(ImageProvider):
             if  max_resolution <= key:
                 if key == 500:
                     # Removing the char that represents the resultion to get max resultion of 500.
-                    new_url = url[:-6] + url[-4:]
+                    return  url[:-6] + url[-4:]
                 # Replacing the char that represents the resultion with the wonted key.
-                new_url = url[:-5] + flickr_resolution_map[key] + url[-4:]
-                return new_url
+                return  url[:-5] + flickr_resolution_map[key] + url[-4:]
         return None
 
     def _genarate_image_id_with_prefix(self, image_id):
