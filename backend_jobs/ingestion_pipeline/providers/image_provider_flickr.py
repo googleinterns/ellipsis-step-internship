@@ -15,7 +15,6 @@
 
 from datetime import datetime
 import flickrapi
-from backend_jobs.ingestion_pipeline.pipeline_lib.firestore_database import get_doc_by_id
 from backend_jobs.ingestion_pipeline.pipeline_lib.image_provider_interface import ImageProvider
 from backend_jobs.ingestion_pipeline.pipeline_lib.data_types import ImageType
 from backend_jobs.ingestion_pipeline.pipeline_lib.data_types import VisibilityType
@@ -27,11 +26,14 @@ _FLICKR_SECRET_KEY =  'e36a277c77f09fdd'
 class FlickrProvider(ImageProvider):
     """ This class is an implementation for the ImageProvider interface.
     """
-    def get_images(self, num_of_page, query_arguments):
+    def __init__(self, query_arguments):
+        self.query_arguments={'tag': query_arguments}
+
+    def get_images(self, num_of_page):
         flickr = flickrapi.FlickrAPI(_FLICKR_API_KEY, _FLICKR_SECRET_KEY, cache = True)
-        photos = flickr.photos.search(text=query_arguments['tag'],
+        photos = flickr.photos.search(text=self.query_arguments['tag'],
                      tag_mode = 'all',
-                     tags = query_arguments['tag'],
+                     tags = self.query_arguments['tag'],
                      extras = 'url_c, geo, date_upload, date_taken, original_format,\
                       owner_name, original_format',
                      per_page = self.num_of_images,
@@ -39,8 +41,8 @@ class FlickrProvider(ImageProvider):
                      sort = 'relevance')
         return photos[0]
 
-    def get_num_of_pages(self, query_arguments):
-        photos = self.get_images(1, query_arguments)
+    def get_num_of_pages(self):
+        photos = self.get_images(1)
         return int(photos.attrib['pages'])
 
     def get_image_attributes(self, element):
@@ -55,24 +57,24 @@ class FlickrProvider(ImageProvider):
             resolution = get_resolution(element))
         return image_arrributes
 
-    def get_url_for_max_resolution(self, resolution, image_id):
-        doc = get_doc_by_id(image_id)
-        if doc.exists:
-            url = doc.to_dict()[u'url']
-            max_resolution =  max(resolution['height'],resolution['width'])
-            flickr_resolution_map = {75:'s',100:'t',150	:'q',240:'m',320:'n',400:'w',
-            500:'',640:'z',800:'c',1024:'b',1600:'n',2048:'k'}
-            for key in flickr_resolution_map:
-                if  max_resolution <= key:
-                    if key == 500:
-                        return url[:-6] + url[-4:]
-                    return url[:-5] + flickr_resolution_map[key] + url[-4:]
+    def get_url_for_max_resolution(self, resolution, image):
+        # This function modifies the url to get the wonted resolution,
+        # in flickr the resolution is represented in the url.
+        # See details at https://www.flickr.com/services/api/misc.urls.html
+        url = image['url']
+        max_resolution =  max(resolution['height'],resolution['width'])
+        # Maping between the char that represents max resultion and the max resultion.
+        flickr_resolution_map = {75:'s',100:'t',150	:'q',240:'m',320:'n',400:'w',
+        500:'',640:'z',800:'c',1024:'b',1600:'n',2048:'k'}
+        for key in flickr_resolution_map:
+            if  max_resolution <= key:
+                if key == 500:
+                    # Removing the char that represents the resultion to get max resultion of 500.
+                    new_url = url[:-6] + url[-4:]
+                # Replacing the char that represents the resultion with the wonted key.
+                new_url = url[:-5] + flickr_resolution_map[key] + url[-4:]
+                return new_url
         return None
-
-    def parse_query_by_args(self, args):
-        if args is not None:
-            return {'tag': args}
-        return {'tag': 'all'}
 
     def _genarate_image_id_with_prefix(self, image_id):
         return str(self.provider_id + image_id)
@@ -84,6 +86,7 @@ class FlickrProvider(ImageProvider):
     enabled = True
     visibility = VisibilityType.NOBODY
     num_of_images = 100
+    query_arguments = {'tag': 'cat'}
 
 def get_coordinates(element):
     """ This function extracts coordinates from the image element,
