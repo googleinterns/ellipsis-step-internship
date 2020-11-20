@@ -15,7 +15,7 @@
 PROJECT_ID = 'projectId'
 
 # Constant collection names:
-IMAGES_COLLECTION_NAME = 'test'
+IMAGES_COLLECTION_NAME = 'Images'
 PIPELINE_RUNS_COLLECTION_NAME = 'PipelineRuns'
 LABELS_COLLECTION_NAME = 'Labels'
 REDEFINE_MAPS_COLLECTION_NAME = 'RedefineMaps'
@@ -41,7 +41,7 @@ URL = 'url'
 COORDINATES = 'coordinates'
 DATE_INGESTED = 'dateIngested'
 DATE_SHOT = 'dateShot'
-DATE_FIELDS = 'dateFields'
+DATE_FIELDS = 'date'
 IMAGE_ATTRIBUTES = 'imageAttributes'
 FORMAT = 'format'
 RESOLUTION = 'resolution'

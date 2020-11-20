@@ -19,6 +19,7 @@ from backend_jobs.ingestion_pipeline.pipeline_lib.image_provider_interface impor
 from backend_jobs.ingestion_pipeline.pipeline_lib.data_types import ImageType
 from backend_jobs.ingestion_pipeline.pipeline_lib.data_types import VisibilityType
 from backend_jobs.ingestion_pipeline.pipeline_lib.data_types import ImageAttributes
+from backend_jobs.pipeline_utils import constants
 
 _FLICKR_API_KEY = '2d00397e012c30ccc33ca4fdc05a5c98'
 _FLICKR_SECRET_KEY =  'e36a277c77f09fdd'
@@ -49,7 +50,7 @@ class FlickrProvider(ImageProvider):
     def get_image_attributes(self, element):
         image_arrributes=ImageAttributes(
             url = element.get('url_c'),
-            image_id = self._genarate_image_id_with_prefix(element.get('id')),
+            image_id = self._generate_image_id_with_prefix(element.get('id')),
             image_type = ImageType.CAMERA,
             date_shot = get_date(element),
             coordinates = get_coordinates(element),
@@ -76,7 +77,7 @@ class FlickrProvider(ImageProvider):
                 return  url[:-5] + flickr_resolution_map[key] + url[-4:]
         return None
 
-    def _genarate_image_id_with_prefix(self, image_id):
+    def _generate_image_id_with_prefix(self, image_id):
         return str(self.provider_id + image_id)
 
     provider_id = 'FlickrProvider-2020'
@@ -84,7 +85,7 @@ class FlickrProvider(ImageProvider):
     provider_version = '2.4.0'
     image_type = ImageType.CAMERA
     enabled = True
-    visibility = VisibilityType.NOBODY
+    visibility = constants.VISIBLE
     num_of_images = 100
     query_arguments = {'tag': 'cat'}
 
