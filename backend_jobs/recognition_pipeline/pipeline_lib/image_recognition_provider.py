@@ -23,6 +23,7 @@ class ImageRecognitionProvider(ABC, beam.DoFn):
 
     All recognition providers need to have a method for labeling the images,
     an Id property and the latest version.
+
     """
     @abstractmethod
     def label_images(self, element):
@@ -36,6 +37,7 @@ class ImageRecognitionProvider(ABC, beam.DoFn):
             and all labels recognized in it by the provider.
             For example: [[({url:string, imageAttributes:map, etc.},
             ['dog', 'fur])], [(another image's dictionary, ['cat', 'fur'])]]
+
         """
 
     def is_eligible(self, image):
@@ -52,6 +54,7 @@ class ImageRecognitionProvider(ABC, beam.DoFn):
         Returns:
             True iff the image's attributes meet the provider's prerequisites
             and the image can be labeled by the provider
+
         """
         resolution_filter = filter_by_resolution.FilterByResolution(self._resolution_prerequisites)
         format_filter = filter_by_format.FilterByFormat(self._format_prerequisites)
@@ -61,6 +64,7 @@ class ImageRecognitionProvider(ABC, beam.DoFn):
     def _resolution_prerequisites(self):
         """ A dictionary of the resolution supported by the provider.
         for example: {'width': 680, 'height': 480}
+
         """
         raise NotImplementedError
 
@@ -68,18 +72,21 @@ class ImageRecognitionProvider(ABC, beam.DoFn):
     def _format_prerequisites(self):
         """ A list of all image formats supported by the provider.
         for example: ['JPG', 'PNG']
+
         """
         raise NotImplementedError
 
     @property
     def provider_id(self):
         """ A string of the image recognition provider's id.
+
         """
         raise NotImplementedError
 
     @property
     def provider_version(self):
         """ A string of the image recognition provider's version.
+        
         """
         raise NotImplementedError
     

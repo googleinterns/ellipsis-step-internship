@@ -16,9 +16,8 @@ import apache_beam as beam
 from backend_jobs.pipeline_utils import constants
 from backend_jobs.pipeline_utils.firestore_database import initialize_db
 
+# Defines the range of the random field to query the database by batches.
 RANGE_OF_BATCH = 0.1
-# Defines the range of the random field to query the database by batches, \
-# each batch covers all documents with random value of X up to value of X+RANGE_OF_BATCH
 
 # pylint: disable=abstract-method
 class GetBatchedImageDataset(beam.DoFn):
@@ -51,19 +50,22 @@ class GetBatchedImageDataset(beam.DoFn):
         Returns:
             A generator of dictionaries with all the information (fields and id)
             of each one of the Firestore data set's image documents.
+
         """
+        # The lower limit for querying the database by the random field.
         random_min = element*RANGE_OF_BATCH
-        # the lower limit for querying the database by the random field.
+        # The higher limit for querying the database by the random field.
         random_max = random_min+RANGE_OF_BATCH
-        # the higher limit for querying the database by the random field.
         if ingestion_run:
             query = self.db.collection(constants.IMAGES_COLLECTION_NAME).\
                 where(constants.INGESTED_RUNS,u'array_contains', ingestion_run).\
-                    where(constants.RANDOM, u'>=', random_min).where(constants.RANDOM, u'<', random_max).stream()
+                    where(constants.RANDOM, u'>=', random_min).\
+                        where(constants.RANDOM, u'<', random_max).stream()
         else:
             query = self.db.collection(constants.IMAGES_COLLECTION_NAME).\
                 where(constants.INGESTED_PROVIDERS, u'array_contains', ingestion_provider).\
-                    where(constants.RANDOM, u'>=', random_min).where(constants.RANDOM, u'<', random_max).stream()
+                    where(constants.RANDOM, u'>=', random_min).\
+                        where(constants.RANDOM, u'<', random_max).stream()
         return (add_id_to_dict(doc) for doc in query)
 
 def add_id_to_dict(doc):
@@ -104,6 +106,6 @@ class StoreInDatabase(beam.DoFn):
                 constants.VISIBILITY: constants.INVISIBLE,
                 constants.PARENT_IMAGE_ID: doc_id,
                 constants.PIPELINE_RUN_ID: run_id,
-                constants.HASHMAP: image_doc[constants.HASHMAP], # redundant for development reasons.
-                constants.RANDOM: image_doc[constants.RANDOM] # redundant for development reasons.
+                constants.HASHMAP: image_doc[constants.HASHMAP],# Redundant for development reasons.
+                constants.RANDOM: image_doc[constants.RANDOM] # Redundant for development reasons.
             })

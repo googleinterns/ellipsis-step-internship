@@ -14,6 +14,7 @@
 """
 
 from backend_jobs.recognition_pipeline.pipeline_lib.filter_by import FilterBy
+from backend_jobs.pipeline_utils import constants
 
 class FilterByFormat(FilterBy):
     """ Checks if the image is in a correct format.
@@ -24,6 +25,6 @@ class FilterByFormat(FilterBy):
         """ Returns True iff image's format is in list of allowed formats.
 
         """
-        image_attribute = image['imageAttributes']['format']
+        image_attribute = image[constants.IMAGE_ATTRIBUTES][constants.FORMAT]
         return image_attribute.upper() in self.prerequisites
  

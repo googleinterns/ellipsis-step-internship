@@ -15,9 +15,8 @@
 
 from backend_jobs.recognition_pipeline.pipeline_lib.filter_by import FilterBy
 from backend_jobs.pipeline_utils.utils import get_provider
-from backend_jobs.ingestion_pipeline.main import IMAGE_PROVIDERS 
-# pylint: disable=fixme
-# TODO: add this after merging with Tal's branch
+from backend_jobs.ingestion_pipeline.main import IMAGE_PROVIDERS
+from backend_jobs.pipeline_utils import constants
 
 class FilterByResolution(FilterBy):
     """ Checks if the image has a high enough resolution.
@@ -29,7 +28,7 @@ class FilterByResolution(FilterBy):
             than the minimum supported resolution supported by the provider.
 
         """
-        image_attribute = image['imageAttributes']['resolution']
+        image_attribute = image[constants.IMAGE_ATTRIBUTES][constants.RESOLUTION]
         min_length = self.prerequisites['height']
         min_width = self.prerequisites['width']
         if image_attribute['width'] >= min_width and \
@@ -45,11 +44,12 @@ class FilterByResolution(FilterBy):
           If it can, changes the image url in the image
           dictionary to be the correct one and returns True.
           Otherwise, the image cannot be supported and returns False.
+
       """
-        for provider_name in image['ingestedProviders']:
-            provider = get_provider(provider_name, IMAGE_PROVIDERS)
-            resize_url = provider.get_url_for_max_resolution(self.prerequisites, image['id'])
+        for provider_name in image[constants.INGESTED_PROVIDERS]:
+            provider = get_provider(IMAGE_PROVIDERS, provider_name)
+            resize_url = provider.get_url_for_max_resolution(self.prerequisites, image)
             if resize_url:
-                image['url'] = resize_url
+                image[constants.URL] = resize_url
                 return True
         return False

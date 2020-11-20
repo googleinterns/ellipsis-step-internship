@@ -35,7 +35,7 @@ def upload_to_pipeline_runs_collection(provider_id, run_id):
     # pylint: disable=fixme
     # TODO: get start, end and quality of current pipeline run.
     db = initialize_db()
-    db.collection(constants.PIPELINE_RUNS_COLLECTION_NAME).document().set({
+    db.collection(constants.PIPELINE_RUNS_COLLECTION_NAME).document(run_id).set({
         constants.PROVIDER_ID: provider_id,
         constants.START_DATE: 00,
         constants.END_DATE: 00,
