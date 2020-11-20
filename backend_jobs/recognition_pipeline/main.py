@@ -46,7 +46,8 @@ def _validate_args(args):
     if bool(args.input_ingestion_pipelinerun_id) == bool(args.input_ingestion_provider):
         raise ValueError('pipeline requires exactly one of out of ingestion pipeline run \
             and ingestion provider - zero or two were given')
-    if args.input_ingestion_pipelinerun_id and not isinstance(args.input_ingestion_pipelinerun_id, str):
+    if args.input_ingestion_pipelinerun_id and\
+        not isinstance(args.input_ingestion_pipelinerun_id, str):
         raise ValueError('ingestion pipeline run id is not a string')
     if args.input_ingestion_provider and not isinstance(args.input_ingestion_provider, str):
         raise ValueError('ingestion pipeline provider id is not a string')
@@ -55,7 +56,7 @@ def _validate_args(args):
 
 def run(argv=None):
     """Main entry point, defines and runs the image recognition pipeline.
-    
+
     Input: either ingestion run id or ingestion provider id.
     The input is used for querying the database for image ingested by
     either one of the optional inputs.
@@ -120,7 +121,7 @@ def run(argv=None):
             output = labelled_images | 'Format' >> beam.MapTuple(format_result)
             output | 'Write' >> WriteToText(known_args.output)
     upload_to_pipeline_runs_collection(recognition_provider.provider_id, job_name)
-    # TODO: add access to job id with dataflow
+    # TODO: add access to job id with dataflow.
     
 if __name__ == '__main__':
     logging.getLogger().setLevel(logging.INFO)

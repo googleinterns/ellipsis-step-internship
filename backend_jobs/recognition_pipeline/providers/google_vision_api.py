@@ -16,6 +16,7 @@
 from google.cloud import vision_v1
 from backend_jobs.recognition_pipeline.pipeline_lib.image_recognition_provider\
     import ImageRecognitionProvider
+from backend_jobs.pipeline_utils import constants
 
 # pylint: disable=abstract-method
 class GoogleVisionAPI(ImageRecognitionProvider):
@@ -47,7 +48,7 @@ class GoogleVisionAPI(ImageRecognitionProvider):
         docs = []
         i = 0
         for doc in image_docs:
-            url = doc['url']
+            url = doc[constants.URL]
             image = vision_v1.Image()
             image.source.image_uri = url
             request = vision_v1.AnnotateImageRequest(image= image, features= features)
