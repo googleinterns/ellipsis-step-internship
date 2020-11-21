@@ -40,7 +40,9 @@ class StoreImageAttributeDoFn(apache_beam.DoFn):
             provider: the provider we are running now
             job_name: the job name that we are running now
         """
-        doc_ref = self.database_firebase.collection(constants.IMAGES_COLLECTION_NAME).document(element.image_id)
+        doc_ref = self.database_firebase \
+            .collection(constants.IMAGES_COLLECTION_NAME) \
+            .document(element.image_id)
         doc = doc_ref.get()
         sub_collection_ref = doc_ref.collection(constants.PIPELINE_RUNS_COLLECTION_NAME)
         sub_collection_doc_ref = sub_collection_ref.document()
@@ -64,14 +66,14 @@ def _add_document(element, provider, job_name, doc_ref):
         constants.COORDINATES: geo_point_coordinates,
         constants.DATE_INGESTED: datetime.now(),
         constants.DATE_SHOT: element.date_shot,
-        constants.DATE_FIELDS:get_date_fields(element.date_shot),
-        constants.HASHMAP: get_geo_hashes_map(element.coordinates),
+        constants.DATE_FIELDS:_get_date_fields(element.date_shot),
+        constants.HASHMAP: _get_geo_hashes_map(element.coordinates),
         constants.IMAGE_ATTRIBUTES:{
             constants.FORMAT: element.format,
             constants.RESOLUTION:element.resolution},
         constants.ATTRIBUTION: element.attribution,
         constants.RANDOM: random.random(),
-        constants.VISIBILITY: provider.visibility.value,
+        constants.VISIBILITY: provider.visibility,
     })
 
 def _update_document(provider,doc, doc_ref,job_name):
@@ -83,7 +85,9 @@ def _update_document(provider,doc, doc_ref,job_name):
     doc_ref.update({
         constants.INGESTED_RUNS:ingested_runs,
         constants.INGESTED_PROVIDERS: ingested_providers,
-        constants.VISIBILITY: max(provider.visibility.value, doc.to_dict()[constants.VISIBILITY]),
+        constants.VISIBILITY: _get_max_visibility(
+            provider.visibility,
+            doc.to_dict()[constants.VISIBILITY]),
     })
 
 def _upload_sub_collection(element, provider,job_name, sub_collection_doc_ref):
@@ -91,12 +95,12 @@ def _upload_sub_collection(element, provider,job_name, sub_collection_doc_ref):
         constants.PROVIDER_ID:provider.provider_id,
         constants.PROVIDER_NAME:provider.provider_name,
         constants.PROVIDER_VERSION: provider.provider_version,
-        constants.PROVIDER_VISIBILITY: provider.visibility.value,
+        constants.PROVIDER_VISIBILITY: provider.visibility,
         constants.PIPELINE_RUN_ID: job_name,
-        constants.HASHMAP: get_geo_hashes_map(element.coordinates),
+        constants.HASHMAP: _get_geo_hashes_map(element.coordinates),
     })
 
-def get_geo_hashes_map(coordinates):
+def _get_geo_hashes_map(coordinates):
     """ This function, given a coordinates (lat,long), calculates the geohash
     and builds a map containing a geohash in different lengths.
 
@@ -113,7 +117,7 @@ def get_geo_hashes_map(coordinates):
         geo_hashes_map['hash'+str(i)]= geohash[0:i]
     return geo_hashes_map
 
-def get_date_fields(date):
+def _get_date_fields(date):
     """ This function converts a datetime object to a map object contaning the date.
 
     Args:
@@ -127,3 +131,17 @@ def get_date_fields(date):
     day = date.day
     date_fields = {'year': year, 'month': month, 'day': day}
     return date_fields
+
+def _get_max_visibility(first_visibility,second_visibility):
+    """ This function returns the max visibility between two given visibilities.
+
+    Args:
+        first_visibility: VISIBLE or INVISIBLE.
+        second_visibility: VISIBLE or INVISIBLE.
+
+    Returns:
+        max visibility.
+    """
+    if first_visibility== constants.VISIBLE or second_visibility == constants.VISIBLE:
+        return constants.VISIBLE
+    return constants.INVISIBLE

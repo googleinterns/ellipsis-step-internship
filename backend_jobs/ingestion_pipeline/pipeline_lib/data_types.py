@@ -26,15 +26,6 @@ class ImageType(enum.Enum):
     LIVE_FEED = 3
     CAMERA = 4
 
-
-class VisibilityType (enum.Enum):
-    """
-    This enum represents the different visibility types
-    """
-    NOBODY = 1
-    EVERYONE = 2
-
-
 @dataclass
 class ImageAttributes():
     """ This class consists of the attributes we need to extract from each image.

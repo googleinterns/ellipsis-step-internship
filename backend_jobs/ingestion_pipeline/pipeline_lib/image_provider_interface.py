@@ -82,7 +82,7 @@ class ImageProvider(ABC, apache_beam.DoFn):
         """
 
     @abstractmethod
-    def _genarate_image_id_with_prefix(self, image_id):
+    def _generate_image_id_with_prefix(self, image_id):
         """ This function gets a image_id and adds a unique provider prefix.
 
         Args:
