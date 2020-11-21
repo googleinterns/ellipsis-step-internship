@@ -18,8 +18,11 @@ from firebase_admin import firestore
 from backend_jobs.pipeline_utils import constants
 
 def initialize_db():
-    """Initializes project's Firestore database for writing and reading purposes.
+    """Initializes project's Firestore database for writing and reading purposes
+    and returns a client that can iteract with Firestore.
 
+    Returns:
+        google.cloud.firestore.Firestore: A `Firestore Client`_.
     """
     # pylint: disable=protected-access
     if not firebase_admin._apps:
