@@ -88,8 +88,8 @@ def run(argv=None):
     # Creating an object of type ImageRecognitionProvider
     # for the specific image recognition provider input.
     recognition_provider = get_provider(NAME_TO_PROVIDER, known_args.input_recognition_provider)
-    job_name = 'RECOGNITION-{time_id}-{recognition_provider}'.format(time_id = get_timestamp_id(),\
-        recognition_provider = recognition_provider.provider_id.replace('_','-').upper())
+    job_name = 'recognition-{time_id}-{recognition_provider}'.format(time_id = get_timestamp_id(),\
+        recognition_provider = recognition_provider.provider_id.replace('_','-').lower())
     pipeline_options = PipelineOptions(pipeline_args, job_name=job_name)
 
     with beam.Pipeline(options=pipeline_options) as pipeline:
@@ -121,7 +121,6 @@ def run(argv=None):
             output = labelled_images | 'Format' >> beam.MapTuple(format_result)
             output | 'Write' >> WriteToText(known_args.output)
     upload_to_pipeline_runs_collection(recognition_provider.provider_id, job_name)
-    # TODO: add access to job id with dataflow.
     
 if __name__ == '__main__':
     logging.getLogger().setLevel(logging.INFO)
