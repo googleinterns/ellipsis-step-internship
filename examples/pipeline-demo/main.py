@@ -132,6 +132,7 @@ def run(argv=None, save_main_session=True):
 
     if known_args.output:
         output = labels | 'Format' >> beam.MapTuple(format_result)
+
         # Write the output using a "Write" transform that has side effects.
         # pylint: disable=expression-not-assigned
         output | 'Write' >> WriteToText(known_args.output)
