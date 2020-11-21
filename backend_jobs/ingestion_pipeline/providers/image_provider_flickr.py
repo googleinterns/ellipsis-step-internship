@@ -17,7 +17,6 @@ from datetime import datetime
 import flickrapi
 from backend_jobs.ingestion_pipeline.pipeline_lib.image_provider_interface import ImageProvider
 from backend_jobs.ingestion_pipeline.pipeline_lib.data_types import ImageType
-from backend_jobs.ingestion_pipeline.pipeline_lib.data_types import VisibilityType
 from backend_jobs.ingestion_pipeline.pipeline_lib.data_types import ImageAttributes
 from backend_jobs.pipeline_utils import constants
 

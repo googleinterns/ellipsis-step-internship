@@ -48,6 +48,7 @@ def is_valid_image(image):
 def run(argv=None):
     """ Main entry point; defines and runs the image ingestion pipeline.
     """
+    # Using external parser: https://docs.python.org/3/library/argparse.html 
     parser = argparse.ArgumentParser()
     parser.add_argument(
         '--input_provider_name',
@@ -64,6 +65,8 @@ def run(argv=None):
         dest = 'output',
         required = False, # Optional - only for development reasons.
         help = 'Output file to write results to.')
+    
+    #Sending giver argument to external parser.
     known_args, pipeline_args = parser.parse_known_args(argv)
     _validate_args(known_args)
     image_provider = utils.get_provider(
