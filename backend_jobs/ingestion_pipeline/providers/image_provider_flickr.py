@@ -27,7 +27,7 @@ FLICKER_API = flickrapi.FlickrAPI(_FLICKR_API_KEY, _FLICKR_SECRET_KEY, cache = T
 
 class FlickrProvider(ImageProvider):
     """ Flickr supports using there urls so we do not need to copy images over.
-    Flicker provides metadata as url, resolution,, location etc and does not provide color depth and 
+    Flicker provides metadata as url, resolution,, location etc and does not provide color depth and
     Compression ratio.
 
     """
@@ -127,8 +127,8 @@ def _parse_query_arguments(query_arguments):
             value = arg.split(':')[1]
             if key in init_query_arguments:
                 if key == 'tag_mode' and value != 'any' and value != 'all':
-                    raise ValueError('Invalid query_arguments value tag_mode can be "any" or "all"')
+                    raise ValueError('Invalid tag_mode, tag_mode can be "any" or "all"')
                 init_query_arguments[key] = value
             else:
-                raise ValueError('Invalid query_arguments key can be tags, tag_mode or text')
+                raise ValueError('Invalid query_arguments key can be tags, tag_mode or text.')
     return init_query_arguments

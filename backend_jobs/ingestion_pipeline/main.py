@@ -21,8 +21,8 @@ import apache_beam
 from apache_beam.io import WriteToText
 from apache_beam.options.pipeline_options import PipelineOptions
 from backend_jobs.ingestion_pipeline.pipeline_lib import firestore_database
+from backend_jobs.ingestion_pipeline.providers import providers
 from backend_jobs.pipeline_utils import utils
-from backend_jobs.pipeline_utils import providers
 
 def _generate_image_id(image):
     """ This function gets an image and updates the id to be the hashed url.
@@ -34,8 +34,8 @@ def _generate_image_id(image):
         image: Type ImageAttributes with an updated unique id.
     """
     hash_url = hashlib.sha1(image.url.encode())
-    hex_dig_id = hash_url.hexdigest()
-    image.image_id = hex_dig_id
+    hex_hash_id = hash_url.hexdigest()
+    image.image_id = hex_hash_id
     return image
 
 def _validate_args(args):
@@ -85,7 +85,7 @@ def run(argv=None):
 
     known_args, pipeline_args = parser.parse_known_args(argv)
     _validate_args(known_args)
-    image_provider = utils.get_provider(
+    image_provider = providers.get_provider(
         providers.IMAGE_PROVIDERS,
         known_args.input_provider_name,
         known_args.input_provider_args)
@@ -93,7 +93,7 @@ def run(argv=None):
     if not image_provider.enabled:
         raise ValueError('ingestion provider is not enabled')
 
-    job_name = 'ingestion-' + utils.get_timestamp_id()
+    job_name = utils.generate_job_name('ingestion', image_provider)
     pipeline_options = PipelineOptions(pipeline_args, job_name=job_name)
 
     # The pipeline will be run on exiting the with block.
@@ -102,7 +102,7 @@ def run(argv=None):
 
         num_of_pages = image_provider.get_num_of_pages()
         create_batch = (pipeline | 'create' >> \
-            apache_beam.Create([i for i in range(1, int(3)+1)]))
+            apache_beam.Create([i for i in range(1, int(num_of_pages)+1)]))
         images = create_batch | 'call API' >> \
             apache_beam.ParDo(image_provider.get_images)
         extracted_elements = images | 'extract attributes' >> \

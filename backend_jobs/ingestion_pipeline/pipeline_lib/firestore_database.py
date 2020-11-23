@@ -58,49 +58,57 @@ class AddOrUpdateImageDoFn(apache_beam.DoFn):
 
 def _add_document(element, provider, job_name, doc_ref):
     geo_point_coordinates = firestore.GeoPoint(element.latitude, element.longitude)
+    geo_hashes_map = _get_geo_hashes_map(element.latitude, element.longitude)
     doc_ref.set({
-        database_schema.URL: element.url,
+        database_schema.COLLECTION_IMAGES_FIELD_URL: element.url,
         database_schema.COLLECTION_IMAGES_FIELD_INGESTED_PROVIDERS: [provider.provider_name],
-        database_schema.INGESTED_RUNS: [job_name],
-        database_schema.COORDINATES: geo_point_coordinates,
-        database_schema.DATE_INGESTED: datetime.now(),
-        database_schema.DATE_SHOT: element.date_shot,
-        database_schema.DATE_FIELDS:_get_date_fields(element.date_shot),
-        database_schema.HASHMAP: _get_geo_hashes_map(element.latitude, element.longitude),
-        database_schema.IMAGE_ATTRIBUTES:{
-            database_schema.FORMAT: element.format,
-            database_schema.RESOLUTION:{
-                database_schema.WIDTH: element.width_pixels,
-                database_schema.HEIGHT: element.height_pixels,
+        database_schema.COLLECTION_IMAGES_FIELD_INGESTED_RUNS: [job_name],
+        database_schema.COLLECTION_IMAGES_FIELD_COORDINATES: geo_point_coordinates,
+        database_schema.COLLECTION_IMAGES_FIELD_DATE_INGESTED: datetime.now(),
+        database_schema.COLLECTION_IMAGES_FIELD_DATE_SHOT: element.date_shot,
+        database_schema.COLLECTION_IMAGES_FIELD_DATE_FIELDS:_get_date_fields(element.date_shot),
+        database_schema.COLLECTION_IMAGES_FIELD_HASHMAP: geo_hashes_map,
+        database_schema.COLLECTION_IMAGES_FIELD_IMAGE_ATTRIBUTES: {
+            database_schema.COLLECTION_IMAGES_FIELD_FORMAT: element.format,
+            database_schema.COLLECTION_IMAGES_FIELD_RESOLUTION: {
+                database_schema.COLLECTION_IMAGES_FIELD_WIDTH: element.width_pixels,
+                database_schema.COLLECTION_IMAGES_FIELD_HEIGHT: element.height_pixels,
             },
         },
-        database_schema.ATTRIBUTION: element.attribution,
-        database_schema.RANDOM: random.random(),
-        database_schema.VISIBILITY: provider.visibility,
+        database_schema.COLLECTION_IMAGES_FIELD_ATTRIBUTION: element.attribution,
+        database_schema.COLLECTION_IMAGES_FIELD_RANDOM: random.random(),
+        database_schema.COLLECTION_IMAGES_FIELD_VISIBILITY: provider.visibility.value,
     })
 
-def _update_document(provider,doc, doc_ref,job_name):
-    ingested_runs = doc.to_dict()[database_schema.INGESTED_RUNS]
+def _update_document(provider, doc, doc_ref, job_name):
+    ingested_runs = doc.to_dict()[database_schema.COLLECTION_IMAGES_FIELD_INGESTED_RUNS]
     ingested_runs.append(job_name)
     ingested_providers = doc.to_dict()[database_schema.COLLECTION_IMAGES_FIELD_INGESTED_PROVIDERS]
     if provider.provider_name not in ingested_providers:
         ingested_providers.append(provider.provider_name)
     doc_ref.update({
-        database_schema.INGESTED_RUNS: ingested_runs,
+        database_schema.COLLECTION_IMAGES_FIELD_INGESTED_RUNS: ingested_runs,
         database_schema.COLLECTION_IMAGES_FIELD_INGESTED_PROVIDERS: ingested_providers,
-        database_schema.VISIBILITY: _get_max_visibility(
+        database_schema.COLLECTION_IMAGES_FIELD_VISIBILITY: _get_max_visibility(
             VisibilityType(provider.visibility.value),
-            doc.to_dict()[database_schema.VISIBILITY]),
+            doc.to_dict()[database_schema.COLLECTION_IMAGES_FIELD_VISIBILITY]),
     })
 
-def _update_sub_collection(element, provider,job_name, sub_collection_doc_ref):
+def _update_sub_collection(element, provider, job_name, sub_collection_doc_ref):
+    geo_hashes_map = _get_geo_hashes_map(element.latitude, element.longitude)
     sub_collection_doc_ref.set({
-        database_schema.PROVIDER_ID:provider.provider_id,
-        database_schema.PROVIDER_NAME:provider.provider_name,
-        database_schema.PROVIDER_VERSION: provider.provider_version,
-        database_schema.PROVIDER_VISIBILITY: provider.visibility.value,
-        database_schema.PIPELINE_RUN_ID: job_name,
-        database_schema.HASHMAP: _get_geo_hashes_map(element.latitude, element.longitude),
+        database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS_FIELD_PROVIDER_ID: \
+            provider.provider_id,
+        database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS_FIELD_PROVIDER_NAME: \
+            provider.provider_name,
+        database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS_FIELD_PROVIDER_VERSION: \
+            provider.provider_version,
+        database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS_FIELD_VISIBILITY: \
+            provider.visibility.value,
+        database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS_FIELD_PIPELINE_RUN_ID: \
+            job_name,
+        database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS_FIELD_HASHMAP: \
+            geo_hashes_map,
     })
 
 def _get_geo_hashes_map(latitude, longitude):

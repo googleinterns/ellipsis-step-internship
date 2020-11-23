@@ -23,21 +23,26 @@ def get_recognition_provider(provider_name, name_to_provider_map):
         return name_to_provider_map[provider_name]
     raise ValueError('{provider} is unknown'.format(provider = provider_name))
 
-def get_provider(name_to_provider_map, provider_name, arguments=None):
-    """ Returns an object of type ImageRecognitionProvider by the specific provider input.
-    If provider is not recognized then throw exception.
-
-    """
-    if provider_name in name_to_provider_map:
-        if arguments is not None:
-            return name_to_provider_map[provider_name](arguments)
-        else:
-            return name_to_provider_map[provider_name]()
-    raise ValueError('{provider} is unknown'.format(provider = provider_name))
-
 def get_timestamp_id():
     """ Returns a string with only numbers as time id.
     The string will be used as a unique id for each dataflow job.
 
     """
     return str(datetime.timestamp(datetime.now())).replace('.','')
+
+def generate_job_name(pipeline_type, provider):
+    """ Returns a unique job_name given pipeline_type and a provider.
+
+    Args:
+      pipeline_type: Type str e.g. 'ingestion' or 'recognition'.
+      provider: Type ImageProvider/ ImageRecognitionProvider.
+
+    Returns:
+      A unique job_name type str.
+    """
+    job_name = '{pipeline_type}_{provider}_{time_id}'.format(
+      pipeline_type = pipeline_type,
+      time_id = get_timestamp_id(),
+      provider = provider.provider_id.lower()).replace('_','-')
+      # Dataflow job names can only include '-' and not '_'.
+    return job_name

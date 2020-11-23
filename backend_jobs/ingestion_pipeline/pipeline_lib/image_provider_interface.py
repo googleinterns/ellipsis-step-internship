@@ -66,9 +66,8 @@ class ImageProvider(ABC, apache_beam.DoFn):
         if there is no above fit raises an error.
 
         Args:
-            min_height:
-            min_width: A dict representing closest height and width.
-            For example {'height': 480, 'width': 640}
+            min_height: Int representing closest min height to retrieve.
+            min_width: Int representing closest min width to retrieve.
             image: A dict contaning all the fields of the image in the database
 
         Returns:
