@@ -26,11 +26,13 @@ class ImageRecognitionProvider(ABC, beam.DoFn):
 
     """
     @abstractmethod
-    def label_images(self, element):
+    def process(self, element):
         """Labels a batch of images from dataset using a specific recognition provider.
 
         Args:
             element: a list of images information dictionaries.
+            Each dictionary contains all of the images' fields and their
+            values as stored in the database.
 
         Returns:
             list of lists in which each inner list is a tuple of a image dictionary
@@ -48,8 +50,8 @@ class ImageRecognitionProvider(ABC, beam.DoFn):
 
         Args:
             image: a dictionary if all image's Firebase document's fields.
-            One of them being 'imageAttributes' which is a map of
-            all the image's attributes and their values.
+            Each dictionary contains all of the images' fields and their
+            values as stored in the database.
         
         Returns:
             True iff the image's attributes meet the provider's prerequisites

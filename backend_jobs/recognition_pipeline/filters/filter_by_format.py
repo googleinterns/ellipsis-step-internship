@@ -14,7 +14,7 @@
 """
 
 from backend_jobs.recognition_pipeline.pipeline_lib.filter_by import FilterBy
-from backend_jobs.pipeline_utils import constants
+from backend_jobs.pipeline_utils import database_schema
 
 class FilterByFormat(FilterBy):
     """ Checks if the image is in a correct format.
@@ -24,7 +24,12 @@ class FilterByFormat(FilterBy):
     def is_supported(self, image):
         """ Returns True iff image's format is in list of allowed formats.
 
+          Args:
+              image: A dictionary representing the image's doc.
+              Each image is represented by a Python dictionary containing all the fields
+              of the document in the database and their values.
+
         """
-        image_attribute = image[constants.IMAGE_ATTRIBUTES][constants.FORMAT]
+        image_attribute = image[database_schema.IMAGE_ATTRIBUTES][database_schema.FORMAT]
         return image_attribute.upper() in self.prerequisites
  
