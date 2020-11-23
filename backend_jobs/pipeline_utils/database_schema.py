@@ -13,8 +13,6 @@
   limitations under the License.
 """
 
-PROJECT_ID = 'projectId'
-
 COLLECTION_IMAGES = 'Images'
 # constant fields names:
 COLLECTION_IMAGES_FIELD_INGESTED_PROVIDERS = 'ingestedProviders'

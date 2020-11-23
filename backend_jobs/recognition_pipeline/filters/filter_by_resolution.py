@@ -28,7 +28,9 @@ class FilterByResolution(FilterBy):
             than the minimum supported resolution supported by the provider.
 
             Args:
-              image: A dictionary representing the image's doc with all it's fields.
+              image: A dictionary representing the image's doc.
+              Each image is represented by a Python dictionary containing all the fields
+              of the document in the database and their values.
 
         """
         image_attribute = image[database_schema.IMAGE_ATTRIBUTES][database_schema.RESOLUTION]

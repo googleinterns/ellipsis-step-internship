@@ -24,6 +24,11 @@ class FilterByFormat(FilterBy):
     def is_supported(self, image):
         """ Returns True iff image's format is in list of allowed formats.
 
+          Args:
+              image: A dictionary representing the image's doc.
+              Each image is represented by a Python dictionary containing all the fields
+              of the document in the database and their values.
+
         """
         image_attribute = image[database_schema.IMAGE_ATTRIBUTES][database_schema.FORMAT]
         return image_attribute.upper() in self.prerequisites

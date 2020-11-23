@@ -28,9 +28,9 @@ class GetBatchedImageDataset(beam.DoFn):
        integer index between 0 and 9.
 
     Output:
-        generator of image's documents in a dictionary form.
+        generator of image's documents in a Python dictionary form.
         Each image is represented by a dict containing all the fields
-        in the database and their values.
+        of the document in the database and their values.
 
     """
     def setup(self):
@@ -97,8 +97,9 @@ class UpdateImageLabelsInDatabase(beam.DoFn):
         for each label in the Labels subcollection of each image.
 
         Args:
-            element: tuple of image document dictionary (all the fields stored in the
-            firebase document and their values) and a list of all labels.
+            element: tuple of image document dictionary (Each image is represented by a
+            Python dictionary containing all the fields of the document in the database
+            and their values) and a list of all labels.
 
         """
         image_doc = element[0]

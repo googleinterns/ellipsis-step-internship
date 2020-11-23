@@ -15,7 +15,7 @@
 import firebase_admin
 from firebase_admin import credentials
 from firebase_admin import firestore
-from backend_jobs.pipeline_utils import database_schema
+from backend_jobs.pipeline_utils import database_schema, constants
 
 def initialize_db():
     """Initializes project's Firestore database for writing and reading purposes
@@ -27,7 +27,7 @@ def initialize_db():
     # pylint: disable=protected-access
     if not firebase_admin._apps:
         firebase_admin.initialize_app(credentials.ApplicationDefault(), {
-        database_schema.PROJECT_ID: 'step-project-ellispis',
+        constants.PROJECT_ID: constants.PROJECT_ID_NAME,
         })
     return firestore.client()
 

@@ -86,7 +86,8 @@ def run(argv=None):
     ingestion_provider = known_args.input_ingestion_provider
     # Creating an object of type ImageRecognitionProvider
     # for the specific image recognition provider input.
-    recognition_provider = get_recognition_provider(known_args.input_recognition_provider, _NAME_TO_PROVIDER)
+    recognition_provider = get_recognition_provider(known_args.input_recognition_provider,\
+        _NAME_TO_PROVIDER)
     job_name = 'recognition_{recognition_provider}_{time_id}'.format(time_id = get_timestamp_id(),\
         recognition_provider = recognition_provider.provider_id.lower()).replace('_','-')
         # Dataflow job names can only include '-' and not '_'.

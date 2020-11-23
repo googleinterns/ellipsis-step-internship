@@ -29,6 +29,8 @@ class FilterBy(ABC):
 
           Args:
               image: The image's dictionary which needs to be checked.
+              Each image is represented by a Python dictionary containing all the fields
+              of the document in the database and their values.
               The dictionary contains all the information stored in the database
               about the specfic images - all the fields and their values.
 
