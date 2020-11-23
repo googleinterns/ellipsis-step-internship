@@ -29,6 +29,8 @@ class FilterBy(ABC):
 
           Args:
               image: The image's dictionary which needs to be checked.
+              The dictionary contains all the information stored in the database
+              about the specfic images - all the fields and their values.
 
           Returns:
               True iff the image attribute matches the provider's prerequisite.

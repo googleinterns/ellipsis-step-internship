@@ -15,14 +15,14 @@
 PROJECT_ID = 'projectId'
 
 # Constant collection names:
-IMAGES_COLLECTION_NAME = 'Images'
+COLLECTION_IMAGES = 'Images'
 PIPELINE_RUNS_COLLECTION_NAME = 'PipelineRuns'
-LABELS_COLLECTION_NAME = 'Labels'
+COLLECTION_IMAGES_SUBCOLLECTION_LABELS = 'Labels'
 LABELTAGS_COLLECTION_NAME = 'LabelTags'
 REDEFINE_MAPS_COLLECTION_NAME = 'RedefineMaps'
 
 # Constant field names:
-INGESTED_PROVIDERS = 'ingestedProviders'
+COLLECTION_IMAGES_FIELD_INGESTED_PROVIDERS = 'ingestedProviders'
 INGESTED_RUNS = 'ingestedRuns'
 PROVIDER_ID = 'providerId'
 PROVIDER_NAME = 'providerName'
@@ -49,5 +49,5 @@ RESOLUTION = 'resolution'
 ATTRIBUTION = 'attribution'
 LABELS = 'labels'
 
-INVISIBLE = 0
-VISIBLE = 1
+LABEL_VISIBILITY_INVISIBLE  = 0
+LABEL_VISIBILITY_VISIBLE  = 1

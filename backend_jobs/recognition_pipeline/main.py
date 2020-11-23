@@ -24,19 +24,16 @@ from __future__ import absolute_import
 
 import argparse
 import logging
-from datetime import datetime
 
 import apache_beam as beam
 from apache_beam.io import WriteToText
 from apache_beam.options.pipeline_options import PipelineOptions
-from providers import google_vision_api
 from backend_jobs.recognition_pipeline.pipeline_lib.firestore_database import\
-    GetBatchedImageDataset, StoreInDatabase
-from backend_jobs.pipeline_utils.firestore_database import upload_to_pipeline_runs_collection
+    GetBatchedImageDataset, UpdateImageLabelsInDatabase
+from backend_jobs.pipeline_utils.firestore_database import store_pipeline_run
 from backend_jobs.pipeline_utils.utils import get_provider, get_timestamp_id
-
-# Maps recognition provider names to an object of the provider.
-NAME_TO_PROVIDER = {'Google_Vision_API': google_vision_api.GoogleVisionAPI}
+from backend_jobs.recognition_pipeline.pipeline_lib.image_recognition_provider\
+    import NAME_TO_PROVIDER
 
 def _validate_args(args):
     """ Checks whether the pipeline's arguments are valid.
@@ -89,18 +86,17 @@ def run(argv=None):
     # Creating an object of type ImageRecognitionProvider
     # for the specific image recognition provider input.
     recognition_provider = get_provider(NAME_TO_PROVIDER, known_args.input_recognition_provider)
-    job_name = 'recognition-{time_id}-{recognition_provider}'.format(time_id = get_timestamp_id(),\
-        recognition_provider = recognition_provider.provider_id.replace('_','-').lower())
+    job_name = 'recognition_{recognition_provider}_{time_id}'.format(time_id = get_timestamp_id(),\
+        recognition_provider = recognition_provider.provider_id.lower()).replace('_','-')
+        # Dataflow job names can only include '-' and not '_'.
     pipeline_options = PipelineOptions(pipeline_args, job_name=job_name)
 
     with beam.Pipeline(options=pipeline_options) as pipeline:
         indices_for_batching = pipeline | 'create' >> beam.Create([i for i in range(10)])
         if ingestion_run:
-            # If the input was for specifing the images dataset was an ingestion run.
             dataset = indices_for_batching | 'get images dataset' >> \
                 beam.ParDo(GetBatchedImageDataset(), ingestion_run=ingestion_run)
         else:
-            # If the input was for specifing the images dataset was an ingestion provider.
             dataset = indices_for_batching | 'get images dataset' >> \
                 beam.ParDo(GetBatchedImageDataset(), ingestion_provider=ingestion_provider)
         filtered_dataset = dataset | 'filter images' >> \
@@ -109,19 +105,20 @@ def run(argv=None):
             beam.GroupBy(lambda doc: int(doc['random']*100)) |\
                 beam.ParDo(lambda element: [element[1]])
         # Labels the images by the process method of the provider.
-        labelled_images_batch = images_batch | 'label by batch' >> \
+        labeled_images_batch = images_batch | 'label by batch' >> \
             beam.ParDo(recognition_provider)
-        labelled_images = labelled_images_batch | \
+        labeled_images = labeled_images_batch | \
             beam.FlatMap(lambda elements: elements)
         # pylint: disable=expression-not-assigned
-        labelled_images | 'upload' >> beam.ParDo(StoreInDatabase(), job_name, recognition_provider.provider_id)
+        labeled_images | 'store in database' >> beam.ParDo(UpdateImageLabelsInDatabase(),\
+            job_name, recognition_provider.provider_id)
 
         if known_args.output: # For testing.
             def format_result(image, labels):
                 return '%s: %s' % (image['url'], labels)
-            output = labelled_images | 'Format' >> beam.MapTuple(format_result)
+            output = labeled_images | 'Format' >> beam.MapTuple(format_result)
             output | 'Write' >> WriteToText(known_args.output)
-    upload_to_pipeline_runs_collection(recognition_provider.provider_id, job_name)
+    store_pipeline_run(recognition_provider.provider_id, job_name)
     
 if __name__ == '__main__':
     logging.getLogger().setLevel(logging.INFO)

@@ -18,7 +18,7 @@ import flickrapi
 from backend_jobs.ingestion_pipeline.pipeline_lib.image_provider_interface import ImageProvider
 from backend_jobs.ingestion_pipeline.pipeline_lib.data_types import ImageType
 from backend_jobs.ingestion_pipeline.pipeline_lib.data_types import ImageAttributes
-from backend_jobs.pipeline_utils import constants
+from backend_jobs.pipeline_utils import database_schema
 
 _FLICKR_API_KEY = '2d00397e012c30ccc33ca4fdc05a5c98'
 _FLICKR_SECRET_KEY =  'e36a277c77f09fdd'
@@ -84,7 +84,7 @@ class FlickrProvider(ImageProvider):
     provider_version = '2.4.0'
     image_type = ImageType.CAMERA
     enabled = True
-    visibility = constants.VISIBLE
+    visibility = database_schema.LABEL_VISIBILITY_VISIBLE
     num_of_images = 100
     query_arguments = {'tag': 'cat'}
 

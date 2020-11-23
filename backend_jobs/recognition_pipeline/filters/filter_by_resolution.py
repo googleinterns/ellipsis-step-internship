@@ -16,7 +16,7 @@
 from backend_jobs.recognition_pipeline.pipeline_lib.filter_by import FilterBy
 from backend_jobs.pipeline_utils.utils import get_provider
 from backend_jobs.ingestion_pipeline.main import IMAGE_PROVIDERS
-from backend_jobs.pipeline_utils import constants
+from backend_jobs.pipeline_utils import database_schema
 
 class FilterByResolution(FilterBy):
     """ Checks if the image has a high enough resolution.
@@ -27,16 +27,19 @@ class FilterByResolution(FilterBy):
         """ Returns True iff image resolution is equal or bigger
             than the minimum supported resolution supported by the provider.
 
+            Args:
+              image: A dictionary representing the image's doc with all it's fields.
+
         """
-        image_attribute = image[constants.IMAGE_ATTRIBUTES][constants.RESOLUTION]
-        min_length = self.prerequisites['height']
+        image_attribute = image[database_schema.IMAGE_ATTRIBUTES][database_schema.RESOLUTION]
+        min_height = self.prerequisites['height']
         min_width = self.prerequisites['width']
         if image_attribute['width'] >= min_width and \
-          image_attribute['height'] >= min_length:
+          image_attribute['height'] >= min_height:
             return True
-        return self.change_url_by_resolution(image)
+        return self._change_url_by_resolution(image)
 
-    def change_url_by_resolution(self, image):
+    def _change_url_by_resolution(self, image):
         """ Returns True iff the image's url was changed to a supported resolution
 
           Iterates through all image providers and checks if
@@ -46,10 +49,10 @@ class FilterByResolution(FilterBy):
           Otherwise, the image cannot be supported and returns False.
 
       """
-        for provider_name in image[constants.INGESTED_PROVIDERS]:
+        for provider_name in image[database_schema.COLLECTION_IMAGES_FIELD_INGESTED_PROVIDERS]:
             provider = get_provider(IMAGE_PROVIDERS, provider_name)
             resize_url = provider.get_url_for_max_resolution(self.prerequisites, image)
             if resize_url:
-                image[constants.URL] = resize_url
+                image[database_schema.URL] = resize_url
                 return True
         return False

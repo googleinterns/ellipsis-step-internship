@@ -15,7 +15,7 @@
 import firebase_admin
 from firebase_admin import credentials
 from firebase_admin import firestore
-from backend_jobs.pipeline_utils import constants
+from backend_jobs.pipeline_utils import database_schema
 
 def initialize_db():
     """Initializes project's Firestore database for writing and reading purposes
@@ -27,21 +27,21 @@ def initialize_db():
     # pylint: disable=protected-access
     if not firebase_admin._apps:
         firebase_admin.initialize_app(credentials.ApplicationDefault(), {
-        constants.PROJECT_ID: 'step-project-ellispis',
+        database_schema.PROJECT_ID: 'step-project-ellispis',
         })
     return firestore.client()
 
-def upload_to_pipeline_runs_collection(provider_id, run_id):
+def store_pipeline_run(provider_id, run_id):
     """ Uploads information about the pipeline run to the Firestore collection
 
     """
     # pylint: disable=fixme
     # TODO: get start, end and quality of current pipeline run.
     db = initialize_db()
-    db.collection(constants.PIPELINE_RUNS_COLLECTION_NAME).document(run_id).set({
-        constants.PROVIDER_ID: provider_id,
-        constants.START_DATE: 00,
-        constants.END_DATE: 00,
-        constants.VISIBILITY: constants.INVISIBLE,
-        constants.PIPELINE_RUN_ID: run_id
+    db.collection(database_schema.PIPELINE_RUNS_COLLECTION_NAME).document(run_id).set({
+        database_schema.PROVIDER_ID: provider_id,
+        database_schema.START_DATE: 00,
+        database_schema.END_DATE: 00,
+        database_schema.VISIBILITY: database_schema.LABEL_VISIBILITY_INVISIBLE ,
+        database_schema.PIPELINE_RUN_ID: run_id
     })

@@ -16,7 +16,7 @@
 from google.cloud import vision_v1
 from backend_jobs.recognition_pipeline.pipeline_lib.image_recognition_provider\
     import ImageRecognitionProvider
-from backend_jobs.pipeline_utils import constants
+from backend_jobs.pipeline_utils import database_schema
 
 # pylint: disable=abstract-method
 class GoogleVisionAPI(ImageRecognitionProvider):
@@ -32,11 +32,12 @@ class GoogleVisionAPI(ImageRecognitionProvider):
     def process(self, element):
         images_and_labels = []
         for i in range(0, len(element), 2000): # The provider supports a batch of max 2000 images.
-            images_and_labels.extend(self.get_labels_of_batch(element[i:2000+i]))
+            images_and_labels.extend(self._get_labels_of_batch(element[i:2000+i]))
         return images_and_labels
 
-    def get_labels_of_batch(self, image_docs):
+    def _get_labels_of_batch(self, image_docs):
         """ Labels the images in the batch using one call to the Google Vision API.
+            Used to label each batch in the class's process method.
 
         Args:
             image_docs: list of up to 2000 image docs represented by dictionaries.
@@ -48,10 +49,10 @@ class GoogleVisionAPI(ImageRecognitionProvider):
         docs = []
         i = 0
         for doc in image_docs:
-            url = doc[constants.URL]
+            url = doc[database_schema.URL]
             image = vision_v1.Image()
             image.source.image_uri = url
-            request = vision_v1.AnnotateImageRequest(image= image, features= features)
+            request = vision_v1.AnnotateImageRequest(image=image, features=features)
             requests.append(request)
             docs.append(doc)
         batch_request = vision_v1.BatchAnnotateImagesRequest(requests=requests)
@@ -60,8 +61,7 @@ class GoogleVisionAPI(ImageRecognitionProvider):
             all_labels = [label.description.lower() for label in image_response.label_annotations]
             results.append([(docs[i], all_labels)])
         return results
-    
-    label_images = process
+
     _resolution_prerequisites = {'height':480, 'width': 640}
     _format_prerequisites =  ['JPG', 'JPEG', 'PNG8', 'PNG24', 'GIF', \
         'BMP', 'WEBP', 'RAW', 'ICO', 'PDF', 'TIFF']
