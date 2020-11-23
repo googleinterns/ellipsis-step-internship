@@ -33,7 +33,7 @@ from backend_jobs.recognition_pipeline.pipeline_lib.firestore_database import\
 from backend_jobs.pipeline_utils.firestore_database import store_pipeline_run
 from backend_jobs.pipeline_utils.utils import get_provider, get_timestamp_id
 from backend_jobs.recognition_pipeline.pipeline_lib.image_recognition_provider\
-    import NAME_TO_PROVIDER
+    import get_recognition_provider
 
 def _validate_args(args):
     """ Checks whether the pipeline's arguments are valid.
@@ -78,14 +78,13 @@ def run(argv=None):
         dest='output',
         required = False, # Optional - only for development reasons.
         help='Output file to write results to for testing.')
-    #Sending giver argument to external parser.
     known_args, pipeline_args = parser.parse_known_args(argv)
     _validate_args(known_args)
     ingestion_run = known_args.input_ingestion_pipelinerun_id
     ingestion_provider = known_args.input_ingestion_provider
     # Creating an object of type ImageRecognitionProvider
     # for the specific image recognition provider input.
-    recognition_provider = get_provider(NAME_TO_PROVIDER, known_args.input_recognition_provider)
+    recognition_provider = get_recognition_provider(known_args.input_recognition_provider)
     job_name = 'recognition_{recognition_provider}_{time_id}'.format(time_id = get_timestamp_id(),\
         recognition_provider = recognition_provider.provider_id.lower()).replace('_','-')
         # Dataflow job names can only include '-' and not '_'.

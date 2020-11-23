@@ -12,33 +12,14 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 """
+
 PROJECT_ID = 'projectId'
 
-# Constant collection names:
 COLLECTION_IMAGES = 'Images'
-PIPELINE_RUNS_COLLECTION_NAME = 'PipelineRuns'
-COLLECTION_IMAGES_SUBCOLLECTION_LABELS = 'Labels'
-LABELTAGS_COLLECTION_NAME = 'LabelTags'
-REDEFINE_MAPS_COLLECTION_NAME = 'RedefineMaps'
-
-# Constant field names:
+# constant fields names:
 COLLECTION_IMAGES_FIELD_INGESTED_PROVIDERS = 'ingestedProviders'
 INGESTED_RUNS = 'ingestedRuns'
 PROVIDER_ID = 'providerId'
-PROVIDER_NAME = 'providerName'
-PROVIDER_VERSION = 'providerVersion'
-PROVIDER_VISIBILITY = 'providerVisibility'
-VISIBILITY = 'visibility'
-LABEL_NAME = 'labelName'
-LABEL_IDS = 'labelIds'
-PARENT_IMAGE_ID = 'parentImageId'
-PIPELINE_RUN_ID = 'pipelineRunId'
-HASHMAP = 'hashmap'
-START_DATE = 'startDate'
-END_DATE = 'endDate'
-REDEFINE_MAP = 'redefineMap'
-RANDOM = 'random'
-URL = 'url'
 COORDINATES = 'coordinates'
 DATE_INGESTED = 'dateIngested'
 DATE_SHOT = 'dateShot'
@@ -48,6 +29,32 @@ FORMAT = 'format'
 RESOLUTION = 'resolution'
 ATTRIBUTION = 'attribution'
 LABELS = 'labels'
+RANDOM = 'random'
+URL = 'url'
+HASHMAP = 'hashmap'
 
+PIPELINE_RUNS_COLLECTION_NAME = 'PipelineRuns'
+# Constant field names:
+PROVIDER_NAME = 'providerName'
+PROVIDER_VERSION = 'providerVersion'
+PROVIDER_VISIBILITY = 'providerVisibility'
+START_DATE = 'startDate'
+END_DATE = 'endDate'
+
+COLLECTION_IMAGES_SUBCOLLECTION_LABELS = 'Labels'
+# Constant field names:
+LABEL_NAME = 'labelName'
+LABEL_IDS = 'labelIds'
+PARENT_IMAGE_ID = 'parentImageId'
+PIPELINE_RUN_ID = 'pipelineRunId'
+
+LABELTAGS_COLLECTION_NAME = 'LabelTags'
+
+REDEFINE_MAPS_COLLECTION_NAME = 'RedefineMaps'
+# Constant field names:
+REDEFINE_MAP = 'redefineMap'
+
+# General:
+VISIBILITY = 'visibility'
 LABEL_VISIBILITY_INVISIBLE  = 0
 LABEL_VISIBILITY_VISIBLE  = 1

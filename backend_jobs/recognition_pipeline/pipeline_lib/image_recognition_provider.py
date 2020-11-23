@@ -21,6 +21,15 @@ from backend_jobs.recognition_pipeline.providers import google_vision_api
 # Maps recognition provider names to an object of the provider.
 NAME_TO_PROVIDER = {'Google_Vision_API': google_vision_api.GoogleVisionAPI}
 
+def get_recognition_provider(provider_name):
+    """ Returns an object of type ImageRecognitionProvider by the specific provider input.
+    If provider is not recognized then throw exception.
+
+    """
+    if provider_name in NAME_TO_PROVIDER:
+        return NAME_TO_PROVIDER[provider_name]
+    raise ValueError('{provider} is unknown'.format(provider = provider_name))
+
 class ImageRecognitionProvider(ABC, beam.DoFn):
     """ Each recognition provider used in our project
     will have an implementation of this abstract class.
