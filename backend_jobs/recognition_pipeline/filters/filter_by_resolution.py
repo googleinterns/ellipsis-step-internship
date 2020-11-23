@@ -33,7 +33,8 @@ class FilterByResolution(FilterBy):
               of the document in the database and their values.
 
         """
-        image_attribute = image[database_schema.IMAGE_ATTRIBUTES][database_schema.RESOLUTION]
+        image_attribute = image[database_schema.COLLECTION_IMAGES_FIELD_IMAGE_ATTRIBUTES]\
+          [database_schema.COLLECTION_IMAGES_FIELD_RESOLUTION]
         min_height = self.prerequisites['height']
         min_width = self.prerequisites['width']
         if image_attribute['width'] >= min_width and \
@@ -55,6 +56,6 @@ class FilterByResolution(FilterBy):
             provider = get_provider(IMAGE_PROVIDERS, provider_name)
             resize_url = provider.get_url_for_max_resolution(self.prerequisites, image)
             if resize_url:
-                image[database_schema.URL] = resize_url
+                image[database_schema.COLLECTION_IMAGES_FIELD_URL] = resize_url
                 return True
         return False

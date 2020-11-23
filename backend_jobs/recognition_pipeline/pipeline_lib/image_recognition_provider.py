@@ -31,7 +31,7 @@ class ImageRecognitionProvider(ABC, beam.DoFn):
 
         Args:
             element: a list of images information dictionaries.
-            Each dictionary contains all of the images' fields and their
+            Each Python dictionary contains all of the images' fields and their
             values as stored in the database.
 
         Returns:

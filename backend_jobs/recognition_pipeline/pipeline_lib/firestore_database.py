@@ -65,14 +65,15 @@ class GetBatchedImageDataset(beam.DoFn):
         random_max = random_min + _RANGE_OF_BATCH
         if ingestion_run:
             query = self.db.collection(database_schema.COLLECTION_IMAGES).\
-                where(database_schema.INGESTED_RUNS,u'array_contains', ingestion_run).\
-                    where(database_schema.RANDOM, u'>=', random_min).\
-                        where(database_schema.RANDOM, u'<', random_max).stream()
+                where(database_schema.COLLECTION_IMAGES_FIELD_INGESTED_RUNS, \
+                    u'array_contains', ingestion_run).\
+                        where(database_schema.COLLECTION_IMAGES_FIELD_RANDOM, u'>=', random_min).\
+                            where(database_schema.COLLECTION_IMAGES_FIELD_RANDOM, u'<', random_max).stream()
         else:
             query = self.db.collection(database_schema.COLLECTION_IMAGES).\
                 where(database_schema.COLLECTION_IMAGES_FIELD_INGESTED_PROVIDERS, u'array_contains', ingestion_provider).\
-                    where(database_schema.RANDOM, u'>=', random_min).\
-                        where(database_schema.RANDOM, u'<', random_max).stream()
+                    where(database_schema.COLLECTION_IMAGES_FIELD_RANDOM, u'>=', random_min).\
+                        where(database_schema.COLLECTION_IMAGES_FIELD_RANDOM, u'<', random_max).stream()
         return (add_id_to_dict(doc) for doc in query)
 
 def add_id_to_dict(doc):
@@ -110,12 +111,14 @@ class UpdateImageLabelsInDatabase(beam.DoFn):
         for label in labels:
             doc = subcollection_ref.document()
             doc.set({
-                database_schema.PROVIDER_ID: provider_id,
-                database_schema.PROVIDER_VERSION: '2.0.0',
-                database_schema.LABEL_NAME: label,
-                database_schema.VISIBILITY: database_schema.LABEL_VISIBILITY_INVISIBLE ,
-                database_schema.PARENT_IMAGE_ID: doc_id,
-                database_schema.PIPELINE_RUN_ID: run_id,
-                database_schema.HASHMAP: image_doc[database_schema.HASHMAP],# Redundant for query optimisation reasons.
-                database_schema.RANDOM: image_doc[database_schema.RANDOM] # Redundant for query optimisation reasons.
+                database_schema.COLLECTION_IMAGES_SUBCOLLECTION_LABELS_FIELD_PROVIDER_ID: provider_id,
+                database_schema.COLLECTION_IMAGES_SUBCOLLECTION_LABELS_FIELD_PROVIDER_VERSION: '2.0.0',
+                database_schema.COLLECTION_IMAGES_SUBCOLLECTION_LABELS_FIELD_LABEL_NAME: label,
+                database_schema.COLLECTION_IMAGES_SUBCOLLECTION_LABELS_FIELD_VISIBILITY: database_schema.LABEL_VISIBILITY_INVISIBLE ,
+                database_schema.COLLECTION_IMAGES_SUBCOLLECTION_LABELS_FIELD_PARENT_IMAGE_ID: doc_id,
+                database_schema.COLLECTION_IMAGES_SUBCOLLECTION_LABELS_FIELD_PIPELINE_RUN_ID: run_id,
+                database_schema.COLLECTION_IMAGES_SUBCOLLECTION_LABELS_FIELD_HASHMAP:\
+                    image_doc[database_schema.COLLECTION_IMAGES_FIELD_HASHMAP], # Redundant for query optimisation reasons.
+                database_schema.COLLECTION_IMAGES_SUBCOLLECTION_LABELS_FIELD_RANDOM:\
+                    image_doc[database_schema.COLLECTION_IMAGES_FIELD_RANDOM] # Redundant for query optimisation reasons.
             })

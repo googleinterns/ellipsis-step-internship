@@ -30,6 +30,7 @@ class FilterByFormat(FilterBy):
               of the document in the database and their values.
 
         """
-        image_attribute = image[database_schema.IMAGE_ATTRIBUTES][database_schema.FORMAT]
+        image_attribute = image[database_schema.COLLECTION_IMAGES_FIELD_IMAGE_ATTRIBUTES]\
+          [database_schema.COLLECTION_IMAGES_FIELD_FORMAT]
         return image_attribute.upper() in self.prerequisites
  
