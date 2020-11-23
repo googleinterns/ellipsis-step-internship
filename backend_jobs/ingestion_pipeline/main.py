@@ -24,11 +24,15 @@ from backend_jobs.ingestion_pipeline.pipeline_lib import firestore_database
 from backend_jobs.pipeline_utils import utils
 from backend_jobs.pipeline_utils import providers
 
-
-
-
 def _generate_image_id(image):
-    print(image.url)
+    """ This function gets an image and updates the id to be the hashed url.
+
+    Args:
+        image: Type ImageAttributes.
+
+    Returns:
+        image: Type ImageAttributes with an updated unique id.
+    """
     hash_url = hashlib.sha1(image.url.encode())
     hex_dig_id = hash_url.hexdigest()
     image.image_id = hex_dig_id
@@ -54,7 +58,12 @@ def _is_valid_image(image):
         image.height_pixels > 100
 
 def run(argv=None):
-    """ Main entry point; defines and runs the image ingestion pipeline.
+    """Main entry point,  defines and runs the image ingestion pipeline.
+
+    Input:
+        input_provider_name- the image provider to ingest images from.
+        input_provider_args(optional)- arguments to get images by.
+        e.g 'tags:cat,dog-tag_mode:any'.
     """
     # Using external parser: https://docs.python.org/3/library/argparse.html 
     parser = argparse.ArgumentParser()

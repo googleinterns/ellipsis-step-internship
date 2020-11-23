@@ -26,7 +26,10 @@ _NUM_OF_IMAGES = 100
 FLICKER_API = flickrapi.FlickrAPI(_FLICKR_API_KEY, _FLICKR_SECRET_KEY, cache = True)
 
 class FlickrProvider(ImageProvider):
-    """ This class is an implementation for the ImageProvider interface.
+    """ Flickr supports using there urls so we do not need to copy images over.
+    Flicker provides metadata as url, resolution,, location etc and does not provide color depth and 
+    Compression ratio.
+
     """
     def __init__(self, query_arguments=None):
         self.query_arguments = _parse_query_arguments(query_arguments)
