@@ -38,10 +38,10 @@ def store_pipeline_run(provider_id, run_id):
     # pylint: disable=fixme
     # TODO: get start, end and quality of current pipeline run.
     db = initialize_db()
-    db.collection(database_schema.PIPELINE_RUNS_COLLECTION_NAME).document(run_id).set({
-        database_schema.PROVIDER_ID: provider_id,
-        database_schema.START_DATE: 00,
-        database_schema.END_DATE: 00,
-        database_schema.VISIBILITY: database_schema.LABEL_VISIBILITY_INVISIBLE ,
-        database_schema.PIPELINE_RUN_ID: run_id
+    db.collection(database_schema.COLLECTION_PIPELINE_RUNS).document(run_id).set({
+        database_schema.COLLECTION_PIPELINE_RUNS_FIELD_PROVIDER_ID: provider_id,
+        database_schema.COLLECTION_PIPELINE_RUNS_FIELD_START_DATE: 00,
+        database_schema.COLLECTION_PIPELINE_RUNS_FIELD_END_DATE: 00,
+        database_schema.COLLECTION_PIPELINE_RUNS_FIELD_VISIBILITY: database_schema.LABEL_VISIBILITY_INVISIBLE ,
+        database_schema.COLLECTION_PIPELINE_RUNS_FIELD_PIPELINE_RUN_ID: run_id
     })
