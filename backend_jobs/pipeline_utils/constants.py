@@ -15,7 +15,7 @@
 PROJECT_ID = 'projectId'
 
 # Constant collection names:
-IMAGES_COLLECTION_NAME = 'Images'
+IMAGES_COLLECTION_NAME = 'Images3'
 PIPELINE_RUNS_COLLECTION_NAME = 'PipelineRuns'
 LABELS_COLLECTION_NAME = 'Labels'
 LABELTAGS_COLLECTION_NAME = 'LabelTags'
@@ -47,6 +47,8 @@ IMAGE_ATTRIBUTES = 'imageAttributes'
 FORMAT = 'format'
 RESOLUTION = 'resolution'
 ATTRIBUTION = 'attribution'
+WIDTH = 'width'
+HEIGHT = 'height'
 LABELS = 'labels'
 
 INVISIBLE = 0

@@ -19,7 +19,7 @@ from backend_jobs.pipeline_utils import constants
 
 def initialize_db():
     """Initializes project's Firestore database for writing and reading purposes
-    and returns a client that can iteract with Firestore.
+    and returns a client that can interact with Firestore.
 
     Returns:
         google.cloud.firestore.Firestore: A `Firestore Client`_.

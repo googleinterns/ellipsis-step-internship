@@ -17,114 +17,81 @@ from datetime import datetime
 import flickrapi
 from backend_jobs.ingestion_pipeline.pipeline_lib.image_provider_interface import ImageProvider
 from backend_jobs.ingestion_pipeline.pipeline_lib.data_types import ImageType
+from backend_jobs.ingestion_pipeline.pipeline_lib.data_types import VisibilityType
 from backend_jobs.ingestion_pipeline.pipeline_lib.data_types import ImageAttributes
-from backend_jobs.pipeline_utils import constants
 
 _FLICKR_API_KEY = '2d00397e012c30ccc33ca4fdc05a5c98'
 _FLICKR_SECRET_KEY =  'e36a277c77f09fdd'
+_NUM_OF_IMAGES = 100
+FLICKER_API = flickrapi.FlickrAPI(_FLICKR_API_KEY, _FLICKR_SECRET_KEY, cache = True)
 
 class FlickrProvider(ImageProvider):
     """ This class is an implementation for the ImageProvider interface.
     """
     def __init__(self, query_arguments=None):
-        if query_arguments is not None:
-            self.query_arguments={'tag': query_arguments}
+        self.query_arguments = _parse_query_arguments(query_arguments)
 
-    def get_images(self, num_of_page):
-        flickr = flickrapi.FlickrAPI(_FLICKR_API_KEY, _FLICKR_SECRET_KEY, cache = True)
-        photos = flickr.photos.search(text=self.query_arguments['tag'],
-                     tag_mode = 'all',
-                     tags = self.query_arguments['tag'],
-                     extras = 'url_c, geo, date_upload, date_taken, original_format,\
-                      owner_name, original_format',
-                     per_page = self.num_of_images,
-                     page = num_of_page,
-                     sort = 'relevance')
-        return photos[0]
+    def get_images(self, page_number):
+        photos = FLICKER_API.photos.search(
+            # Returns images containing the text in their title, description or tags.
+            text = self.query_arguments['text'],
+            # Returns images containing the tags listed (multiple tags are delimited by commas).
+            tags = self.query_arguments['tags'],
+            # 'any' for an OR combination of tags, 'and' for an AND combination of tags.
+            tag_mode = self.query_arguments['tag_mode'],
+            extras = 'url_c, geo, date_upload, date_taken, original_format, \
+                owner_name, original_format',
+            per_page = _NUM_OF_IMAGES,
+            page = page_number,
+            sort = 'relevance')
+        return photos[0] # return Element 'photos'
 
     def get_num_of_pages(self):
         photos = self.get_images(1)
         return int(photos.attrib['pages'])
 
     def get_image_attributes(self, element):
-        image_arrributes=ImageAttributes(
+        image_attributes=ImageAttributes(
             url = element.get('url_c'),
-            image_id = self._generate_image_id_with_prefix(element.get('id')),
+            image_id = None,
             image_type = ImageType.CAMERA,
-            date_shot = get_date(element),
-            coordinates = get_coordinates(element),
+            date_shot = _get_date(element),
             format = element.get('originalformat'),
             attribution = element.get('ownername'),
-            resolution = get_resolution(element))
-        return image_arrributes
+            latitude = float(element.get('latitude')),
+            longitude = float(element.get('longitude')),
+            #Extracts width from element, if the width equals str converts to int.
+            width_pixels = int(element.get('width_c')) if element.get('width_c') else None,
+            #Extracts height from element, if the height equals str converts to int.
+            height_pixels = int(element.get('height_c')) if element.get('height_c') else None)
+        return image_attributes
 
-    def get_url_for_max_resolution(self, resolution, image):
-        # This function modifies the url to get the wonted resolution,
+    def get_url_for_min_resolution(self,  min_height, min_width, image):
+        # This function modifies the url to get the requested resolution,
         # in flickr the resolution is represented in the url.
         # See details at https://www.flickr.com/services/api/misc.urls.html
         url = image['url']
-        max_resolution =  max(resolution['height'],resolution['width'])
-        # Maping between the char that represents max resultion and the max resultion.
-        flickr_resolution_map = {75:'s',100:'t',150	:'q',240:'m',320:'n',400:'w',
-        500:'',640:'z',800:'c',1024:'b',1600:'n',2048:'k'}
+        max_resolution =  max(min_height, min_width)
+        # Maping between the char that represents max resolution and the max resolution.
+        flickr_resolution_map = {2048: 'k', 1600: 'n', 1024: 'b', 800: 'c', 640: 'z',500: '',
+        400: 'w', 320: 'n', 240: 'm', 150: 'q', 100: 't', 75: 's'}
         for key in flickr_resolution_map:
-            if  max_resolution <= key:
+            if  max_resolution >= key:
                 if key == 500:
-                    # Removing the char that represents the resultion to get max resultion of 500.
+                    # Removing the char that represents the resolution to get max resolution of 500.
                     return  url[:-6] + url[-4:]
-                # Replacing the char that represents the resultion with the wonted key.
+                # Replacing the char that represents the resolution with the wonted key.
                 return  url[:-5] + flickr_resolution_map[key] + url[-4:]
-        return None
+        raise ValueError('No url with requested resolution')
 
-    def _generate_image_id_with_prefix(self, image_id):
-        return str(self.provider_id + image_id)
 
     provider_id = 'FlickrProvider-2020'
     provider_name ='FlickrProvider'
     provider_version = '2.4.0'
-    image_type = ImageType.CAMERA
     enabled = True
-    visibility = constants.VISIBLE
-    num_of_images = 100
-    query_arguments = {'tag': 'cat'}
+    visibility = VisibilityType.INVISIBLE
 
-def get_coordinates(element):
-    """ This function extracts coordinates from the image element,
-    if the coordinates equals (0,0) the function returns None.
-
-    Args:
-        element: A dict cuntianing all the image attributes.
-
-    Returns:
-        Coordinates in the format {'latitude':float,'longitude':float}.
-    """
-    latitude=float(element.get('latitude'))
-    longitude=float(element.get('longitude'))
-    if (latitude==0.0 and longitude==0.0):
-        coordinates=None
-    else:
-        coordinates={'latitude':latitude,'longitude':longitude}
-    return coordinates
-
-def get_resolution(element):
-    """ This function extracts resolution from the image element,
-    if the resolution equals None the function returns None.
-
-    Args:
-        element: A dict cuntianing all the image attributes.
-
-    Returns:
-        Resolution in the format {'height':int,'width':int}.
-    """
-    height=element.get('height_c')
-    width=element.get('width_c')
-    if (height is None and width is None):
-        resolution=None
-    else:
-        resolution={'height':int(height),'width':int(width)}
-    return resolution
-
-def get_date(element):
+def _get_date(element):
     """ This function extracts the date the image was taken from the image element
     and converts it to a datetime format.
 
@@ -137,3 +104,28 @@ def get_date(element):
     date_taken = element.get('datetaken')
     datetime_date_taken = datetime.strptime(date_taken, '%Y-%m-%d %H:%M:%S')
     return datetime_date_taken
+
+def _parse_query_arguments(query_arguments):
+    """ This function converts a string in the format 'key1:value1-key2:value2' to a dict in the
+    format {'key1': 'value1', 'key2': 'value2',...}.
+
+    Args:
+        query_arguments: A string cuntianing all the arguments to query by
+        e.g. 'tags:cat,plastic-tag_mode:any'.
+
+    Returns:
+        A dict of all the args e.g.  {'tags': 'cat,plastic', 'tag_mode': 'any', 'text':''}.
+    """
+    init_query_arguments = {'tags': 'all', 'tag_mode': 'any', 'text':''}
+    if query_arguments is not None:
+        different_arg = query_arguments.split('-')
+        for arg in different_arg:
+            key = arg.split(':')[0]
+            value = arg.split(':')[1]
+            if key in init_query_arguments:
+                if key == 'tag_mode' and value != 'any' and value != 'all':
+                    raise ValueError('Invalid query_arguments value tag_mode can be "any" or "all"')
+                init_query_arguments[key] = value
+            else:
+                raise ValueError('Invalid query_arguments key can be tags, tag_mode or text')
+    return init_query_arguments
