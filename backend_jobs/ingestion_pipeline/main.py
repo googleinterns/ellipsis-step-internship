@@ -75,7 +75,7 @@ def run(argv=None):
     parser.add_argument(
         '--input_provider_args',
         dest = 'input_provider_args',
-        default = '',
+        default = None,
         help = 'args to query by provider.')
     parser.add_argument(
         '--output',
