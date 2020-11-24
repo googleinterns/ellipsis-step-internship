@@ -12,27 +12,12 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 """
-import firebase_admin
-from firebase_admin import credentials
-from firebase_admin import firestore
 import apache_beam as beam
-from pipeline_lib.constants import *
+from backend_jobs.pipeline_utils import database_schema
+from backend_jobs.pipeline_utils.firestore_database import initialize_db
 
-RANGE_OF_BATCH = 0.1
-# Defines the range of the random field to query the database by batches, \
-# each batch covers all documents with random value of X up to value of X+RANGE_OF_BATCH
-INVISIBLE = 0
-
-def initialize_db():
-    """Initializes project's Firestore database for writing and reading purposes.
-
-    """
-    # pylint: disable=protected-access
-    if not firebase_admin._apps:
-        firebase_admin.initialize_app(credentials.ApplicationDefault(), {
-        PROJECT_ID: 'step-project-ellispis',
-        })
-    return firestore.client()
+# Defines the range of the random field to query the database by batches.
+_RANGE_OF_BATCH = 0.1
 
 # pylint: disable=abstract-method
 class GetBatchedImageDataset(beam.DoFn):
@@ -43,9 +28,9 @@ class GetBatchedImageDataset(beam.DoFn):
        integer index between 0 and 9.
 
     Output:
-        generator of image's documents in a dictionary form.
+        generator of image's documents in a Python dictionary form.
         Each image is represented by a dict containing all the fields
-        in the database and their values.
+        of the document in the database and their values.
 
     """
     def setup(self):
@@ -61,23 +46,38 @@ class GetBatchedImageDataset(beam.DoFn):
             element: the index used for querying the database by the random field.
             ingestion_provider: the input of the pipeline, determines the images dataset.
             ingestion_run: the input of the pipeline, determines the dataset.
+            Only one out of ingestion_provider and ingestion_run is provided.
 
         Returns:
             A generator of dictionaries with all the information (fields and id)
             of each one of the Firestore data set's image documents.
+
+        Raises:
+            Value error if both ingestion_provider and ingestion_run
+            are provided.
+
         """
-        random_min = element*RANGE_OF_BATCH
-        # the lower limit for querying the database by the random field.
-        random_max = random_min+RANGE_OF_BATCH
-        # the higher limit for querying the database by the random field.
+        if ingestion_provider and ingestion_run:
+            raise ValueError('both ingestion provider and run are provided -\
+                there should be only one')
+        # The lower limit for querying the database by the random field.
+        random_min = element * _RANGE_OF_BATCH
+        # The higher limit for querying the database by the random field.
+        random_max = random_min + _RANGE_OF_BATCH
         if ingestion_run:
-            query = self.db.collection(IMAGES_COLLECTION_NAME).\
-                where(INGESTED_RUNS,u'array_contains', ingestion_run).\
-                    where(RANDOM, u'>=', random_min).where(RANDOM, u'<', random_max).stream()
+            query = self.db.collection(database_schema.COLLECTION_IMAGES).\
+                where(database_schema.COLLECTION_IMAGES_FIELD_INGESTED_RUNS, \
+                    u'array_contains', ingestion_run).\
+                        where(database_schema.COLLECTION_IMAGES_FIELD_RANDOM, u'>=', random_min).\
+                            where(database_schema.COLLECTION_IMAGES_FIELD_RANDOM, \
+                                u'<', random_max).stream()
         else:
-            query = self.db.collection(IMAGES_COLLECTION_NAME).\
-                where(INGESTED_PROVIDERS, u'array_contains', ingestion_provider).\
-                    where(RANDOM, u'>=', random_min).where(RANDOM, u'<', random_max).stream()
+            query = self.db.collection(database_schema.COLLECTION_IMAGES).\
+                where(database_schema.COLLECTION_IMAGES_FIELD_INGESTED_PROVIDERS, \
+                    u'array_contains', ingestion_provider).\
+                        where(database_schema.COLLECTION_IMAGES_FIELD_RANDOM, u'>=', random_min).\
+                            where(database_schema.COLLECTION_IMAGES_FIELD_RANDOM,\
+                                u'<', random_max).stream()
         return (add_id_to_dict(doc) for doc in query)
 
 def add_id_to_dict(doc):
@@ -88,13 +88,7 @@ def add_id_to_dict(doc):
     full_dict['id'] = doc.id
     return full_dict
 
-# pylint: disable=missing-function-docstring
-def get_redefine_map(recognition_provider_id):
-    db = initialize_db()
-    doc_dict = db.collection(REDEFINE_MAPS_COLLECTION_NAME).document(recognition_provider_id).get().to_dict()
-    return doc_dict[REDEFINE_MAP]
-
-class StoreInDatabase(beam.DoFn):
+class UpdateImageLabelsInDatabase(beam.DoFn):
     """Stores parallelly the label information in the project's database.
 
     """
@@ -108,40 +102,27 @@ class StoreInDatabase(beam.DoFn):
         for each label in the Labels subcollection of each image.
 
         Args:
-            element: tuple of image document dict and a list of all label names and Ids.
+            element: tuple of image document dictionary (Each image is represented by a
+            Python dictionary containing all the fields of the document in the database
+            and their values) and a list of all labels.
+
         """
         image_doc = element[0]
         doc_id = image_doc['id']
-        subcollection_ref = self.db.collection(IMAGES_COLLECTION_NAME).document(doc_id).\
-            collection(LABELS_COLLECTION_NAME)
-        for label in element[1]:
+        subcollection_ref = self.db.collection(database_schema.COLLECTION_IMAGES).document(doc_id).\
+            collection(database_schema.COLLECTION_IMAGES_SUBCOLLECTION_LABELS)
+        labels = element[1]
+        for label in labels:
             doc = subcollection_ref.document()
             doc.set({
-                PROVIDER_ID: provider_id,
-                PROVIDER_VERSION: '2.0.0',
-                LABEL_NAME: label['name'],
-                VISIBILITY: INVISIBLE,
-                PARENT_IMAGE_ID: doc_id,
-                PIPELINE_RUN_ID: run_id,
-                HASHMAP: image_doc['geoHashes'],
-                RANDOM: image_doc['random']
+                database_schema.COLLECTION_IMAGES_SUBCOLLECTION_LABELS_FIELD_PROVIDER_ID: provider_id,
+                database_schema.COLLECTION_IMAGES_SUBCOLLECTION_LABELS_FIELD_PROVIDER_VERSION: '2.0.0',
+                database_schema.COLLECTION_IMAGES_SUBCOLLECTION_LABELS_FIELD_LABEL_NAME: label,
+                database_schema.COLLECTION_IMAGES_SUBCOLLECTION_LABELS_FIELD_VISIBILITY: database_schema.LABEL_VISIBILITY_INVISIBLE ,
+                database_schema.COLLECTION_IMAGES_SUBCOLLECTION_LABELS_FIELD_PARENT_IMAGE_ID: doc_id,
+                database_schema.COLLECTION_IMAGES_SUBCOLLECTION_LABELS_FIELD_PIPELINE_RUN_ID: run_id,
+                database_schema.COLLECTION_IMAGES_SUBCOLLECTION_LABELS_FIELD_HASHMAP:\
+                    image_doc[database_schema.COLLECTION_IMAGES_FIELD_HASHMAP], # Redundant for query optimisation reasons.
+                database_schema.COLLECTION_IMAGES_SUBCOLLECTION_LABELS_FIELD_RANDOM:\
+                    image_doc[database_schema.COLLECTION_IMAGES_FIELD_RANDOM] # Redundant for query optimisation reasons.
             })
-            if 'id' in label:
-                doc.set({
-                    LABEL_ID: label['id']
-                }, merge = True)
-
-def upload_to_pipeline_runs_collection(provider_id, run_id):
-    """ Uploads information about the pipeline run to the Firestore collection
-
-    """
-    # pylint: disable=fixme
-    # TODO: get start, end and quality of current pipeline run.
-    db = initialize_db()
-    db.collection(PIPELINE_RUNS_COLLECTION_NAME).document().set({
-        PROVIDER_ID: provider_id,
-        START_DATE: 00,
-        END_DATE: 00,
-        VISIBILITY: INVISIBLE,
-        PIPELINE_RUN_ID: run_id
-    })

@@ -13,7 +13,8 @@
   limitations under the License.
 """
 
-from pipeline_lib.filter_by import FilterBy
+from backend_jobs.recognition_pipeline.pipeline_lib.filter_by import FilterBy
+from backend_jobs.pipeline_utils import database_schema
 
 class FilterByFormat(FilterBy):
     """ Checks if the image is in a correct format.
@@ -23,7 +24,13 @@ class FilterByFormat(FilterBy):
     def is_supported(self, image):
         """ Returns True iff image's format is in list of allowed formats.
 
+          Args:
+              image: A dictionary representing the image's doc.
+              Each image is represented by a Python dictionary containing all the fields
+              of the document in the database and their values.
+
         """
-        image_attribute = image['imageAttributes']['format']
+        image_attribute = image[database_schema.COLLECTION_IMAGES_FIELD_IMAGE_ATTRIBUTES]\
+          [database_schema.COLLECTION_IMAGES_FIELD_FORMAT]
         return image_attribute.upper() in self.prerequisites
  

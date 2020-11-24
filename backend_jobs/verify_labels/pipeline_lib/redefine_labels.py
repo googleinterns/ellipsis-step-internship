@@ -14,6 +14,15 @@
 """
 
 import apache_beam as beam
+from backend_jobs.pipeline_utils.firestore_database import initialize_db
+from backend_jobs.pipeline_utils import database_schema
+
+# pylint: disable=missing-function-docstring
+def get_redefine_map(recognition_provider_id):
+    db = initialize_db()
+    doc_dict = db.collection(database_schema.COLLECTION_REDEFINE_MAPS).\
+        document(recognition_provider_id).get().to_dict()
+    return doc_dict[database_schema.COLLECTION_REDEFINE_MAPS_FIELD_REDEFINE_MAP]
 
 # pylint: disable=abstract-method
 class RedefineLabels(beam.DoFn):
@@ -24,21 +33,15 @@ class RedefineLabels(beam.DoFn):
 
     # pylint: disable=arguments-differ
     def process(self, element, redefine_map):
-        """Uses the global redefine map to change the different labels to the project's label Ids.
+        """Uses the global redefine map to map the different labels to the project's label Ids.
 
         Args:
             element: tuple of dictionary of image properties and list of labels.
-            provider_id: image recognition provider for the redefine map.
+            redefine_map: a specific provider's redefine map from the database.
 
         Returns:
-            [(dictionary of image properties, label ids list)]
+            [(dictionary of label doc properties, label ids list)]
         """
-        all_labels_and_ids = []
-        for label in element[1]:
-            # redefine_map = get_redefine_map(provider_id)
-            if label in redefine_map:
-                for label_id in redefine_map[label]:
-                    all_labels_and_ids.append({'name': label, 'id': label_id})
-            else:
-                all_labels_and_ids.append({'name': label})
-        return [(element[0], all_labels_and_ids)]
+        label_name = element[database_schema.COLLECTION_IMAGES_SUBCOLLECTION_LABELS_FIELD_LABEL_NAME]
+        if label_name in redefine_map:
+            return [(element, redefine_map[label_name])]

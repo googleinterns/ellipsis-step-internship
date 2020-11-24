@@ -13,12 +13,11 @@
   limitations under the License.
 
   Sets up the packages required for the pipeline's imports.
-
-"""
+ """
 import setuptools
 
 setuptools.setup(
-    name="recognition-pipeline-OFRI-AVIELI",
+    name="ingestion-pipeline_TALTAMIR",
     version="0.0.1",
     packages=setuptools.find_packages(),
     classifiers=[
@@ -27,5 +26,10 @@ setuptools.setup(
         "Operating System :: OS Independent",
     ],
     python_requires='>=3.6',
-    install_requires=['firebase-admin==4.4.0', 'apache-beam==2.24.0', 'google-cloud-vision==2.0.0']
+    install_requires=[
+        'apache-beam==2.24.0',
+        'firebase-admin==4.4.0',
+        'flickrapi==2.4.0',
+        'geohash2==1.1'
+    ]
 )
