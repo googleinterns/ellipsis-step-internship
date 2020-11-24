@@ -14,4 +14,4 @@
 """
 
 PROJECT_ID_NAME = 'step-project-ellispis'
-PROJECT_ID = 'step-project-ellispis'
+PROJECT_ID = 'projectId'

@@ -152,3 +152,20 @@ def _get_max_visibility(first_visibility, second_visibility):
     if first_visibility== VisibilityType.VISIBLE  or second_visibility == VisibilityType.VISIBLE :
         return VisibilityType.VISIBLE.value
     return VisibilityType.INVISIBLE.value
+
+def get_provider_key(provider_id):
+    """ This function given a provider id gets the Api key and Secret key
+    from the database.
+
+    Args:
+        provider_id: string the providers id.
+
+    Returns:
+        api_key: string
+        secret_key: string
+    """
+    database = firestore_database.initialize_db()
+    doc_dict = database.collection(database_schema.COLLECTION_IMAGE_PROVIDERS).\
+        document(provider_id).get().to_dict()
+    return doc_dict[database_schema.COLLECTION_IMAGE_PROVIDERS_FIELD_API_KEY],\
+        doc_dict[database_schema.COLLECTION_IMAGE_PROVIDERS_FIELD_API_KEY]
