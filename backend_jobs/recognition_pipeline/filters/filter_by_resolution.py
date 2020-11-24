@@ -14,8 +14,8 @@
 """
 
 from backend_jobs.recognition_pipeline.pipeline_lib.filter_by import FilterBy
-from backend_jobs.pipeline_utils.utils import get_provider
-from backend_jobs.ingestion_pipeline.main import IMAGE_PROVIDERS
+from backend_jobs.ingestion_pipeline.providers.providers import\
+  get_provider, IMAGE_PROVIDERS
 from backend_jobs.pipeline_utils import database_schema
 
 class FilterByResolution(FilterBy):
@@ -54,7 +54,8 @@ class FilterByResolution(FilterBy):
       """
         for provider_name in image[database_schema.COLLECTION_IMAGES_FIELD_INGESTED_PROVIDERS]:
             provider = get_provider(IMAGE_PROVIDERS, provider_name)
-            resize_url = provider.get_url_for_max_resolution(self.prerequisites, image)
+            resize_url = provider.get_url_for_min_resolution(\
+              self.prerequisites['height'], self.prerequisites['width'], image)
             if resize_url:
                 image[database_schema.COLLECTION_IMAGES_FIELD_URL] = resize_url
                 return True

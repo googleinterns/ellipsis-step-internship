@@ -31,11 +31,10 @@ from apache_beam.options.pipeline_options import PipelineOptions
 from backend_jobs.recognition_pipeline.pipeline_lib.firestore_database import\
     GetBatchedImageDataset, UpdateImageLabelsInDatabase
 from backend_jobs.pipeline_utils.firestore_database import store_pipeline_run
-from backend_jobs.pipeline_utils.utils import get_timestamp_id, get_recognition_provider
-from backend_jobs.recognition_pipeline.providers import google_vision_api
+from backend_jobs.pipeline_utils.utils import generate_job_name
+from backend_jobs.recognition_pipeline.providers.providers import get_recognition_provider
 
-# Maps recognition provider names to an object of the provider.
-_NAME_TO_PROVIDER = {'Google_Vision_API': google_vision_api.GoogleVisionAPI()}
+_PIPELINE_TYPE = 'recognition'
 
 def _validate_args(args):
     """ Checks whether the pipeline's arguments are valid.
@@ -86,11 +85,8 @@ def run(argv=None):
     ingestion_provider = known_args.input_ingestion_provider
     # Creating an object of type ImageRecognitionProvider
     # for the specific image recognition provider input.
-    recognition_provider = get_recognition_provider(known_args.input_recognition_provider,\
-        _NAME_TO_PROVIDER)
-    job_name = 'recognition_{recognition_provider}_{time_id}'.format(time_id = get_timestamp_id(),\
-        recognition_provider = recognition_provider.provider_id.lower()).replace('_','-')
-        # Dataflow job names can only include '-' and not '_'.
+    recognition_provider = get_recognition_provider(known_args.input_recognition_provider)
+    job_name = generate_job_name(_PIPELINE_TYPE, recognition_provider)
     pipeline_options = PipelineOptions(pipeline_args, job_name=job_name)
 
     with beam.Pipeline(options=pipeline_options) as pipeline:
@@ -121,7 +117,7 @@ def run(argv=None):
             output = labeled_images | 'Format' >> beam.MapTuple(format_result)
             output | 'Write' >> WriteToText(known_args.output)
     store_pipeline_run(recognition_provider.provider_id, job_name)
-    
+
 if __name__ == '__main__':
     logging.getLogger().setLevel(logging.INFO)
     run()

@@ -14,15 +14,6 @@
 """
 from datetime import datetime
 
-def get_recognition_provider(provider_name, name_to_provider_map):
-    """ Returns an object of type ImageRecognitionProvider by the specific provider input.
-    If provider is not recognized then throw exception.
-
-    """
-    if provider_name in name_to_provider_map:
-        return name_to_provider_map[provider_name]
-    raise ValueError('{provider} is unknown'.format(provider = provider_name))
-
 def get_timestamp_id():
     """ Returns a string with only numbers as time id.
     The string will be used as a unique id for each dataflow job.
