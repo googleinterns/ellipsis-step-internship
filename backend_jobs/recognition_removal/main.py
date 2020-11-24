@@ -33,7 +33,7 @@ from backend_jobs.pipeline_utils.firestore_database import initialize_db
 from backend_jobs.recognition_pipeline.pipeline_lib.firestore_database import add_id_to_dict
 from backend_jobs.pipeline_utils.utils import get_timestamp_id
 from backend_jobs.recognition_removal.pipeline_lib.firestore_database import\
-    GetBatchedDataset, UpdateLabelsInImageDocs
+    GetBatchedDataset, UpdateLabelsInImageDocs, DeleteDoc
     
 def _validate_args(args):
     """ Checks whether the pipeline's arguments are valid.
@@ -88,6 +88,7 @@ def run(argv=None):
             dataset = indices_for_batching | 'get labels dataset' >> \
                 beam.ParDo(GetBatchedDataset(), recognition_run=recognition_run)
         dataset | 'update database' >> beam.ParDo(UpdateLabelsInImageDocs())
+        indices_for_batching | 'delete docs' >> beam.ParDo(DeleteDoc())
         if known_args.output: # For testing.
             dataset | 'Write' >> WriteToText(known_args.output)
 
