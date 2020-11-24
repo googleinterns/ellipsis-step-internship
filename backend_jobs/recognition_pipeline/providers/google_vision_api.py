@@ -49,7 +49,7 @@ class GoogleVisionAPI(ImageRecognitionProvider):
         docs = []
         i = 0
         for doc in image_docs:
-            url = doc[database_schema.URL]
+            url = doc[database_schema.COLLECTION_IMAGES_FIELD_URL]
             image = vision_v1.Image()
             image.source.image_uri = url
             request = vision_v1.AnnotateImageRequest(image=image, features=features)

@@ -58,7 +58,8 @@ class GetBatchedImageDataset(beam.DoFn):
 
         """
         if ingestion_provider and ingestion_run:
-            raise ValueError('both ingestion provider and run are provided - there should be only one')
+            raise ValueError('both ingestion provider and run are provided -\
+                there should be only one')
         # The lower limit for querying the database by the random field.
         random_min = element * _RANGE_OF_BATCH
         # The higher limit for querying the database by the random field.
@@ -68,12 +69,15 @@ class GetBatchedImageDataset(beam.DoFn):
                 where(database_schema.COLLECTION_IMAGES_FIELD_INGESTED_RUNS, \
                     u'array_contains', ingestion_run).\
                         where(database_schema.COLLECTION_IMAGES_FIELD_RANDOM, u'>=', random_min).\
-                            where(database_schema.COLLECTION_IMAGES_FIELD_RANDOM, u'<', random_max).stream()
+                            where(database_schema.COLLECTION_IMAGES_FIELD_RANDOM, \
+                                u'<', random_max).stream()
         else:
             query = self.db.collection(database_schema.COLLECTION_IMAGES).\
-                where(database_schema.COLLECTION_IMAGES_FIELD_INGESTED_PROVIDERS, u'array_contains', ingestion_provider).\
-                    where(database_schema.COLLECTION_IMAGES_FIELD_RANDOM, u'>=', random_min).\
-                        where(database_schema.COLLECTION_IMAGES_FIELD_RANDOM, u'<', random_max).stream()
+                where(database_schema.COLLECTION_IMAGES_FIELD_INGESTED_PROVIDERS, \
+                    u'array_contains', ingestion_provider).\
+                        where(database_schema.COLLECTION_IMAGES_FIELD_RANDOM, u'>=', random_min).\
+                            where(database_schema.COLLECTION_IMAGES_FIELD_RANDOM,\
+                                u'<', random_max).stream()
         return (add_id_to_dict(doc) for doc in query)
 
 def add_id_to_dict(doc):
