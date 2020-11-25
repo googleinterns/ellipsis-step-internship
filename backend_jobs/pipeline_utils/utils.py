@@ -34,6 +34,6 @@ def generate_job_name(pipeline_type, provider):
     job_name = '{pipeline_type}_{provider}_{time_id}'.format(
       pipeline_type = pipeline_type,
       time_id = get_timestamp_id(),
-      provider = provider.provider_id.lower()).replace('_','-')
+      provider = provider.provider_id.lower())
       # Dataflow job names can only include '-' and not '_'.
-    return job_name
+    return job_name.replace('_','-')

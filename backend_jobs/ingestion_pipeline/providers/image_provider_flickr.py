@@ -19,9 +19,10 @@ from backend_jobs.ingestion_pipeline.pipeline_lib.image_provider_interface impor
 from backend_jobs.ingestion_pipeline.pipeline_lib.data_types import ImageType
 from backend_jobs.ingestion_pipeline.pipeline_lib.data_types import VisibilityType
 from backend_jobs.ingestion_pipeline.pipeline_lib.data_types import ImageAttributes
+from backend_jobs.ingestion_pipeline.pipeline_lib.firestore_database import get_provider_key
 
-_FLICKR_API_KEY = '2d00397e012c30ccc33ca4fdc05a5c98'
-_FLICKR_SECRET_KEY =  'e36a277c77f09fdd'
+_PROVIDER_ID = 'Flickr-2020'
+_FLICKR_API_KEY, _FLICKR_SECRET_KEY = get_provider_key(_PROVIDER_ID)
 _NUM_OF_IMAGES = 100
 FLICKER_API = flickrapi.FlickrAPI(_FLICKR_API_KEY, _FLICKR_SECRET_KEY, cache = True)
 
@@ -88,7 +89,7 @@ class FlickrProvider(ImageProvider):
         raise ValueError('No url with requested resolution')
 
 
-    provider_id = 'FlickrProvider-2020'
+    provider_id = _PROVIDER_ID
     provider_name ='FlickrProvider'
     provider_version = '2.4.0'
     enabled = True
