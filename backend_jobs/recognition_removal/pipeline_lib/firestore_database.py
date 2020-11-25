@@ -125,4 +125,3 @@ class UpdateLabelsInImageDocs(beam.DoFn):
         image_doc_ref.update({
             database_schema.COLLECTION_IMAGES_FIELD_LABELS: labels_array
         })
-        
