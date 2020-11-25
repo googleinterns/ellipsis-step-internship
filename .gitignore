@@ -31,3 +31,9 @@ backend_jobs/recognition_pipeline/.vscode/launch.json
 backend_jobs/recognition_pipeline/dist/recognition-pipeline-OFRI-AVIELI-0.0.1.tar.gz
 
 backend_jobs/pipeline_utils/__pycache__/
+backend_jobs/verify_labels/verify_labels_OFRI_AVIELI.egg-info/
+backend_jobs/verify_labels/dist/verify_labels_OFRI_AVIELI-0.0.1-py3.7.egg
+backend_jobs/verify_labels/pipeline_lib/__pycache__/
+backend_jobs/verify_labels/__pycache__/
+backend_jobs/recognition_removal/pipeline_lib/__pycache__/
+backend_jobs/verify_labels/build/lib/

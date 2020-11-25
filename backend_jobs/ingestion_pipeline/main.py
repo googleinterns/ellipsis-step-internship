@@ -16,7 +16,6 @@
 from __future__ import absolute_import
 import argparse
 import logging
-import hashlib
 import apache_beam
 from apache_beam.io import WriteToText
 from apache_beam.options.pipeline_options import PipelineOptions
@@ -33,9 +32,7 @@ def _generate_image_id(image):
     Returns:
         image: Type ImageAttributes with an updated unique id.
     """
-    hash_url = hashlib.sha1(image.url.encode())
-    hex_hash_id = hash_url.hexdigest()
-    image.image_id = hex_hash_id
+    image.image_id = str(hash(image.url))
     return image
 
 def _validate_args(args):
@@ -75,7 +72,7 @@ def run(argv=None):
     parser.add_argument(
         '--input_provider_args',
         dest = 'input_provider_args',
-        default = '',
+        default = None,
         help = 'args to query by provider.')
     parser.add_argument(
         '--output',
@@ -93,7 +90,7 @@ def run(argv=None):
     if not image_provider.enabled:
         raise ValueError('ingestion provider is not enabled')
 
-    job_name = utils.generate_job_name('ingestion', image_provider)
+    job_name = utils.generate_job_name('ingestion', image_provider.provider_id)
     pipeline_options = PipelineOptions(pipeline_args, job_name=job_name)
 
     # The pipeline will be run on exiting the with block.
@@ -102,7 +99,7 @@ def run(argv=None):
 
         num_of_pages = image_provider.get_num_of_pages()
         create_batch = (pipeline | 'create' >> \
-            apache_beam.Create([i for i in range(1, int(num_of_pages)+1)]))
+            apache_beam.Create([i for i in range(1, int(6)+1)]))
         images = create_batch | 'call API' >> \
             apache_beam.ParDo(image_provider.get_images)
         extracted_elements = images | 'extract attributes' >> \

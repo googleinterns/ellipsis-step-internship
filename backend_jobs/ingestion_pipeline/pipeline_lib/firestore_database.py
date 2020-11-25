@@ -23,6 +23,7 @@ from backend_jobs.pipeline_utils import firestore_database
 from backend_jobs.pipeline_utils import database_schema
 from backend_jobs.ingestion_pipeline.pipeline_lib.data_types import VisibilityType
 
+_RANDOM = random.random()
 
 class AddOrUpdateImageDoFn(apache_beam.DoFn):
     """ Stores asynchronously the entity of ImageAttributes type from each image in the
@@ -76,7 +77,7 @@ def _add_document(element, provider, job_name, doc_ref):
             },
         },
         database_schema.COLLECTION_IMAGES_FIELD_ATTRIBUTION: element.attribution,
-        database_schema.COLLECTION_IMAGES_FIELD_RANDOM: random.random(),
+        database_schema.COLLECTION_IMAGES_FIELD_RANDOM: _RANDOM,
         database_schema.COLLECTION_IMAGES_FIELD_VISIBILITY: provider.visibility.value,
     })
 
@@ -109,6 +110,10 @@ def _update_sub_collection(element, provider, job_name, sub_collection_doc_ref):
             job_name,
         database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS_FIELD_HASHMAP: \
             geo_hashes_map,
+        database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS_FIELD_RANDOM: \
+            _RANDOM,
+        database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS_FIELD_PARENT_IMAGE_ID: \
+            element.image_id
     })
 
 def _get_geo_hashes_map(latitude, longitude):
