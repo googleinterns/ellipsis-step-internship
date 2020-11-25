@@ -32,7 +32,7 @@ def initialize_db():
     return firestore.client()
 
 def store_pipeline_run(provider_id, run_id):
-    """ Uploads information about the pipeline run to the Firestore collection
+    """ Uploads information about the pipeline run to the database_schema.COLLECTION_PIPELINE_RUNS collection
 
     """
     # pylint: disable=fixme
@@ -42,6 +42,7 @@ def store_pipeline_run(provider_id, run_id):
         database_schema.COLLECTION_PIPELINE_RUNS_FIELD_PROVIDER_ID: provider_id,
         database_schema.COLLECTION_PIPELINE_RUNS_FIELD_START_DATE: 00,
         database_schema.COLLECTION_PIPELINE_RUNS_FIELD_END_DATE: 00,
-        database_schema.COLLECTION_PIPELINE_RUNS_FIELD_VISIBILITY: database_schema.LABEL_VISIBILITY_INVISIBLE ,
+        database_schema.COLLECTION_PIPELINE_RUNS_FIELD_VISIBILITY:\
+            database_schema.LABEL_VISIBILITY_INVISIBLE ,
         database_schema.COLLECTION_PIPELINE_RUNS_FIELD_PIPELINE_RUN_ID: run_id
     })

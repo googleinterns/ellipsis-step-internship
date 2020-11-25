@@ -12,7 +12,8 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 
-  Sets up the packages required for the pipeline's imports.
+  Sets up the packages required for cloud dataflow pipeline imports.
+
 """
 import setuptools
 
