@@ -19,11 +19,18 @@ import geohash2
 import numpy as np
 import math
 
-latlong_sf = (37.7749, 122.4194)
+latlong_zero = (0, 0)
 
 def get_quantization_error(precision=12):
-  """Computes the quantization error for a certain geohash precision (for San Francisco)."""
-  location_and_error_margin = np.array(geohash2.decode_exactly(geohash2.encode(latlong_sf[0],latlong_sf[1], precision=precision)))
+  """Computes the maximal quantization error for a certain geohash precision.
+
+  More specifically, it gives the diagonal in meters of the cell defined by a
+  specific geohash precision. It does so at the equator, where cells are the
+  largest.
+  The computed errors were verified against:
+   https://www.elastic.co/guide/en/elasticsearch/reference/current/search-aggregations-bucket-geohashgrid-aggregation.html#_cell_dimensions_at_the_equator
+  """
+  location_and_error_margin = np.array(geohash2.decode_exactly(geohash2.encode(latlong_zero[0],latlong_zero[1], precision=precision)))
   location = location_and_error_margin[0:2]
   error_margin = location_and_error_margin[2:]
   error_in_meters = geopy.distance.distance(location-error_margin, location+error_margin).m
@@ -34,7 +41,7 @@ def get_quantization_error(precision=12):
 def zoom_to_meters_per_pixel(zoom):
   """Computes the meters in each pixel on Google maps  (for San Francisco).
 
-  This corresponds to the fomula provided by
+  This corresponds to the formula provided by
   https://groups.google.com/g/google-maps-js-api-v3/c/hDRO4oHVSeM/m/osOYQYXg2oUJ
 
   Args:
@@ -44,7 +51,7 @@ def zoom_to_meters_per_pixel(zoom):
     meters_per_pixel: the size of a pixel in meters.
 
   """
-  return 156543.03392 * math.cos(latlong_sf[0] * math.pi / 180) / math.pow(2, zoom)
+  return 156543.03392 * math.cos(latlong_zero[0] * math.pi / 180) / math.pow(2, zoom)
 
 digits2error = {num_digits: get_quantization_error(num_digits) for num_digits in range(0,23)}
 if __name__ == "__main__":
