@@ -19,12 +19,14 @@ from backend_jobs.ingestion_pipeline.pipeline_lib.image_provider_interface impor
 from backend_jobs.ingestion_pipeline.pipeline_lib.data_types import ImageType
 from backend_jobs.ingestion_pipeline.pipeline_lib.data_types import VisibilityType
 from backend_jobs.ingestion_pipeline.pipeline_lib.data_types import ImageAttributes
-from backend_jobs.ingestion_pipeline.pipeline_lib.firestore_database import get_provider_key
+from backend_jobs.ingestion_pipeline.pipeline_lib.firestore_database import get_provider_keys
 
 _PROVIDER_ID = 'Flickr-2020'
-_FLICKR_API_KEY, _FLICKR_SECRET_KEY = get_provider_key(_PROVIDER_ID)
-_NUM_OF_IMAGES = 100
-FLICKER_API = flickrapi.FlickrAPI(_FLICKR_API_KEY, _FLICKR_SECRET_KEY, cache = True)
+_PROVIDER_KEYS = get_provider_keys(_PROVIDER_ID)
+_FLICKR_API_KEY = _PROVIDER_KEYS['apiKey']
+_FLICKR_SECRET_KEY = _PROVIDER_KEYS['secretKey']
+_NUM_OF_IMAGES_PER_PAGE = 100
+_FLICKER_API = flickrapi.FlickrAPI(_FLICKR_API_KEY, _FLICKR_SECRET_KEY, cache = True)
 
 class FlickrProvider(ImageProvider):
     """ Flickr supports using there urls so we do not need to copy images over.
@@ -36,7 +38,7 @@ class FlickrProvider(ImageProvider):
         self.query_arguments = _parse_query_arguments(query_arguments)
 
     def get_images(self, page_number):
-        photos = FLICKER_API.photos.search(
+        photos = _FLICKER_API.photos.search(
             # Returns images containing the text in their title, description or tags.
             text = self.query_arguments['text'],
             # Returns images containing the tags listed (multiple tags are delimited by commas).
@@ -45,7 +47,7 @@ class FlickrProvider(ImageProvider):
             tag_mode = self.query_arguments['tag_mode'],
             extras = 'url_c, geo, date_upload, date_taken, original_format, \
                 owner_name, original_format',
-            per_page = _NUM_OF_IMAGES,
+            per_page = _NUM_OF_IMAGES_PER_PAGE,
             page = page_number,
             sort = 'relevance')
         return photos[0] # return Element 'photos'
@@ -75,22 +77,32 @@ class FlickrProvider(ImageProvider):
         # in flickr the resolution is represented in the url.
         # See details at https://www.flickr.com/services/api/misc.urls.html
         url = image['url']
-        max_resolution =  max(min_height, min_width)
+        num_of_underscores = url.count('_')
+        min_resolution =  max(min_height, min_width)
         # Maping between the char that represents max resolution and the max resolution.
         flickr_resolution_map = {2048: 'k', 1600: 'n', 1024: 'b', 800: 'c', 640: 'z',500: '',
         400: 'w', 320: 'n', 240: 'm', 150: 'q', 100: 't', 75: 's'}
         for key in flickr_resolution_map:
-            if  max_resolution >= key:
-                if key == 500:
-                    # Removing the char that represents the resolution to get max resolution of 500.
-                    return  url[:-6] + url[-4:]
-                # Replacing the char that represents the resolution with the wonted key.
-                return  url[:-5] + flickr_resolution_map[key] + url[-4:]
+            # Url in the format: https://live.staticflickr.com/{server-id}/{id}_{secret}_{size-suffix}.jpg
+            if num_of_underscores == 3:
+                if  min_resolution >= key:
+                    if key == 500:
+                        # Removing the char that represents the resolution to get max resolution of 500.
+                        return  url[:-6] + url[-4:]
+                    # Replacing the char that represents the resolution with the wonted key.
+                    return  url[:-5] + flickr_resolution_map[key] + url[-4:]
+            # Url in the format: https://live.staticflickr.com/{server-id}/{id}_{secret}.jpg
+            else:
+                if  min_resolution >= key:
+                    if key == 500:
+                        # Removing the char that represents the resolution to get max resolution of 500.
+                        return  url
+                    # Adding the char that represents the resolution with the wonted key.
+                    return  url[:-4] + '_' + flickr_resolution_map[key] + url[-4:]
         raise ValueError('No url with requested resolution')
 
-
     provider_id = _PROVIDER_ID
-    provider_name ='FlickrProvider'
+    provider_name = 'FlickrProvider'
     provider_version = '2.4.0'
     enabled = True
     visibility = VisibilityType.INVISIBLE

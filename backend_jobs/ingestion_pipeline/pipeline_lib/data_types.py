@@ -45,4 +45,4 @@ class ImageAttributes():
     height_pixels: int # Image height resolution, e.g. 500.
     width_pixels: int # Image width resolution, e.g. 500.
     latitude: float # Image latitude coordinate, between -90 and 90.
-    longitude: float # Image longitude coordinate, between 80 and 180.
+    longitude: float # Image longitude coordinate, between -180 and 180.

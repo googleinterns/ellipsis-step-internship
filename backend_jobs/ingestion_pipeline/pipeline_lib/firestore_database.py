@@ -81,17 +81,18 @@ def _add_document(element, provider, job_name, doc_ref):
     })
 
 def _update_document(provider, doc, doc_ref, job_name):
-    ingested_runs = doc.to_dict()[database_schema.COLLECTION_IMAGES_FIELD_INGESTED_RUNS]
+    doc_to_dict = doc.to_dict()
+    ingested_runs = doc_to_dict[database_schema.COLLECTION_IMAGES_FIELD_INGESTED_RUNS]
     ingested_runs.append(job_name)
-    ingested_providers = doc.to_dict()[database_schema.COLLECTION_IMAGES_FIELD_INGESTED_PROVIDERS]
+    ingested_providers = doc_to_dict[database_schema.COLLECTION_IMAGES_FIELD_INGESTED_PROVIDERS]
     if provider.provider_name not in ingested_providers:
         ingested_providers.append(provider.provider_name)
     doc_ref.update({
         database_schema.COLLECTION_IMAGES_FIELD_INGESTED_RUNS: ingested_runs,
         database_schema.COLLECTION_IMAGES_FIELD_INGESTED_PROVIDERS: ingested_providers,
         database_schema.COLLECTION_IMAGES_FIELD_VISIBILITY: _get_max_visibility(
-            VisibilityType(provider.visibility.value),
-            doc.to_dict()[database_schema.COLLECTION_IMAGES_FIELD_VISIBILITY]),
+            doc_to_dict[database_schema.COLLECTION_IMAGES_FIELD_VISIBILITY],
+            provider.visibility).value
     })
 
 def _update_sub_collection(element, provider, job_name, sub_collection_doc_ref):
@@ -122,10 +123,10 @@ def _get_geo_hashes_map(latitude, longitude):
         A dict contaning geohash in all the diffrent lengths
         e.g.: {'hash1':'d', 'hash2':'dp', 'hash3':'dph', ... 'hash10':'dph1qz7y88',}.
     """
-    geo_hashes_map={}
-    geohash=geohash2.encode(latitude, longitude)
+    geo_hashes_map = {}
+    geohash = geohash2.encode(latitude, longitude)
     for i in range(1,11):
-        geo_hashes_map['hash'+str(i)]= geohash[0:i]
+        geo_hashes_map['hash' + str(i)] = geohash[0:i]
     return geo_hashes_map
 
 def _get_date_fields(date):
@@ -143,17 +144,17 @@ def _get_max_visibility(first_visibility, second_visibility):
     """ This function returns the max visibility between two given visibilities.
 
     Args:
-        first_visibility: VISIBLE or INVISIBLE.
-        second_visibility: VISIBLE or INVISIBLE.
+        first_visibility: VisibilityType e.g. VISIBLE or INVISIBLE.
+        second_visibility: VisibilityType e.g. VISIBLE or INVISIBLE.
 
     Returns:
-        max visibility 0 or 1.
+        VisibilityType e.g. VISIBLE or INVISIBLE.
     """
     if first_visibility== VisibilityType.VISIBLE  or second_visibility == VisibilityType.VISIBLE :
-        return VisibilityType.VISIBLE.value
-    return VisibilityType.INVISIBLE.value
+        return VisibilityType.VISIBLE
+    return VisibilityType.INVISIBLE
 
-def get_provider_key(provider_id):
+def get_provider_keys(provider_id):
     """ This function given a provider id gets the Api key and Secret key
     from the database.
 
@@ -161,11 +162,10 @@ def get_provider_key(provider_id):
         provider_id: string the providers id.
 
     Returns:
-        api_key: string
-        secret_key: string
+        Dict containing all of the providers keys e.g. secret key and api key,
+        {'secretKey': 'X', 'apiKey': 'Y'}
     """
     database = firestore_database.initialize_db()
     doc_dict = database.collection(database_schema.COLLECTION_IMAGE_PROVIDERS).\
         document(provider_id).get().to_dict()
-    return doc_dict[database_schema.COLLECTION_IMAGE_PROVIDERS_FIELD_API_KEY],\
-        doc_dict[database_schema.COLLECTION_IMAGE_PROVIDERS_FIELD_API_KEY]
+    return doc_dict[database_schema.COLLECTION_IMAGE_PROVIDERS_FIELD_PROVIDER_KEYS]

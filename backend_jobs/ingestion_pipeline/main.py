@@ -62,7 +62,7 @@ def run(argv=None):
 
     Input:
         input_provider_name- the image provider to ingest images from.
-        input_provider_args(optional)- arguments to get images by.
+        input_provider_args- optional query to pass to the image provider.
         e.g 'tags:cat,dog-tag_mode:any'.
     """
     # Using external parser: https://docs.python.org/3/library/argparse.html 

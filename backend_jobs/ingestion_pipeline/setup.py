@@ -12,12 +12,12 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 
-  Sets up the packages required for the pipeline's imports.
+  Sets up the packages required for cloud dataflow pipeline imports.
  """
 import setuptools
 
 setuptools.setup(
-    name="ingestion-pipeline_TALTAMIR",
+    name="backend-pipelines",
     version="0.0.1",
     packages=setuptools.find_packages(),
     classifiers=[
