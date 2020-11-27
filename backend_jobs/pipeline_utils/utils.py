@@ -21,7 +21,7 @@ def get_timestamp_id():
     """
     return str(datetime.timestamp(datetime.now())).replace('.','')
 
-def generate_job_name(pipeline_type, provider):
+def generate_cloud_dataflow_job_name(pipeline_type, provider):
     """ Returns a unique job_name given pipeline_type and a provider.
 
     Args:

@@ -110,6 +110,10 @@ def _update_sub_collection(element, provider, job_name, sub_collection_doc_ref):
             job_name,
         database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS_FIELD_HASHMAP: \
             geo_hashes_map,
+        database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS_FIELD_RANDOM: \
+            random.random(),
+        database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS_FIELD_PARENT_IMAGE_ID: \
+            element.image_id
     })
 
 def _get_geo_hashes_map(latitude, longitude):
@@ -117,7 +121,7 @@ def _get_geo_hashes_map(latitude, longitude):
     and builds a map containing a geohash in different lengths.
 
     Args:
-        coordinates: Coordinates in the format {'latitude':float,'longitude':float}.
+        coordinates: Coordinates in the format {'latitude': float, 'longitude': float}.
 
     Returns:
         A dict contaning geohash in all the diffrent lengths
@@ -150,7 +154,7 @@ def _get_max_visibility(first_visibility, second_visibility):
     Returns:
         VisibilityType e.g. VISIBLE or INVISIBLE.
     """
-    if first_visibility== VisibilityType.VISIBLE  or second_visibility == VisibilityType.VISIBLE :
+    if first_visibility == VisibilityType.VISIBLE or second_visibility == VisibilityType.VISIBLE :
         return VisibilityType.VISIBLE
     return VisibilityType.INVISIBLE
 

@@ -26,7 +26,6 @@ _PROVIDER_KEYS = get_provider_keys(_PROVIDER_ID)
 _FLICKR_API_KEY = _PROVIDER_KEYS['apiKey']
 _FLICKR_SECRET_KEY = _PROVIDER_KEYS['secretKey']
 _NUM_OF_IMAGES_PER_PAGE = 100
-_FLICKER_API = flickrapi.FlickrAPI(_FLICKR_API_KEY, _FLICKR_SECRET_KEY, cache = True)
 
 class FlickrProvider(ImageProvider):
     """ Flickr supports using there urls so we do not need to copy images over.
@@ -38,7 +37,7 @@ class FlickrProvider(ImageProvider):
         self.query_arguments = _parse_query_arguments(query_arguments)
 
     def get_images(self, page_number):
-        photos = _FLICKER_API.photos.search(
+        photos = self.flickr_api.photos.search(
             # Returns images containing the text in their title, description or tags.
             text = self.query_arguments['text'],
             # Returns images containing the tags listed (multiple tags are delimited by commas).
@@ -78,13 +77,13 @@ class FlickrProvider(ImageProvider):
         # See details at https://www.flickr.com/services/api/misc.urls.html
         url = image['url']
         num_of_underscores = url.count('_')
-        min_resolution =  max(min_height, min_width)
+        min_resolution =  min(min_height, min_width)
         # Maping between the char that represents max resolution and the max resolution.
-        flickr_resolution_map = {2048: 'k', 1600: 'n', 1024: 'b', 800: 'c', 640: 'z',500: '',
+        flickr_resolution_map = {2048: 'k', 1600: 'n', 1024: 'b', 800: 'c', 640: 'z', 500: '',
         400: 'w', 320: 'n', 240: 'm', 150: 'q', 100: 't', 75: 's'}
         for key in flickr_resolution_map:
             # Url in the format: https://live.staticflickr.com/{server-id}/{id}_{secret}_{size-suffix}.jpg
-            if num_of_underscores == 3:
+            if num_of_underscores == 2:
                 if  min_resolution >= key:
                     if key == 500:
                         # Removing the char that represents the resolution to get max resolution of 500.
@@ -101,6 +100,8 @@ class FlickrProvider(ImageProvider):
                     return  url[:-4] + '_' + flickr_resolution_map[key] + url[-4:]
         raise ValueError('No url with requested resolution')
 
+    
+    flickr_api = flickrapi.FlickrAPI(_FLICKR_API_KEY, _FLICKR_SECRET_KEY, cache = True)
     provider_id = _PROVIDER_ID
     provider_name = 'FlickrProvider'
     provider_version = '2.4.0'

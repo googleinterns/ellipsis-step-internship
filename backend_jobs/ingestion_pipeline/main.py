@@ -64,6 +64,15 @@ def run(argv=None):
         input_provider_name- the image provider to ingest images from.
         input_provider_args- optional query to pass to the image provider.
         e.g 'tags:cat,dog-tag_mode:any'.
+
+        Additional parameters that are being forwarded to the PipelineOptions:
+        region- The rigion the job runs, e.g. europe-west2.
+        output- Where to save the outpot, e.g. outputs.txt.
+        runner- The runner of the job, e.g. DataflowRunner.
+        project- Project id, e.g. step-project-ellispis.
+        requirements_file- A file with all externall imports, e.g. requirements.txt.
+        extra_package- A zip file with all internal import packages,
+        e.g. pipeline-BACKEND_JOBS-0.0.1.tar.gz.
     """
     # Using external parser: https://docs.python.org/3/library/argparse.html 
     parser = argparse.ArgumentParser()
@@ -93,7 +102,7 @@ def run(argv=None):
     if not image_provider.enabled:
         raise ValueError('ingestion provider is not enabled')
 
-    job_name = utils.generate_job_name('ingestion', image_provider)
+    job_name = utils.generate_cloud_dataflow_job_name('ingestion', image_provider)
     pipeline_options = PipelineOptions(pipeline_args, job_name=job_name)
 
     # The pipeline will be run on exiting the with block.
