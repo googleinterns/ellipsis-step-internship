@@ -84,12 +84,12 @@ def run(argv=None):
             dataset = indices_for_batching | 'get labels dataset and delete Firebase docs' >> \
                 beam.ParDo(GetBatchedDatasetAndDeleteFromDatabase(),\
                     recognition_provider=recognition_provider)
-            dataset | 'update database' >> beam.ParDo(UpdateLabelsInImageDocs(), recognition_provider = recognition_provider)
         else:
             dataset = indices_for_batching | 'get labels dataset and delete Firebase docs' >> \
                 beam.ParDo(GetBatchedDatasetAndDeleteFromDatabase(),\
                     recognition_run=recognition_run)
-            dataset | 'update database' >> beam.ParDo(UpdateLabelsInImageDocs(), recognition_run = recognition_run)
+        all_deleted_dataset = dataset | beam.ParDo(lambda element: [element])
+        all_deleted_dataset | 'update database' >> beam.ParDo(UpdateLabelsInImageDocs())
 
         if known_args.output: # For testing.
             dataset | 'Write' >> WriteToText(known_args.output)

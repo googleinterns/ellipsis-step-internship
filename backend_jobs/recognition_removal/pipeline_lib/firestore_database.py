@@ -90,7 +90,7 @@ class UpdateLabelsInImageDocs(beam.DoFn):
         self.db = initialize_db()
 
     # pylint: disable=arguments-differ
-    def process(self, element, recognition_provider = None, recognition_run = None):
+    def process(self, element):
         """
 
         """
@@ -106,14 +106,6 @@ class UpdateLabelsInImageDocs(beam.DoFn):
                             u'array_contains', label_id).where(\
                                 database_schema.COLLECTION_IMAGES_SUBCOLLECTION_LABELS_FIELD_VISIBILITY, u'==',\
                                     database_schema.LABEL_VISIBILITY_VISIBLE)
-            if recognition_provider:
-                query = query.where(database_schema.COLLECTION_IMAGES_SUBCOLLECTION_LABELS_FIELD_PROVIDER_ID, u'<',\
-                    recognition_provider).where(database_schema.COLLECTION_IMAGES_SUBCOLLECTION_LABELS_FIELD_PROVIDER_ID, u'>',\
-                        recognition_provider)
-            else:
-                query = query.where(database_schema.COLLECTION_IMAGES_SUBCOLLECTION_LABELS_FIELD_PIPELINE_RUN_ID, u'<',\
-                    recognition_run).where(database_schema.COLLECTION_IMAGES_SUBCOLLECTION_LABELS_FIELD_PIPELINE_RUN_ID, u'>',\
-                        recognition_run)
             if len(query.get()) == 0:
                 self._delete_label_id_from_labels_array(parent_image_ref, label_id)
 
