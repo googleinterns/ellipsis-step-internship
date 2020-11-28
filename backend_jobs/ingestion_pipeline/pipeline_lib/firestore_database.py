@@ -48,13 +48,14 @@ class AddOrUpdateImageDoFn(apache_beam.DoFn):
         sub_collection_ref = doc_ref.collection(database_schema.COLLECTION_PIPELINE_RUNS)
         sub_collection_doc_ref = sub_collection_ref.document()
         if doc.exists:
-            #doc found- image has been ingested already
+            # Doc found- image has been ingested already
             _update_document(provider, doc, doc_ref, job_name)
         else:
-            #doc not found- image has not been ingested already
+            # Doc not found- image has not been ingested already
             _add_document(element, provider, job_name, doc_ref)
-        #Adding a doc to the sub collection (pipelinerun) in the image collection
+        # Adding a doc to the sub collection (pipelinerun) in the image collection
         _update_sub_collection(element, provider, job_name, sub_collection_doc_ref)
+
 
 def _add_document(element, provider, job_name, doc_ref):
     geo_point_coordinates = firestore.GeoPoint(element.latitude, element.longitude)
@@ -66,7 +67,7 @@ def _add_document(element, provider, job_name, doc_ref):
         database_schema.COLLECTION_IMAGES_FIELD_COORDINATES: geo_point_coordinates,
         database_schema.COLLECTION_IMAGES_FIELD_DATE_INGESTED: datetime.now(),
         database_schema.COLLECTION_IMAGES_FIELD_DATE_SHOT: element.date_shot,
-        database_schema.COLLECTION_IMAGES_FIELD_DATE_FIELDS:_get_date_fields(element.date_shot),
+        database_schema.COLLECTION_IMAGES_FIELD_DATE_FIELDS: _get_date_fields(element.date_shot),
         database_schema.COLLECTION_IMAGES_FIELD_HASHMAP: geo_hashes_map,
         database_schema.COLLECTION_IMAGES_FIELD_IMAGE_ATTRIBUTES: {
             database_schema.COLLECTION_IMAGES_FIELD_FORMAT: element.format,
@@ -79,6 +80,7 @@ def _add_document(element, provider, job_name, doc_ref):
         database_schema.COLLECTION_IMAGES_FIELD_RANDOM: random.random(),
         database_schema.COLLECTION_IMAGES_FIELD_VISIBILITY: provider.visibility.value,
     })
+
 
 def _update_document(provider, doc, doc_ref, job_name):
     doc_to_dict = doc.to_dict()
@@ -95,26 +97,28 @@ def _update_document(provider, doc, doc_ref, job_name):
             provider.visibility).value
     })
 
+
 def _update_sub_collection(element, provider, job_name, sub_collection_doc_ref):
     geo_hashes_map = _get_geo_hashes_map(element.latitude, element.longitude)
     sub_collection_doc_ref.set({
-        database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS_FIELD_PROVIDER_ID: \
+        database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS_FIELD_PROVIDER_ID:
             provider.provider_id,
-        database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS_FIELD_PROVIDER_NAME: \
+        database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS_FIELD_PROVIDER_NAME:
             provider.provider_name,
-        database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS_FIELD_PROVIDER_VERSION: \
+        database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS_FIELD_PROVIDER_VERSION:
             provider.provider_version,
-        database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS_FIELD_VISIBILITY: \
+        database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS_FIELD_VISIBILITY:
             provider.visibility.value,
-        database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS_FIELD_PIPELINE_RUN_ID: \
+        database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS_FIELD_PIPELINE_RUN_ID:
             job_name,
-        database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS_FIELD_HASHMAP: \
+        database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS_FIELD_HASHMAP:
             geo_hashes_map,
-        database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS_FIELD_RANDOM: \
+        database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS_FIELD_RANDOM:
             random.random(),
-        database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS_FIELD_PARENT_IMAGE_ID: \
+        database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS_FIELD_PARENT_IMAGE_ID:
             element.image_id
     })
+
 
 def _get_geo_hashes_map(latitude, longitude):
     """ This function, given a coordinates (lat,long), calculates the geohash
@@ -129,9 +133,10 @@ def _get_geo_hashes_map(latitude, longitude):
     """
     geo_hashes_map = {}
     geohash = geohash2.encode(latitude, longitude)
-    for i in range(1,11):
+    for i in range(1, 11):
         geo_hashes_map['hash' + str(i)] = geohash[0:i]
     return geo_hashes_map
+
 
 def _get_date_fields(date):
     """ This function converts a datetime object to a map object contaning the date.
@@ -144,6 +149,7 @@ def _get_date_fields(date):
     """
     return {'year': date.year, 'month': date.month, 'day': date.day}
 
+
 def _get_max_visibility(first_visibility, second_visibility):
     """ This function returns the max visibility between two given visibilities.
 
@@ -154,9 +160,10 @@ def _get_max_visibility(first_visibility, second_visibility):
     Returns:
         VisibilityType e.g. VISIBLE or INVISIBLE.
     """
-    if first_visibility == VisibilityType.VISIBLE or second_visibility == VisibilityType.VISIBLE :
+    if first_visibility == VisibilityType.VISIBLE or second_visibility == VisibilityType.VISIBLE:
         return VisibilityType.VISIBLE
     return VisibilityType.INVISIBLE
+
 
 def get_provider_keys(provider_id):
     """ This function given a provider id gets the Api key and Secret key

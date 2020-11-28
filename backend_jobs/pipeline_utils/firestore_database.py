@@ -15,10 +15,11 @@
 import firebase_admin
 from firebase_admin import credentials
 from firebase_admin import firestore
-from backend_jobs.pipeline_utils import database_schema, constants
+from backend_jobs.pipeline_utils import database_schema
 
 PROJECT_ID_NAME = 'step-project-ellispis'
 PROJECT_ID = 'projectId'
+
 
 def initialize_db():
     """Initializes project's Firestore database for writing and reading purposes
@@ -30,12 +31,14 @@ def initialize_db():
     # pylint: disable=protected-access
     if not firebase_admin._apps:
         firebase_admin.initialize_app(credentials.ApplicationDefault(), {
-        PROJECT_ID: PROJECT_ID_NAME,
+            PROJECT_ID: PROJECT_ID_NAME,
         })
     return firestore.client()
 
+
 def store_pipeline_run(provider_id, run_id):
-    """ Uploads information about the pipeline run to the database_schema.COLLECTION_PIPELINE_RUNS collection
+    """ Uploads information about the pipeline run to the
+    database_schema.COLLECTION_PIPELINE_RUNS collection
 
     """
     # pylint: disable=fixme
@@ -45,7 +48,7 @@ def store_pipeline_run(provider_id, run_id):
         database_schema.COLLECTION_PIPELINE_RUNS_FIELD_PROVIDER_ID: provider_id,
         database_schema.COLLECTION_PIPELINE_RUNS_FIELD_START_DATE: 00,
         database_schema.COLLECTION_PIPELINE_RUNS_FIELD_END_DATE: 00,
-        database_schema.COLLECTION_PIPELINE_RUNS_FIELD_VISIBILITY:\
-            database_schema.LABEL_VISIBILITY_INVISIBLE ,
+        database_schema.COLLECTION_PIPELINE_RUNS_FIELD_VISIBILITY:
+            database_schema.LABEL_VISIBILITY_INVISIBLE,
         database_schema.COLLECTION_PIPELINE_RUNS_FIELD_PIPELINE_RUN_ID: run_id
     })

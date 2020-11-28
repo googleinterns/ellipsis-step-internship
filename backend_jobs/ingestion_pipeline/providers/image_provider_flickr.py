@@ -27,6 +27,7 @@ _FLICKR_API_KEY = _PROVIDER_KEYS['apiKey']
 _FLICKR_SECRET_KEY = _PROVIDER_KEYS['secretKey']
 _NUM_OF_IMAGES_PER_PAGE = 100
 
+
 class FlickrProvider(ImageProvider):
     """ Flickr supports using there urls so we do not need to copy images over.
     Flicker provides metadata as url, resolution,, location etc and does not provide color depth and
@@ -39,36 +40,36 @@ class FlickrProvider(ImageProvider):
     def get_images(self, page_number):
         photos = self.flickr_api.photos.search(
             # Returns images containing the text in their title, description or tags.
-            text = self.query_arguments['text'],
+            text=self.query_arguments['text'],
             # Returns images containing the tags listed (multiple tags are delimited by commas).
-            tags = self.query_arguments['tags'],
+            tags=self.query_arguments['tags'],
             # 'any' for an OR combination of tags, 'and' for an AND combination of tags.
-            tag_mode = self.query_arguments['tag_mode'],
-            extras = 'url_c, geo, date_upload, date_taken, original_format, \
+            tag_mode=self.query_arguments['tag_mode'],
+            extras='url_c, geo, date_upload, date_taken, original_format, \
                 owner_name, original_format',
-            per_page = _NUM_OF_IMAGES_PER_PAGE,
-            page = page_number,
-            sort = 'relevance')
-        return photos[0] # return Element 'photos'
+            per_page=_NUM_OF_IMAGES_PER_PAGE,
+            page=page_number,
+            sort='relevance')
+        return photos[0]  # return Element 'photos'
 
     def get_num_of_pages(self):
         photos = self.get_images(1)
         return int(photos.attrib['pages'])
 
     def get_image_attributes(self, element):
-        image_attributes=ImageAttributes(
-            url = element.get('url_c'),
-            image_id = None,
-            image_type = ImageType.CAMERA,
-            date_shot = _get_date(element),
-            format = element.get('originalformat'),
-            attribution = element.get('ownername'),
-            latitude = float(element.get('latitude')),
-            longitude = float(element.get('longitude')),
-            #Extracts width from element, if the width equals str converts to int.
-            width_pixels = int(element.get('width_c')) if element.get('width_c') else None,
-            #Extracts height from element, if the height equals str converts to int.
-            height_pixels = int(element.get('height_c')) if element.get('height_c') else None)
+        image_attributes = ImageAttributes(
+            url=element.get('url_c'),
+            image_id=None,
+            image_type=ImageType.CAMERA,
+            date_shot=_get_date(element),
+            format=element.get('originalformat'),
+            attribution=element.get('ownername'),
+            latitude=float(element.get('latitude')),
+            longitude=float(element.get('longitude')),
+            # Extracts width from element, if the width equals str converts to int.
+            width_pixels=int(element.get('width_c')) if element.get('width_c') else None,
+            # Extracts height from element, if the height equals str converts to int.
+            height_pixels=int(element.get('height_c')) if element.get('height_c') else None)
         return image_attributes
 
     def get_url_for_min_resolution(self,  min_height, min_width, image):
@@ -77,36 +78,37 @@ class FlickrProvider(ImageProvider):
         # See details at https://www.flickr.com/services/api/misc.urls.html
         url = image['url']
         num_of_underscores = url.count('_')
-        min_resolution =  min(min_height, min_width)
+        min_resolution = min(min_height, min_width)
         # Maping between the char that represents max resolution and the max resolution.
-        flickr_resolution_map = {2048: 'k', 1600: 'n', 1024: 'b', 800: 'c', 640: 'z', 500: '',
-        400: 'w', 320: 'n', 240: 'm', 150: 'q', 100: 't', 75: 's'}
+        flickr_resolution_map = {
+                2048: 'k', 1600: 'n', 1024: 'b', 800: 'c', 640: 'z', 500: '',
+                400: 'w', 320: 'n', 240: 'm', 150: 'q', 100: 't', 75: 's'}
         for key in flickr_resolution_map:
             # Url in the format: https://live.staticflickr.com/{server-id}/{id}_{secret}_{size-suffix}.jpg
             if num_of_underscores == 2:
-                if  min_resolution >= key:
+                if min_resolution >= key:
                     if key == 500:
                         # Removing the char that represents the resolution to get max resolution of 500.
-                        return  url[:-6] + url[-4:]
+                        return url[:-6] + url[-4:]
                     # Replacing the char that represents the resolution with the wonted key.
-                    return  url[:-5] + flickr_resolution_map[key] + url[-4:]
+                    return url[:-5] + flickr_resolution_map[key] + url[-4:]
             # Url in the format: https://live.staticflickr.com/{server-id}/{id}_{secret}.jpg
             else:
-                if  min_resolution >= key:
+                if min_resolution >= key:
                     if key == 500:
                         # Removing the char that represents the resolution to get max resolution of 500.
-                        return  url
+                        return url
                     # Adding the char that represents the resolution with the wonted key.
-                    return  url[:-4] + '_' + flickr_resolution_map[key] + url[-4:]
+                    return url[:-4] + '_' + flickr_resolution_map[key] + url[-4:]
         raise ValueError('No url with requested resolution')
 
-    
-    flickr_api = flickrapi.FlickrAPI(_FLICKR_API_KEY, _FLICKR_SECRET_KEY, cache = True)
+    flickr_api = flickrapi.FlickrAPI(_FLICKR_API_KEY, _FLICKR_SECRET_KEY, cache=True)
     provider_id = _PROVIDER_ID
     provider_name = 'FlickrProvider'
     provider_version = '2.4.0'
     enabled = True
     visibility = VisibilityType.INVISIBLE
+
 
 def _get_date(element):
     """ This function extracts the date the image was taken from the image element
@@ -122,6 +124,7 @@ def _get_date(element):
     datetime_date_taken = datetime.strptime(date_taken, '%Y-%m-%d %H:%M:%S')
     return datetime_date_taken
 
+
 def _parse_query_arguments(query_arguments):
     """ This function converts a string in the format 'key1:value1-key2:value2' to a dict in the
     format {'key1': 'value1', 'key2': 'value2',...}.
@@ -133,7 +136,7 @@ def _parse_query_arguments(query_arguments):
     Returns:
         A dict of all the args e.g.  {'tags': 'cat,plastic', 'tag_mode': 'any', 'text':''}.
     """
-    init_query_arguments = {'tags': 'all', 'tag_mode': 'any', 'text':''}
+    init_query_arguments = {'tags': 'all', 'tag_mode': 'any', 'text': ''}
     if query_arguments is not None:
         different_arg = query_arguments.split('-')
         for arg in different_arg:
