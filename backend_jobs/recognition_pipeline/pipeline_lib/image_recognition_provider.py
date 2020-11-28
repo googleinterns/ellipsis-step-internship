@@ -52,7 +52,7 @@ class ImageRecognitionProvider(ABC, beam.DoFn):
             image: a dictionary if all image's Firebase document's fields.
             Each dictionary contains all of the images' fields and their
             values as stored in the database_schema.COLLECTION_IMAGES.
-        
+  
         Returns:
             True iff the image's attributes meet the provider's prerequisites
             and the image can be labeled by the provider

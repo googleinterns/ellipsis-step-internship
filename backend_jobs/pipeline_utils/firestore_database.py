@@ -16,6 +16,7 @@ import firebase_admin
 from firebase_admin import credentials
 from firebase_admin import firestore
 from backend_jobs.pipeline_utils import database_schema
+from backend_jobs.pipeline_utils.data_types import VisibilityType
 
 PROJECT_ID_NAME = 'step-project-ellispis'
 PROJECT_ID = 'projectId'
@@ -49,6 +50,6 @@ def store_pipeline_run(provider_id, run_id):
         database_schema.COLLECTION_PIPELINE_RUNS_FIELD_START_DATE: 00,
         database_schema.COLLECTION_PIPELINE_RUNS_FIELD_END_DATE: 00,
         database_schema.COLLECTION_PIPELINE_RUNS_FIELD_VISIBILITY:
-            database_schema.LABEL_VISIBILITY_INVISIBLE,
+            VisibilityType.INVISIBLE,
         database_schema.COLLECTION_PIPELINE_RUNS_FIELD_PIPELINE_RUN_ID: run_id
     })
