@@ -23,13 +23,14 @@ def get_timestamp_id():
 
 def generate_cloud_dataflow_job_name(pipeline_type, provider):
     """ Returns a unique job_name given pipeline_type and a provider.
+    Strips '_' and changes it to '-' since Dataflow does not support it.
 
     Args:
       pipeline_type: Type str e.g. 'ingestion' or 'recognition'.
       provider: Type ImageProvider/ ImageRecognitionProvider.
 
     Returns:
-      A unique job_name type str.
+      A unique job_name type str. 
     """
     job_name = '{pipeline_type}_{provider}_{time_id}'.format(
       pipeline_type = pipeline_type,
