@@ -21,7 +21,7 @@ import geohash2
 from google.cloud import firestore
 from backend_jobs.pipeline_utils import firestore_database
 from backend_jobs.pipeline_utils import database_schema
-from backend_jobs.ingestion_pipeline.pipeline_lib.data_types import VisibilityType
+from backend_jobs.pipeline_utils.data_types import VisibilityType
 
 
 class AddOrUpdateImageDoFn(apache_beam.DoFn):
