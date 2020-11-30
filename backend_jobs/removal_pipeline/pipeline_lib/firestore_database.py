@@ -26,10 +26,10 @@ from backend_jobs.recognition_pipeline.pipeline_lib.firestore_database import ad
 from backend_jobs.pipeline_utils import database_schema
 
 RANGE_OF_BATCH = 0.1
-
 # pylint: disable=abstract-method
-class GetBatchedDataset(beam.DoFn):
-    """Queries the project's database to get the image dataset to label.
+class GetBatchedDatasetAndDeleteFromDatabase(beam.DoFn):
+    """Queries the project's database to get the labels dataset to remove,
+    and deleted the documents from the 'Labels' subcollection in the database.
 
     """
     def setup(self):
@@ -37,21 +37,28 @@ class GetBatchedDataset(beam.DoFn):
         self.db = initialize_db()
 
     # pylint: disable=arguments-differ
-    def process(self, element, provider = None, pipeline_run = None):
-        """Queries firestore database for images from
-        the ingestion_provider within a random range (by batch).
+    def process(self, element, recognition_provider = None, recognition_run = None):
+        """Queries firestore database for labels recognized by the given
+        recognition provider or run and deletes the documents from the
+        database (by batch).
 
         Args:
             element: the lower limit for querying the database by the random field.
-            ingestion_provider: the input of the pipeline, determines the images dataset.
-            ingestion_run: the input of the pipeline, determines the dataset.
+            recognition_provider: the input of the pipeline, determines the labels dataset.
+            recognition_run: the input of the pipeline, determines the labels dataset.
 
         Returns:
             A list of dictionaries with all the information (fields and id)
-            of each one of the Firestore query's image documents.
+            of each one of the Firestore query's label documents.
+
+         Raises:
+            Value error if both recognition_provider and recognition_run
+            are provided.
+
         """
-        if provider and pipeline_run:
-            raise ValueError('both recognition provider and run are provided - there should be only one')
+        if recognition_provider and recognition_run:
+            raise ValueError('both recognition provider and run are provided -\
+                there should be only one')
         # The lower limit for querying the database by the random field.
         random_min = element * RANGE_OF_BATCH
         # The higher limit for querying the database by the random field.
@@ -64,14 +71,14 @@ class GetBatchedDataset(beam.DoFn):
             query = self.db.collection_group(database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS).\
                 where(u'pipelineRunId', u'==', pipeline_run).\
                     where(u'random', u'>=', random_min).where(u'random', u'<', random_max).stream()
-        docs_generator = query
-        self._delete_all_docs(query)
-        return docs_generator
-
-    def _delete_all_docs(self, firestore_query):
-        for doc in firestore_query:
-            print(doc)
-            doc.reference.delete()
+        for doc in query:
+            doc_dict = add_id_to_dict(doc)
+            if database_schema.COLLECTION_IMAGES_SUBCOLLECTION_LABELS_FIELD_LABEL_IDS in doc_dict:
+                # Only label documents with a 'Label Ids' field are relevant for the
+                # pipeline's continuation. The documents will be used to delete the
+                # label ids from the parent image 'labels' array if needed.
+                yield doc_dict
+            doc.reference.delete() # Delete label doc from database.
 
     # pylint: disable=abstract-method
 class UpdateLabelsInImageDocs(beam.DoFn):
@@ -83,26 +90,32 @@ class UpdateLabelsInImageDocs(beam.DoFn):
         self.db = initialize_db()
 
     # pylint: disable=arguments-differ
-    def process(self, element):
-        """Q
+    def process(self, element, recognition_provider = None, recognition_run = None):
+        """
 
         """
         parent_image_id = element[database_schema.COLLECTION_IMAGES_SUBCOLLECTION_LABELS_FIELD_PARENT_IMAGE_ID]
         parent_image_ref = self.db.collection(database_schema.COLLECTION_IMAGES).\
             document(parent_image_id)
         label_ids = element[database_schema.COLLECTION_IMAGES_SUBCOLLECTION_LABELS_FIELD_LABEL_IDS]
-        # TODO: make sure only doc with label ids get here
-       
-
         for label_id in label_ids:
             query = self.db.collection_group(database_schema.COLLECTION_IMAGES_SUBCOLLECTION_LABELS\
-                ).where(database_schema.COLLECTION_IMAGES_SUBCOLLECTION_LABELS_FIELD_PARENT_IMAGE_ID, u'==', parent_image_id)\
-                    .where(database_schema.COLLECTION_IMAGES_SUBCOLLECTION_LABELS_FIELD_LABEL_IDS, u'array_contains', label_id)\
-                        .where(database_schema.COLLECTION_IMAGES_SUBCOLLECTION_LABELS_FIELD_VISIBILITY, u'==',\
-                            database_schema.LABEL_VISIBILITY_VISIBLE)
+                ).where(database_schema.COLLECTION_IMAGES_SUBCOLLECTION_LABELS_FIELD_PARENT_IMAGE_ID\
+                    ,u'==', parent_image_id).where(database_schema.\
+                        COLLECTION_IMAGES_SUBCOLLECTION_LABELS_FIELD_LABEL_IDS,\
+                            u'array_contains', label_id).where(\
+                                database_schema.COLLECTION_IMAGES_SUBCOLLECTION_LABELS_FIELD_VISIBILITY, u'==',\
+                                    database_schema.LABEL_VISIBILITY_VISIBLE)
+            if recognition_provider:
+                query = query.where(database_schema.COLLECTION_IMAGES_SUBCOLLECTION_LABELS_FIELD_PROVIDER_ID, u'<',\
+                    recognition_provider).where(database_schema.COLLECTION_IMAGES_SUBCOLLECTION_LABELS_FIELD_PROVIDER_ID, u'>',\
+                        recognition_provider)
+            else:
+                query = query.where(database_schema.COLLECTION_IMAGES_SUBCOLLECTION_LABELS_FIELD_PIPELINE_RUN_ID, u'<',\
+                    recognition_run).where(database_schema.COLLECTION_IMAGES_SUBCOLLECTION_LABELS_FIELD_PIPELINE_RUN_ID, u'>',\
+                        recognition_run)
             if len(query.get()) == 0:
                 self._delete_label_id_from_labels_array(parent_image_ref, label_id)
-            self._delete_label_id_from_labels_array(parent_image_ref, label_id)
 
     def _delete_label_id_from_labels_array(self, image_doc_ref, label_id):
         image_doc_dict = image_doc_ref.get().to_dict()

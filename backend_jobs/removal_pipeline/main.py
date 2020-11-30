@@ -32,8 +32,11 @@ from apache_beam.options.pipeline_options import PipelineOptions
 from backend_jobs.pipeline_utils.firestore_database import initialize_db
 from backend_jobs.recognition_pipeline.pipeline_lib.firestore_database import add_id_to_dict
 from backend_jobs.pipeline_utils.utils import generate_job_name
-from backend_jobs.removal_pipeline.pipeline_lib.firestore_database import GetBatchedDataset, UpdateLabelsInImageDocs
-    
+from backend_jobs.recognition_removal.pipeline_lib.firestore_database import\
+    GetBatchedDatasetAndDeleteFromDatabase, UpdateLabelsInImageDocs
+
+_PIPELINE_TYPE = 'recognition_removal'    
+
 def _validate_args(args):
     """ Checks whether the pipeline's arguments are valid.
     If not - throws an error.
@@ -67,30 +70,31 @@ def run(argv=None):
         help='Output file to write results to for testing.')
     known_args, pipeline_args = parser.parse_known_args(argv)
     _validate_args(known_args)
-    pipeline_run = known_args.input_pipeline_run
-    provider = known_args.input_provider
-    if pipeline_run:
-        job_name = generate_job_name('remove', pipeline_run)
+    recognition_run = known_args.input_recognition_run_id
+    recognition_provider = known_args.input_recognition_provider
+    if recognition_run:
+        job_name = generate_job_name(_PIPELINE_TYPE, 'recognition_run')
     else:
-        print(provider)
-        job_name = generate_job_name('remove', provider)
+        job_name = generate_job_name(_PIPELINE_TYPE, 'recognition_provider')
 
     pipeline_options = PipelineOptions(pipeline_args, job_name=job_name)
 
     with beam.Pipeline(options=pipeline_options) as pipeline:
 
         indices_for_batching = pipeline | 'create' >> beam.Create([i for i in range(10)])
-
-        if provider:
-            dataset = indices_for_batching | 'get labels dataset' >> \
-                beam.ParDo(GetBatchedDataset(), provider=provider)
+        if recognition_provider:
+            dataset = indices_for_batching | 'get labels dataset and delete Firebase docs' >> \
+                beam.ParDo(GetBatchedDatasetAndDeleteFromDatabase(),\
+                    recognition_provider=recognition_provider)
+            dataset | 'update database' >> beam.ParDo(UpdateLabelsInImageDocs(), recognition_provider = recognition_provider)
         else:
-            dataset = indices_for_batching | 'get labels dataset' >> \
-                beam.ParDo(GetBatchedDataset(), pipeline_run=pipeline_run)
+            dataset = indices_for_batching | 'get labels dataset and delete Firebase docs' >> \
+                beam.ParDo(GetBatchedDatasetAndDeleteFromDatabase(),\
+                    recognition_run=recognition_run)
+            dataset | 'update database' >> beam.ParDo(UpdateLabelsInImageDocs(), recognition_run = recognition_run)
 
-        #dataset | 'update database' >> beam.ParDo(UpdateLabelsInImageDocs())
-        #if known_args.output: # For testing.
-        #    dataset | 'Write' >> WriteToText(known_args.output)
+        if known_args.output: # For testing.
+            dataset | 'Write' >> WriteToText(known_args.output)
 
 if __name__ == '__main__':
     logging.getLogger().setLevel(logging.INFO)
