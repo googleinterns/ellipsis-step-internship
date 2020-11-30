@@ -40,14 +40,14 @@ class GoogleVisionAPI(ImageRecognitionProvider):
             Used to label each batch in the class's process method.
 
         Args:
-            image_docs: list of up to 2000 image docs represented by dictionaries.
+            image_docs: list of up to 2000 image docs represented by dictionaries as
+            stored in the database_schema.COLLECTION_IMAGES.
 
         """
         features = [ {"type_": vision_v1.Feature.Type.LABEL_DETECTION} ]
         requests = []
         results = []
         docs = []
-        i = 0
         for doc in image_docs:
             url = doc[database_schema.COLLECTION_IMAGES_FIELD_URL]
             image = vision_v1.Image()

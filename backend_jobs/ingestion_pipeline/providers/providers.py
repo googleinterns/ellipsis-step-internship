@@ -15,12 +15,14 @@
 
 from backend_jobs.ingestion_pipeline.providers import image_provider_flickr
 
-#This map provides all the Providers.ImageProviders in the platform
+# This map provides all the Providers.ImageProviders in the platform
 IMAGE_PROVIDERS = {'FlickrProvider': image_provider_flickr.FlickrProvider}
+
 
 def get_provider(name_to_provider_map, provider_name, arguments=None):
     """ Returns an object of type ImageProvider by the specific provider input.
     If provider is not recognized then throw exception.
+    Raises: An exception for when the given provider_name is not a key in name_to_provider_map.
 
     """
     if provider_name in name_to_provider_map:
@@ -28,4 +30,4 @@ def get_provider(name_to_provider_map, provider_name, arguments=None):
             return name_to_provider_map[provider_name](arguments)
         else:
             return name_to_provider_map[provider_name]()
-    raise ValueError('{provider} is unknown'.format(provider = provider_name))
+    raise ValueError('{provider} is unknown'.format(provider=provider_name))

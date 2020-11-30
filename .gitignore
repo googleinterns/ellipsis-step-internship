@@ -1,4 +1,5 @@
 .vscode
+.gitignore
 webapp/maps_heatmaps/.firebase/hosting.cHVibGlj.cache
 
 examples/pipeline-demo/__pycache__

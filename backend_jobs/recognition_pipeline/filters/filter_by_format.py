@@ -27,7 +27,8 @@ class FilterByFormat(FilterBy):
           Args:
               image: A dictionary representing the image's doc.
               Each image is represented by a Python dictionary containing all the fields
-              of the document in the database and their values.
+              of the document in the database_schema.COLLECTION_IMAGES
+              and their values.
 
         """
         image_attribute = image[database_schema.COLLECTION_IMAGES_FIELD_IMAGE_ATTRIBUTES]\

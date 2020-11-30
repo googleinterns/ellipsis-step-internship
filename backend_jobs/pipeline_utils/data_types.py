@@ -11,25 +11,13 @@
   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
   See the License for the specific language governing permissions and
   limitations under the License.
-
-  Sets up the packages required for the pipeline's imports.
  """
-import setuptools
 
-setuptools.setup(
-    name="ingestion-pipeline_TALTAMIR",
-    version="0.0.1",
-    packages=setuptools.find_packages(),
-    classifiers=[
-        "Programming Language :: Python :: 3",
-        "License :: OSI Approved :: MIT License",
-        "Operating System :: OS Independent",
-    ],
-    python_requires='>=3.6',
-    install_requires=[
-        'apache-beam==2.24.0',
-        'firebase-admin==4.4.0',
-        'flickrapi==2.4.0',
-        'geohash2==1.1'
-    ]
-)
+import enum
+
+
+class VisibilityType(enum.Enum):
+    """ This enum represents the different visibility types.
+    """
+    INVISIBLE = 0
+    VISIBLE = 1

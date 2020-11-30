@@ -12,12 +12,12 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 
-  Sets up the packages required for the pipeline's imports.
-"""
+  Sets up the packages required for cloud dataflow pipeline imports.
+ """
 import setuptools
 
 setuptools.setup(
-    name="pipeline-BACKEND_JOBS",
+    name="backend-pipelines",
     version="0.0.1",
     packages=setuptools.find_packages(),
     classifiers=[
@@ -26,7 +26,7 @@ setuptools.setup(
         "Operating System :: OS Independent",
     ],
     python_requires='>=3.6',
-        install_requires=[
+    install_requires=[
         'apache-beam==2.24.0',
         'firebase-admin==4.4.0',
         'flickrapi==2.4.0',
