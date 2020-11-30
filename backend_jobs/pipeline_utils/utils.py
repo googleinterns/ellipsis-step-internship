@@ -14,15 +14,18 @@
 """
 from datetime import datetime
 
+
 def get_timestamp_id():
     """ Returns a string with only numbers as time id.
     The string will be used as a unique id for each dataflow job.
 
     """
-    return str(datetime.timestamp(datetime.now())).replace('.','')
+    return str(datetime.timestamp(datetime.now())).replace('.', '')
 
-def generate_job_name(pipeline_type, additional_info):
+
+def generate_cloud_dataflow_job_name(pipeline_type, additional_info):
     """ Returns a unique job_name given pipeline_type and a provider.
+    Strips '_' and changes it to '-' since Dataflow does not support it.
 
     Args:
       pipeline_type: Type str e.g. 'ingestion' or 'recognition'.

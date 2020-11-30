@@ -31,7 +31,7 @@ from apache_beam.options.pipeline_options import PipelineOptions
 from backend_jobs.recognition_pipeline.pipeline_lib.firestore_database import\
     GetBatchedImageDataset, UpdateImageLabelsInDatabase
 from backend_jobs.pipeline_utils.firestore_database import store_pipeline_run
-from backend_jobs.pipeline_utils.utils import generate_job_name
+from backend_jobs.pipeline_utils.utils import generate_cloud_dataflow_job_name
 from backend_jobs.recognition_pipeline.providers.providers import get_recognition_provider
 
 _PIPELINE_TYPE = 'recognition'
@@ -102,7 +102,7 @@ def run(argv=None):
     # Creating an object of type ImageRecognitionProvider
     # for the specific image recognition provider input.
     recognition_provider = get_recognition_provider(known_args.input_recognition_provider)
-    job_name = generate_job_name(_PIPELINE_TYPE, recognition_provider.provider_id)
+    job_name = generate_cloud_dataflow_job_name(_PIPELINE_TYPE, recognition_provider.provider_id)
     pipeline_options = PipelineOptions(pipeline_args, job_name=job_name)
 
     with beam.Pipeline(options=pipeline_options) as pipeline:
@@ -132,7 +132,8 @@ def run(argv=None):
                 return '%s: %s' % (image['url'], labels)
             output = labeled_images | 'Format' >> beam.MapTuple(format_result)
             output | 'Write' >> WriteToText(known_args.output)
-    store_pipeline_run(recognition_provider.provider_id, job_name)
+
+    store_pipeline_run(job_name, provider_id=recognition_provider.provider_id)
 
 if __name__ == '__main__':
     logging.getLogger().setLevel(logging.INFO)

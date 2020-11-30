@@ -14,6 +14,7 @@
 """
 import apache_beam as beam
 from backend_jobs.pipeline_utils import database_schema
+from backend_jobs.pipeline_utils.data_types import VisibilityType
 from backend_jobs.pipeline_utils.firestore_database import initialize_db
 
 # Defines the range of the random field to query the database by batches.
@@ -50,7 +51,8 @@ class GetBatchedImageDataset(beam.DoFn):
 
         Returns:
             A generator of dictionaries with all the information (fields and id)
-            of each one of the Firestore data set's image documents.
+            of each one of the Firestore data set's image documents as stored in
+            the database_schema.COLLECTION_IMAGES.
 
         Raises:
             Value error if both ingestion_provider and ingestion_run
@@ -89,7 +91,8 @@ def add_id_to_dict(doc):
     return full_dict
 
 class UpdateImageLabelsInDatabase(beam.DoFn):
-    """Stores parallelly the label information in the project's database.
+    """Stores parallelly the label information in the project's database
+    in the database_schema.COLLECTION_IMAGES_SUBCOLLECTION_LABELS.
 
     """
     def setup(self):
@@ -103,26 +106,34 @@ class UpdateImageLabelsInDatabase(beam.DoFn):
 
         Args:
             element: tuple of image document dictionary (Each image is represented by a
-            Python dictionary containing all the fields of the document in the database
-            and their values) and a list of all labels.
+            Python dictionary containing all the fields of the document in the
+            database_schema.COLLECTION_IMAGES and their values)
+            and a list of all labels.
 
         """
         image_doc = element[0]
+        labels = element[1]
         doc_id = image_doc['id']
         subcollection_ref = self.db.collection(database_schema.COLLECTION_IMAGES).document(doc_id).\
             collection(database_schema.COLLECTION_IMAGES_SUBCOLLECTION_LABELS)
-        labels = element[1]
         for label in labels:
             doc = subcollection_ref.document()
             doc.set({
-                database_schema.COLLECTION_IMAGES_SUBCOLLECTION_LABELS_FIELD_PROVIDER_ID: provider_id,
-                database_schema.COLLECTION_IMAGES_SUBCOLLECTION_LABELS_FIELD_PROVIDER_VERSION: '2.0.0',
+                database_schema.COLLECTION_IMAGES_SUBCOLLECTION_LABELS_FIELD_PROVIDER_ID:\
+                    provider_id,
+                database_schema.COLLECTION_IMAGES_SUBCOLLECTION_LABELS_FIELD_PROVIDER_VERSION:\
+                    '2.0.0',
                 database_schema.COLLECTION_IMAGES_SUBCOLLECTION_LABELS_FIELD_LABEL_NAME: label,
-                database_schema.COLLECTION_IMAGES_SUBCOLLECTION_LABELS_FIELD_VISIBILITY: database_schema.LABEL_VISIBILITY_INVISIBLE ,
-                database_schema.COLLECTION_IMAGES_SUBCOLLECTION_LABELS_FIELD_PARENT_IMAGE_ID: doc_id,
-                database_schema.COLLECTION_IMAGES_SUBCOLLECTION_LABELS_FIELD_PIPELINE_RUN_ID: run_id,
+                database_schema.COLLECTION_IMAGES_SUBCOLLECTION_LABELS_FIELD_VISIBILITY:\
+                    VisibilityType.INVISIBLE,
+                database_schema.COLLECTION_IMAGES_SUBCOLLECTION_LABELS_FIELD_PARENT_IMAGE_ID:\
+                    doc_id,
+                database_schema.COLLECTION_IMAGES_SUBCOLLECTION_LABELS_FIELD_PIPELINE_RUN_ID:\
+                    run_id,
+                # Redundant for query optimisation reasons.
                 database_schema.COLLECTION_IMAGES_SUBCOLLECTION_LABELS_FIELD_HASHMAP:\
-                    image_doc[database_schema.COLLECTION_IMAGES_FIELD_HASHMAP], # Redundant for query optimisation reasons.
+                    image_doc[database_schema.COLLECTION_IMAGES_FIELD_HASHMAP],
+                # Redundant for query optimisation reasons.
                 database_schema.COLLECTION_IMAGES_SUBCOLLECTION_LABELS_FIELD_RANDOM:\
-                    image_doc[database_schema.COLLECTION_IMAGES_FIELD_RANDOM] # Redundant for query optimisation reasons.
+                    image_doc[database_schema.COLLECTION_IMAGES_FIELD_RANDOM]
             })

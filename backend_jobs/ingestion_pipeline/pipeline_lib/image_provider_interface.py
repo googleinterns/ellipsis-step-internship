@@ -23,6 +23,7 @@ This class is in charge of:
 from abc import ABC, abstractmethod
 import apache_beam
 
+
 class ImageProvider(ABC, apache_beam.DoFn):
     """ ImageProvider is an interface that all the image ingestion providers inherit from.
     """
@@ -78,18 +79,22 @@ class ImageProvider(ABC, apache_beam.DoFn):
     def provider_id(self):
         """ A unique id of the provider, e.g. FlickrProvider_2020. """
         raise NotImplementedError
+
     @property
     def provider_name(self):
         """ A friendly name of the provider, e.g. FlickrProvider. """
         raise NotImplementedError
+
     @property
     def provider_version(self):
         """ The version of the provider. """
         raise NotImplementedError
+
     @property
     def enabled(self):
         """ Whether we can ingest images from this provider. """
         raise NotImplementedError
+
     @property
     def visibility(self):
         """ Type VisibilityType - The provider visibility. """
