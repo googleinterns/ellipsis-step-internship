@@ -16,6 +16,7 @@ import apache_beam as beam
 from backend_jobs.pipeline_utils import database_schema
 from backend_jobs.pipeline_utils.data_types import VisibilityType
 from backend_jobs.pipeline_utils.firestore_database import initialize_db
+import random
 
 # Defines the range of the random field to query the database by batches.
 _RANGE_OF_BATCH = 0.1
@@ -125,7 +126,7 @@ class UpdateImageLabelsInDatabase(beam.DoFn):
                     '2.0.0',
                 database_schema.COLLECTION_IMAGES_SUBCOLLECTION_LABELS_FIELD_LABEL_NAME: label,
                 database_schema.COLLECTION_IMAGES_SUBCOLLECTION_LABELS_FIELD_VISIBILITY:\
-                    VisibilityType.INVISIBLE,
+                    VisibilityType.INVISIBLE.value,
                 database_schema.COLLECTION_IMAGES_SUBCOLLECTION_LABELS_FIELD_PARENT_IMAGE_ID:\
                     doc_id,
                 database_schema.COLLECTION_IMAGES_SUBCOLLECTION_LABELS_FIELD_PIPELINE_RUN_ID:\
@@ -135,5 +136,5 @@ class UpdateImageLabelsInDatabase(beam.DoFn):
                     image_doc[database_schema.COLLECTION_IMAGES_FIELD_HASHMAP],
                 # Redundant for query optimisation reasons.
                 database_schema.COLLECTION_IMAGES_SUBCOLLECTION_LABELS_FIELD_RANDOM:\
-                    image_doc[database_schema.COLLECTION_IMAGES_FIELD_RANDOM]
+                    random.random()
             })

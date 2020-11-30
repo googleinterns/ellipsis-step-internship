@@ -29,13 +29,12 @@ import apache_beam as beam
 from apache_beam.io import WriteToText
 from apache_beam.options.pipeline_options import PipelineOptions
 
-from backend_jobs.pipeline_utils.firestore_database import initialize_db
-from backend_jobs.recognition_pipeline.pipeline_lib.firestore_database import add_id_to_dict
-from backend_jobs.pipeline_utils.utils import generate_job_name
+from backend_jobs.pipeline_utils.utils import generate_cloud_dataflow_job_name
+from backend_jobs.pipeline_utils.firestore_database import store_pipeline_run
 from backend_jobs.recognition_removal.pipeline_lib.firestore_database import\
-    GetBatchedDatasetAndDeleteFromDatabase, UpdateLabelsInImageDocs
+    GetBatchedDatasetAndDeleteFromDatabase, UpdateLabelsInImageDocs, update_pipelinerun_doc_to_invisible
 
-_PIPELINE_TYPE = 'recognition_removal'    
+_PIPELINE_TYPE = 'recognition_removal'
 
 def _validate_args(args):
     """ Checks whether the pipeline's arguments are valid.
@@ -53,7 +52,13 @@ def _validate_args(args):
 
 
 def run(argv=None):
-    """Main entry point, defines and runs the image recognition pipeline."""
+    """Main entry point, defines and runs the labels removal pipeline.
+
+    Input: either recognition run id or recognition provider id.
+    The input is used for querying the database for labels recognized by
+    either one of the optional inputs.
+    """
+    # Using external parser: https://docs.python.org/3/library/argparse.html
     parser = argparse.ArgumentParser()
     parser.add_argument(
         '--input-recognition-run',
@@ -66,15 +71,16 @@ def run(argv=None):
     parser.add_argument(
         '--output',
         dest='output',
+        required = False, # Optional - only for development reasons.
         help='Output file to write results to for testing.')
     known_args, pipeline_args = parser.parse_known_args(argv)
     _validate_args(known_args)
     recognition_run = known_args.input_recognition_run_id
     recognition_provider = known_args.input_recognition_provider
     if recognition_run:
-        job_name = generate_job_name(_PIPELINE_TYPE, recognition_run)
+        job_name = generate_cloud_dataflow_job_name(_PIPELINE_TYPE, recognition_run)
     else:
-        job_name = generate_job_name(_PIPELINE_TYPE, recognition_provider)
+        job_name = generate_cloud_dataflow_job_name(_PIPELINE_TYPE, recognition_provider)
 
     pipeline_options = PipelineOptions(pipeline_args, job_name=job_name)
 
@@ -88,11 +94,17 @@ def run(argv=None):
             dataset = indices_for_batching | 'get labels dataset and delete Firebase docs' >> \
                 beam.ParDo(GetBatchedDatasetAndDeleteFromDatabase(),\
                     recognition_run=recognition_run)
-        all_deleted_dataset = dataset | beam.ParDo(lambda element: [element])
-        all_deleted_dataset | 'update database' >> beam.ParDo(UpdateLabelsInImageDocs())
+            update_pipelinerun_doc_to_invisible(recognition_run)
+        dataset_group_by_parent_image = dataset | 'group all labels by parent image' >>\
+            beam.GroupByKey()
+        # pylint: disable=expression-not-assigned
+        dataset_group_by_parent_image | 'update database' >> beam.ParDo(UpdateLabelsInImageDocs())
 
         if known_args.output: # For testing.
-            dataset | 'Write' >> WriteToText(known_args.output)
+            # pylint: disable=expression-not-assigned
+            dataset_group_by_parent_image | 'Write' >> WriteToText(known_args.output)
+    
+    store_pipeline_run(job_name)
 
 if __name__ == '__main__':
     logging.getLogger().setLevel(logging.INFO)

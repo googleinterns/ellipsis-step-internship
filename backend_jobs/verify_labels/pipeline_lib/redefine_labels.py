@@ -17,8 +17,11 @@ import apache_beam as beam
 from backend_jobs.pipeline_utils.firestore_database import initialize_db
 from backend_jobs.pipeline_utils import database_schema
 
-# pylint: disable=missing-function-docstring
 def get_redefine_map(recognition_provider_id):
+    """ Returns the recognition ptovider's specific redefine labels map
+        as stroed in the COLLECTION_REDEFINE_MAPS.
+
+    """
     db = initialize_db()
     doc_dict = db.collection(database_schema.COLLECTION_REDEFINE_MAPS).\
         document(recognition_provider_id).get().to_dict()
@@ -26,8 +29,16 @@ def get_redefine_map(recognition_provider_id):
 
 # pylint: disable=abstract-method
 class RedefineLabels(beam.DoFn):
-    """Converts parallelly the labels list returned from
+    """Converts parallelly the labels returned from
     the provider to the corresponding label Id's.
+
+    Input:
+       Python dictionary containing all the fields of the document in the
+       database_schema.COLLECTION_IMAGES_SUBCOLLECTION_LABELS and their values.
+
+    Output:
+       A generator of tuples of dictionary of label documents' properties (same as input)
+       and list of label ids.
 
     """
 
@@ -36,12 +47,13 @@ class RedefineLabels(beam.DoFn):
         """Uses the global redefine map to map the different labels to the project's label Ids.
 
         Args:
-            element: tuple of dictionary of image properties and list of labels.
+            element: Python dictionary of label properties.
             redefine_map: a specific provider's redefine map from the database.
 
-        Returns:
-            [(dictionary of label doc properties, label ids list)]
+        Yields:
+            (dictionary of label doc properties, label ids list)
         """
-        label_name = element[database_schema.COLLECTION_IMAGES_SUBCOLLECTION_LABELS_FIELD_LABEL_NAME]
+        label_name =\
+            element[database_schema.COLLECTION_IMAGES_SUBCOLLECTION_LABELS_FIELD_LABEL_NAME]
         if label_name in redefine_map:
-            return [(element, redefine_map[label_name])]
+            yield (element, redefine_map[label_name])

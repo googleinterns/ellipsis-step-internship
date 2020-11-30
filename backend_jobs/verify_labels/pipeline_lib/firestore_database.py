@@ -23,14 +23,23 @@ By the end of the process, the project's admin group get notified.
 import apache_beam as beam
 
 from backend_jobs.pipeline_utils.firestore_database import initialize_db
-from backend_jobs.pipeline_utils import database_schema
+from backend_jobs.pipeline_utils import database_schema, data_types
 from backend_jobs.recognition_pipeline.pipeline_lib.firestore_database import add_id_to_dict
 
 RANGE_OF_BATCH = 0.1
 
 # pylint: disable=abstract-method
 class GetBatchedLabelsDataset(beam.DoFn):
-    """Queries the project's database to get the image dataset to label.
+    """Queries the project's database to get the labels needed to be verified.
+
+    Input:
+       integer index between 0 and 9.
+
+    Output:
+        generator of label's documents in a Python dictionary form.
+        Each label is represented by a dict containing all the fields
+        of the document in the database and their values as stored in
+        the database_schema.COLLECTION_IMAGES_SUBCOLLECTION_LABELS.
 
     """
     def setup(self):
@@ -39,26 +48,29 @@ class GetBatchedLabelsDataset(beam.DoFn):
 
     # pylint: disable=arguments-differ
     def process(self, element, recognition_run):
-        """Queries firestore database for images from
-        the ingestion_provider within a random range (by batch).
+        """Queries firestore database for labels recognizied by
+        the recognition_run within a random range (by batch).
 
         Args:
             element: the lower limit for querying the database by the random field.
-            ingestion_provider: the input of the pipeline, determines the images dataset.
-            ingestion_run: the input of the pipeline, determines the dataset.
+            recognition_run: the input of the pipeline, determines the labels dataset.
 
         Returns:
-            A list of dictionaries with all the information (fields and id)
-            of each one of the Firestore query's image documents.
+            A generator of dictionaries with all the information (fields and id)
+            of each one of the Firestore data set's label documents as stored in
+            the database_schema.COLLECTION_IMAGES_SUBCOLLECTION_LABELS.
+
         """
         # the lower limit for querying the database by the random field.
         random_min = element * RANGE_OF_BATCH
         # the higher limit for querying the database by the random field.
         random_max = random_min + RANGE_OF_BATCH
         query = self.db.collection_group(database_schema.COLLECTION_IMAGES_SUBCOLLECTION_LABELS)\
-            .where(database_schema.COLLECTION_IMAGES_SUBCOLLECTION_LABELS_FIELD_PIPELINE_RUN_ID, u'==', recognition_run).\
-                    where(database_schema.COLLECTION_IMAGES_SUBCOLLECTION_LABELS_FIELD_RANDOM, u'>=', random_min).\
-                        where(database_schema.COLLECTION_IMAGES_SUBCOLLECTION_LABELS_FIELD_RANDOM, u'<', random_max).stream()
+            .where(database_schema.COLLECTION_IMAGES_SUBCOLLECTION_LABELS_FIELD_PIPELINE_RUN_ID,\
+                u'==', recognition_run).where(database_schema.\
+                    COLLECTION_IMAGES_SUBCOLLECTION_LABELS_FIELD_RANDOM, u'>=', random_min)\
+                        .where(database_schema.COLLECTION_IMAGES_SUBCOLLECTION_LABELS_FIELD_RANDOM,\
+                            u'<', random_max).stream()
         return (add_id_to_dict(doc) for doc in query)
 
 # pylint: disable=abstract-method
@@ -67,17 +79,33 @@ class UpdateDatabase(beam.DoFn):
 
         Changes visibility inside label document in 'Labels' subcollection
         and adds the label id to the 'labels' field in the image document if necessary.
+
+    Input:
+        tuple of a Python Dictionary representing the label document as
+        stored in the database_schema.COLLECTION_IMAGES_SUBCOLLECTION_LABELS and
+        a list of label ids.
+
     """
 
     def setup(self):
+        # pylint: disable=attribute-defined-outside-init
         self.db = initialize_db()
 
     # pylint: disable=arguments-differ
     def process(self, element):
+        """ Updates the Firestore database after verifying the labels.
+        Updates parent image doc to include the new label ids.
+        Updates the label doc to Visible.
+
+            Args:
+                element: (label doc Python dictionary, list of label ids)
+
+        """
         image_doc_dict = element[0]
         image_label_ids = element[1]
         parent_image_ref = self.db.collection(database_schema.COLLECTION_IMAGES).\
-            document(image_doc_dict[database_schema.COLLECTION_IMAGES_SUBCOLLECTION_LABELS_FIELD_PARENT_IMAGE_ID])
+            document(image_doc_dict[database_schema.\
+                COLLECTION_IMAGES_SUBCOLLECTION_LABELS_FIELD_PARENT_IMAGE_ID])
         self._update_label_doc(parent_image_ref, image_doc_dict['id'], image_label_ids)
         self._update_parent_image_labels_array(parent_image_ref, image_label_ids)
 
@@ -90,12 +118,13 @@ class UpdateDatabase(beam.DoFn):
                 parent_image_ref: refrence to the parent image document in the database
                 doc_id: the label document's id which needs to be updated in the database
                 label_id_list: list of label ids that the label was redefined to
+  
         """
-
         doc_ref = parent_image_ref.collection(\
             database_schema.COLLECTION_IMAGES_SUBCOLLECTION_LABELS).document(doc_id)
         doc_ref.update({
-            database_schema.COLLECTION_IMAGES_SUBCOLLECTION_LABELS_FIELD_VISIBILITY: database_schema.LABEL_VISIBILITY_VISIBLE
+            database_schema.COLLECTION_IMAGES_SUBCOLLECTION_LABELS_FIELD_VISIBILITY:\
+                data_types.VisibilityType.VISIBLE.value
         })
         doc_ref.set({
             database_schema.COLLECTION_IMAGES_SUBCOLLECTION_LABELS_FIELD_LABEL_IDS: label_id_list
@@ -105,7 +134,7 @@ class UpdateDatabase(beam.DoFn):
         """ Adds the label id to the image's document if it is not already there.
 
             Args:
-                parent_image_ref: refrence to the parent image document in the database
+                image_doc_ref: refrence to the parent image document in the database
                 label_id: the label id which needs to be added to the labels array
                 of the parent image document in the database
 
@@ -115,10 +144,8 @@ class UpdateDatabase(beam.DoFn):
         if database_schema.COLLECTION_IMAGES_FIELD_LABELS in image_doc_dict:
             labels_array = image_doc_dict[database_schema.COLLECTION_IMAGES_FIELD_LABELS]
         for label_id in label_ids:
-            # label_name = id_to_name(label_id) # TODO: after demo - change to ids not names.
-            # if label_name not in labels_array:
             if label_id not in labels_array:
-                labels_array.append(label_id) # label name instead for demp
+                labels_array.append(label_id) # label name instead for demo
             image_doc_ref.update({
                 database_schema.COLLECTION_IMAGES_FIELD_LABELS: labels_array
             })
@@ -136,11 +163,12 @@ def update_pipelinerun_doc_to_visible(pipeline_run_id):
     doc_ref = initialize_db().collection(database_schema.COLLECTION_PIPELINE_RUNS).\
         document(pipeline_run_id)
     doc_ref.update({
-            u'visibility': database_schema.LABEL_VISIBILITY_VISIBLE
+           database_schema.COLLECTION_PIPELINE_RUNS_FIELD_VISIBILITY:\
+               data_types.VisibilityType.VISIBLE.value
         })
 
 def get_provider_id_from_run_id(run_id):
-    """ Returns provider id of the specific run's id.
+    """ Returns the provider id of the specific run's id.
 
     """
     run_doc_ref = initialize_db().collection(database_schema.COLLECTION_PIPELINE_RUNS).\

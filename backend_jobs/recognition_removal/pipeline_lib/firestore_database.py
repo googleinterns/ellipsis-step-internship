@@ -22,14 +22,22 @@ By the end of the process, the project's admin group get notified.
 import apache_beam as beam
 
 from backend_jobs.pipeline_utils.firestore_database import initialize_db
-from backend_jobs.recognition_pipeline.pipeline_lib.firestore_database import add_id_to_dict
-from backend_jobs.pipeline_utils import database_schema
+from backend_jobs.pipeline_utils import database_schema, data_types
 
-RANGE_OF_BATCH = 0.1
+_RANGE_OF_BATCH = 0.1
 # pylint: disable=abstract-method
 class GetBatchedDatasetAndDeleteFromDatabase(beam.DoFn):
     """Queries the project's database to get the labels dataset to remove,
-    and deleted the documents from the 'Labels' subcollection in the database.
+    and deletes the documents from the database_schema.COLLECTION_IMAGES_SUBCOLLECTION_LABELS.
+
+    Input:
+       integer index between 0 and 9.
+
+    Output:
+        generator of label's documents in a Python dictionary form.
+        Each label is represented by a dict containing all the fields
+        of the document in the database and their values as stored in
+        the database_schema.COLLECTION_IMAGES_SUBCOLLECTION_LABELS.
 
     """
     def setup(self):
@@ -47,11 +55,12 @@ class GetBatchedDatasetAndDeleteFromDatabase(beam.DoFn):
             recognition_provider: the input of the pipeline, determines the labels dataset.
             recognition_run: the input of the pipeline, determines the labels dataset.
 
-        Returns:
-            A list of dictionaries with all the information (fields and id)
-            of each one of the Firestore query's label documents.
+        Yields:
+            A tuple of a Python dictionary with all the information (fields and id)
+            of each one of the Firestore query's label documents as stored in
+            the database_schema.COLLECTION_IMAGES_SUBCOLLECTION_LABELS.
 
-         Raises:
+        Raises:
             Value error if both recognition_provider and recognition_run
             are provided.
 
@@ -60,29 +69,43 @@ class GetBatchedDatasetAndDeleteFromDatabase(beam.DoFn):
             raise ValueError('both recognition provider and run are provided -\
                 there should be only one')
         # The lower limit for querying the database by the random field.
-        random_min = element * RANGE_OF_BATCH
+        random_min = element * _RANGE_OF_BATCH
         # The higher limit for querying the database by the random field.
-        random_max = random_min + RANGE_OF_BATCH
+        random_max = random_min + _RANGE_OF_BATCH
         if recognition_provider:
-            query = self.db.collection_group(u'Labels').\
-                where(u'providerId',u'==', recognition_provider.lower()).\
-                    where(u'random', u'>=', random_min).where(u'random', u'<', random_max).stream()
+            query = self.db.collection_group(database_schema.COLLECTION_IMAGES_SUBCOLLECTION_LABELS\
+                ).where(database_schema.COLLECTION_IMAGES_SUBCOLLECTION_LABELS_FIELD_PROVIDER_ID,\
+                    u'==', recognition_provider.lower()).where(database_schema.\
+                        COLLECTION_IMAGES_SUBCOLLECTION_LABELS_FIELD_RANDOM, u'>=', random_min).\
+                            where(database_schema.COLLECTION_IMAGES_SUBCOLLECTION_LABELS_FIELD_RANDOM,\
+                                u'<', random_max).stream()
         else:
-            query = self.db.collection_group(u'Labels').\
-                where(u'pipelineRunId', u'==', recognition_run).\
-                    where(u'random', u'>=', random_min).where(u'random', u'<', random_max).stream()
+            query = self.db.collection_group(database_schema.COLLECTION_IMAGES_SUBCOLLECTION_LABELS).\
+                where(database_schema.COLLECTION_IMAGES_SUBCOLLECTION_LABELS_FIELD_PIPELINE_RUN_ID,\
+                    u'==', recognition_run).where(database_schema.\
+                        COLLECTION_IMAGES_SUBCOLLECTION_LABELS_FIELD_RANDOM, u'>=', random_min)\
+                            .where(database_schema.COLLECTION_IMAGES_SUBCOLLECTION_LABELS_FIELD_RANDOM,\
+                                u'<', random_max).stream()
         for doc in query:
-            doc_dict = add_id_to_dict(doc)
+            doc_dict = doc.to_dict()
             if database_schema.COLLECTION_IMAGES_SUBCOLLECTION_LABELS_FIELD_LABEL_IDS in doc_dict:
                 # Only label documents with a 'Label Ids' field are relevant for the
                 # pipeline's continuation. The documents will be used to delete the
                 # label ids from the parent image 'labels' array if needed.
-                yield doc_dict
+                parent_image_id =\
+                    doc_dict[database_schema.COLLECTION_IMAGES_SUBCOLLECTION_LABELS_FIELD_PARENT_IMAGE_ID]
+                label_ids =\
+                    doc_dict[database_schema.COLLECTION_IMAGES_SUBCOLLECTION_LABELS_FIELD_LABEL_IDS]
+                yield (parent_image_id, label_ids)
             doc.reference.delete() # Delete label doc from database.
 
     # pylint: disable=abstract-method
 class UpdateLabelsInImageDocs(beam.DoFn):
-    """Queries the project's database to get the image dataset to label.
+    """Updates the labels field in all image douments in the
+       database_schema.COLLECTION_IMAGES.
+
+       Input: a tuple of parent image doc id and a
+       list of all label ids that were deleted in the parent image doc.
 
     """
     def setup(self):
@@ -92,21 +115,30 @@ class UpdateLabelsInImageDocs(beam.DoFn):
     # pylint: disable=arguments-differ
     def process(self, element):
         """
+        Checks if there are any other label docs in each image's
+        database_schema.COLLECTION_IMAGES_SUBCOLLECTION_LABELS
+        that contain the label ids that were deleted.
+        If not - deletes the corresponding label id from the 'labels' array field in the
+        image document in database_schema.COLLECTION_IMAGES.
+
+        Args:
+            element: (parent image doc, list of lists of label ids)
 
         """
-        parent_image_id = element[database_schema.COLLECTION_IMAGES_SUBCOLLECTION_LABELS_FIELD_PARENT_IMAGE_ID]
+        parent_image_id = element[0]
+        label_ids_lists = element[1]
+        label_ids = _union(label_ids_lists)
         parent_image_ref = self.db.collection(database_schema.COLLECTION_IMAGES).\
             document(parent_image_id)
-        label_ids = element[database_schema.COLLECTION_IMAGES_SUBCOLLECTION_LABELS_FIELD_LABEL_IDS]
         for label_id in label_ids:
             query = self.db.collection_group(database_schema.COLLECTION_IMAGES_SUBCOLLECTION_LABELS\
                 ).where(database_schema.COLLECTION_IMAGES_SUBCOLLECTION_LABELS_FIELD_PARENT_IMAGE_ID\
                     ,u'==', parent_image_id).where(database_schema.\
                         COLLECTION_IMAGES_SUBCOLLECTION_LABELS_FIELD_LABEL_IDS,\
                             u'array_contains', label_id).where(\
-                                database_schema.COLLECTION_IMAGES_SUBCOLLECTION_LABELS_FIELD_VISIBILITY, u'==',\
-                                    database_schema.LABEL_VISIBILITY_VISIBLE)
-            if len(query.get()) == 0:
+                                database_schema.COLLECTION_IMAGES_SUBCOLLECTION_LABELS_FIELD_VISIBILITY,\
+                                    u'==', data_types.VisibilityType.VISIBLE.value)
+            if len(query.get()) == 0: # No doc of the label id was found.
                 self._delete_label_id_from_labels_array(parent_image_ref, label_id)
 
     def _delete_label_id_from_labels_array(self, image_doc_ref, label_id):
@@ -116,4 +148,26 @@ class UpdateLabelsInImageDocs(beam.DoFn):
             labels_array.remove(label_id)
         image_doc_ref.update({
             database_schema.COLLECTION_IMAGES_FIELD_LABELS: labels_array
+        })
+
+def _union(list_of_lists):
+    """ Returns a list which is the union of all lists in
+    list_of_lists.
+
+    """
+    all_labels = set()
+    for inner_list in list_of_lists:
+        all_labels = all_labels.union(inner_list)
+    return list(all_labels)
+
+def update_pipelinerun_doc_to_invisible(pipeline_run_id):
+    """ Updates the pipeline run's document in the Pipeline runs Firestore collection
+    to invisible after the labels were removed.
+
+    """
+    doc_ref = initialize_db().collection(database_schema.COLLECTION_PIPELINE_RUNS).\
+        document(pipeline_run_id)
+    doc_ref.update({
+            database_schema.COLLECTION_PIPELINE_RUNS_FIELD_PROVIDER_VISIBILITY:\
+                data_types.VisibilityType.INVISIBLE.value
         })

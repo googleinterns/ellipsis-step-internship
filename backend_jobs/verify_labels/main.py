@@ -31,7 +31,8 @@ from apache_beam.options.pipeline_options import PipelineOptions
 from backend_jobs.verify_labels.pipeline_lib.redefine_labels import RedefineLabels, get_redefine_map
 from backend_jobs.verify_labels.pipeline_lib.firestore_database import GetBatchedLabelsDataset,\
     UpdateDatabase, update_pipelinerun_doc_to_visible, get_provider_id_from_run_id
-from backend_jobs.pipeline_utils.utils import generate_job_name
+from backend_jobs.pipeline_utils.utils import generate_cloud_dataflow_job_name
+from backend_jobs.pipeline_utils.firestore_database import store_pipeline_run
 
 _PIPELINE_TYPE = 'verify_labels'
 
@@ -44,7 +45,14 @@ def _validate_args(args):
         raise ValueError('recognition pipeline run id is not a string')
 
 def run(argv=None):
-    """Main entry point, defines and runs the verifymor labels pipeline."""
+    """Main entry point, defines and runs the verify labels pipeline.
+
+    Input: recogntion run id.
+    The input is used for querying the database for labels recognized by the
+    input run and verify them.
+    
+    """
+    # Using external parser: https://docs.python.org/3/library/argparse.html
     parser = argparse.ArgumentParser()
     parser.add_argument(
         '--input-recognition-run',
@@ -54,11 +62,12 @@ def run(argv=None):
     parser.add_argument(
         '--output',
         dest='output',
+        required = False, # Optional - only for development reasons.
         help='Output file to write results to for testing.')
     known_args, pipeline_args = parser.parse_known_args(argv)
     _validate_args(known_args)
     recognition_run = known_args.input_recognition_run_id
-    job_name = generate_job_name(_PIPELINE_TYPE, recognition_run)
+    job_name = generate_cloud_dataflow_job_name(_PIPELINE_TYPE, recognition_run)
     pipeline_options = PipelineOptions(pipeline_args, job_name=job_name)
 
     with beam.Pipeline(options=pipeline_options) as pipeline:
@@ -72,9 +81,12 @@ def run(argv=None):
         # pylint: disable=expression-not-assigned
         redefine_labels | 'update database' >> beam.ParDo(UpdateDatabase())
         update_pipelinerun_doc_to_visible(recognition_run)
+
         if known_args.output: # For testing.
             # pylint: disable=expression-not-assigned
             redefine_labels | 'Write' >> WriteToText(known_args.output)
+
+    store_pipeline_run(job_name)
 
 if __name__ == '__main__':
     logging.getLogger().setLevel(logging.INFO)

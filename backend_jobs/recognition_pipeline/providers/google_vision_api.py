@@ -18,6 +18,8 @@ from backend_jobs.recognition_pipeline.pipeline_lib.image_recognition_provider\
     import ImageRecognitionProvider
 from backend_jobs.pipeline_utils import database_schema
 
+_MAX_IMAGES_IN_BATCH = 16
+
 # pylint: disable=abstract-method
 class GoogleVisionAPI(ImageRecognitionProvider):
     """ An implementation of the abstract class ImageRecognitionProvider
@@ -26,13 +28,14 @@ class GoogleVisionAPI(ImageRecognitionProvider):
     """
 
     def setup(self):
+        # pylint: disable=attribute-defined-outside-init
         self.client = vision_v1.ImageAnnotatorClient()
 
     # pylint: disable=arguments-differ
     def process(self, element):
         images_and_labels = []
-        for i in range(0, len(element), 2000): # The provider supports a batch of max 2000 images.
-            images_and_labels.extend(self._get_labels_of_batch(element[i:2000+i]))
+        for i in range(0, len(element), _MAX_IMAGES_IN_BATCH):
+            images_and_labels.extend(self._get_labels_of_batch(element[i:_MAX_IMAGES_IN_BATCH+i]))
         return images_and_labels
 
     def _get_labels_of_batch(self, image_docs):
