@@ -41,7 +41,11 @@ def initialize_db():
 
 def store_pipeline_run(run_id, provider_id = None):
     """ Uploads information about the pipeline run to the
-    database_schema.COLLECTION_PIPELINE_RUNS collection
+    database_schema.COLLECTION_PIPELINE_RUNS collection.
+
+    Args:
+        run_id: the pipeline run's unique id.
+        provider_id: Optional. Used for recognition and ingestion pipelines only.
 
     """
     # pylint: disable=fixme
@@ -53,7 +57,7 @@ def store_pipeline_run(run_id, provider_id = None):
         database_schema.COLLECTION_PIPELINE_RUNS_FIELD_END_DATE: 00,
         database_schema.COLLECTION_PIPELINE_RUNS_FIELD_PIPELINE_RUN_ID: run_id
     })
-    if provider_id:
+    if provider_id: # For recognition and ingestion main pipelines.
         new_doc.set({
             database_schema.COLLECTION_PIPELINE_RUNS_FIELD_PROVIDER_ID: provider_id,
             database_schema.COLLECTION_PIPELINE_RUNS_FIELD_VISIBILITY:

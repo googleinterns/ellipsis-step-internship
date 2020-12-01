@@ -52,22 +52,6 @@ def _validate_args(args):
     if not isinstance(args.input_recognition_provider, str):
         raise ValueError('recognition provider is not a string')
 
-def _validate_args(args):
-    """ Checks whether the pipeline's arguments are valid.
-    If not - throws an error.
-
-    """
-    if bool(args.input_ingestion_pipelinerun_id) == bool(args.input_ingestion_provider):
-        raise ValueError('pipeline requires exactly one of out of ingestion pipeline run \
-            and ingestion provider - zero or two were given')
-    if args.input_ingestion_pipelinerun_id and\
-        not isinstance(args.input_ingestion_pipelinerun_id, str):
-        raise ValueError('ingestion pipeline run id is not a string')
-    if args.input_ingestion_provider and not isinstance(args.input_ingestion_provider, str):
-        raise ValueError('ingestion pipeline provider id is not a string')
-    if not isinstance(args.input_recognition_provider, str):
-        raise ValueError('recognition provider is not a string')
-
 def run(argv=None):
     """Main entry point, defines and runs the image recognition pipeline.
 

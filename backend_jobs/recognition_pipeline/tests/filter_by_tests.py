@@ -21,7 +21,6 @@ class TestFilterBy(unittest.TestCase):
     """ Tests FilterBy interface implementations.
 
     """
-
     def setUp(self):
         self.supported_image = {'imageAttributes' : {'format': 'jpg', 'resolution':\
             {'width': 800, 'height': 600}}, 'ingestedProviders': []}

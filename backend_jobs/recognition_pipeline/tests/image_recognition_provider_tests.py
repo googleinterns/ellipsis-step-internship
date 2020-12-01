@@ -20,8 +20,8 @@ _SIZE_OF_LARGE_BATCH = 1000
 
 class TestImageRecognitionProviders(unittest.TestCase):
     """ Tests ImageRecognitionProvider interface implementations.
-    """
 
+    """
     def setUp(self):
         self.eligible_image1= {'url': \
             'https://live.staticflickr.com/3677/13545844805_170ec3746b_c.jpg',\
@@ -40,6 +40,7 @@ class TestImageRecognitionProviders(unittest.TestCase):
 
     def test_label_images_correctly(self):
         """ Tests the get_labels method of each one of the providers.
+
         """
         for provider in self.providers:
             provider.setup()
@@ -85,6 +86,7 @@ class TestImageRecognitionProviders(unittest.TestCase):
     def test_is_eligible(self):
         """ Tests both supported and unsupported images by is_eligible method
             of each provider.
+            
         """
         for provider in self.providers:
             self.assertTrue(provider.is_eligible(self.eligible_image1))

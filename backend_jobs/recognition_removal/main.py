@@ -12,12 +12,6 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 
-An Image Recognition pipeline to label images from specific dataset by a specific provider.
-
-The pipeline uses Python's Apache beam library to parallelize the different stages.
-The images are taken from a Firestore database and are labeled by a ML provider.
-The labeling content is updated in the database for each image.
-By the end of the process, the project's admin group get notified.
 """
 
 from __future__ import absolute_import
@@ -57,6 +51,7 @@ def run(argv=None):
     Input: either recognition run id or recognition provider id.
     The input is used for querying the database for labels recognized by
     either one of the optional inputs.
+    
     """
     # Using external parser: https://docs.python.org/3/library/argparse.html
     parser = argparse.ArgumentParser()

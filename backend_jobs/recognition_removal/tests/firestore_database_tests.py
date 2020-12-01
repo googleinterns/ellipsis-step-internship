@@ -20,9 +20,8 @@ class TestUnionMethod(unittest.TestCase):
     """ Tests union method.
 
     """
-
     def setUp(self):
-        self.list_of_lists = [[1], [2], [1, 2]]
+        self.list_of_lists = [[1], [2], [1, 2], []]
 
     def test_union_method(self):
         """ Tests that the union method works as it should.
