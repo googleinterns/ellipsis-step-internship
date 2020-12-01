@@ -77,7 +77,7 @@ class FlickrProvider(ImageProvider):
         # See details at https://www.flickr.com/services/api/misc.urls.html
         url = image['url']
         num_of_underscores = url.count('_')
-        max_resolution = min(min_height, min_width)
+        max_resolution = max(min_height, min_width)
         # Maping between the char that represents max resolution and the max resolution.
         flickr_resolution_map = {
             75: 's', 100: 't', 150: 'q', 240: 'm', 320: 'n', 400: 'w',
