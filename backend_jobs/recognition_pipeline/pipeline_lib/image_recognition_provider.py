@@ -60,6 +60,7 @@ class ImageRecognitionProvider(ABC, beam.DoFn):
         """
         resolution_filter = filter_by_resolution.FilterByResolution(self._resolution_prerequisites)
         format_filter = filter_by_format.FilterByFormat(self._format_prerequisites)
+        resolution_filter.add_url_for_recognition_api(image)
         return resolution_filter.is_supported(image) and format_filter.is_supported(image)
 
     @property
