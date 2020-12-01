@@ -26,6 +26,8 @@ class FilterByResolution(FilterBy):
     def is_supported(self, image):
         """ Returns True iff image resolution is equal or bigger
             than the minimum supported resolution supported by the provider.
+            Adds a URL_FOR_RECOGNITION_API field with the url in the supported
+            resolution.
 
             Args:
               image: A dictionary representing the image's doc.
@@ -40,6 +42,9 @@ class FilterByResolution(FilterBy):
         min_width = self.prerequisites['width']
         if image_attribute['width'] >= min_width and \
           image_attribute['height'] >= min_height:
+            # current url is in a supported resolution
+            image[database_schema.COLLECTION_IMAGES_FIELD_URL_FOR_RECOGNITION_API] =\
+              image[database_schema.COLLECTION_IMAGES_FIELD_URL]
             return True
         return self._change_url_by_resolution(image)
 
@@ -58,6 +63,7 @@ class FilterByResolution(FilterBy):
             resize_url = provider.get_url_for_min_resolution(\
               self.prerequisites['height'], self.prerequisites['width'], image)
             if resize_url:
-                image[database_schema.COLLECTION_IMAGES_FIELD_URL] = resize_url
+                image[database_schema.COLLECTION_IMAGES_FIELD_URL_FOR_RECOGNITION_API] =\
+                  resize_url
                 return True
         return False

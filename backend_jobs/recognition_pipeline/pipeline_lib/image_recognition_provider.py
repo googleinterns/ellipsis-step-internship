@@ -88,7 +88,7 @@ class ImageRecognitionProvider(ABC, beam.DoFn):
     @property
     def provider_version(self):
         """ A string of the image recognition provider's version.
-        
+
         """
         raise NotImplementedError
     

@@ -125,7 +125,7 @@ class UpdateImageLabelsInDatabase(beam.DoFn):
                     '2.0.0',
                 database_schema.COLLECTION_IMAGES_SUBCOLLECTION_LABELS_FIELD_LABEL_NAME: label,
                 database_schema.COLLECTION_IMAGES_SUBCOLLECTION_LABELS_FIELD_VISIBILITY:\
-                    VisibilityType.INVISIBLE,
+                    VisibilityType.INVISIBLE.value,
                 database_schema.COLLECTION_IMAGES_SUBCOLLECTION_LABELS_FIELD_PARENT_IMAGE_ID:\
                     doc_id,
                 database_schema.COLLECTION_IMAGES_SUBCOLLECTION_LABELS_FIELD_PIPELINE_RUN_ID:\
