@@ -81,7 +81,6 @@ def run(argv=None):
     parser.add_argument(
         '--input_provider_name',
         dest='input_provider_name',
-        default='FlickrProvider',
         help='Provider name to process.')
     parser.add_argument(
         '--input_provider_args',
@@ -96,6 +95,7 @@ def run(argv=None):
 
     known_args, pipeline_args = parser.parse_known_args(argv)
     _validate_args(known_args)
+
     image_provider = providers.get_provider(
         providers.IMAGE_PROVIDERS,
         known_args.input_provider_name,
@@ -104,7 +104,7 @@ def run(argv=None):
     if not image_provider.enabled:
         raise ValueError('ingestion provider is not enabled')
 
-    job_name = utils.generate_cloud_dataflow_job_name('ingestion', image_provider)
+    job_name = utils.generate_cloud_dataflow_job_name('ingestion', image_provider.provider_id)
     pipeline_options = PipelineOptions(pipeline_args, job_name=job_name)
 
     # The pipeline will be run on exiting the with block.
@@ -113,7 +113,7 @@ def run(argv=None):
 
         num_of_pages = image_provider.get_num_of_pages()
         create_batch = pipeline | 'create' >> \
-            apache_beam.Create([i for i in range(1, int(num_of_pages)+1)])
+            apache_beam.Create([i for i in range(1, int(12)+1)])
         images = create_batch | 'call API' >> \
             apache_beam.ParDo(image_provider.get_images)
         extracted_elements = images | 'extract attributes' >> \

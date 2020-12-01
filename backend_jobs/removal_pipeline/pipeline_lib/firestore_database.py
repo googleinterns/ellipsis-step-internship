@@ -22,10 +22,11 @@ By the end of the process, the project's admin group get notified.
 import apache_beam as beam
 
 from backend_jobs.pipeline_utils.firestore_database import initialize_db
-from backend_jobs.recognition_pipeline.pipeline_lib.firestore_database import add_id_to_dict
 from backend_jobs.pipeline_utils import database_schema
 
 RANGE_OF_BATCH = 0.1
+
+
 # pylint: disable=abstract-method
 class GetBatchedDatasetAndDeleteFromDatabase(beam.DoFn):
     """Queries the project's database to get the labels dataset to remove,
@@ -37,7 +38,7 @@ class GetBatchedDatasetAndDeleteFromDatabase(beam.DoFn):
         self.db = initialize_db()
 
     # pylint: disable=arguments-differ
-    def process(self, element, recognition_provider = None, recognition_run = None):
+    def process(self, element, image_provider=None, pipeline_run=None):
         """Queries firestore database for labels recognized by the given
         recognition provider or run and deletes the documents from the
         database (by batch).
@@ -56,32 +57,31 @@ class GetBatchedDatasetAndDeleteFromDatabase(beam.DoFn):
             are provided.
 
         """
-        if recognition_provider and recognition_run:
-            raise ValueError('both recognition provider and run are provided -\
-                there should be only one')
         # The lower limit for querying the database by the random field.
         random_min = element * RANGE_OF_BATCH
         # The higher limit for querying the database by the random field.
         random_max = random_min + RANGE_OF_BATCH
-        if provider:
-            query = self.db.collection_group(database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS).\
-                where(u'providerId',u'==', provider).\
-                    where(u'random', u'>=', random_min).where(u'random', u'<', random_max).stream()
+        if image_provider:
+            query = self.db\
+                .collection_group(database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS)\
+                .where(u'providerId', u'==', image_provider)\
+                .where(u'random', u'>=', random_min)\
+                .where(u'random', u'<', random_max)\
+                .stream()
         else:
-            query = self.db.collection_group(database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS).\
-                where(u'pipelineRunId', u'==', pipeline_run).\
-                    where(u'random', u'>=', random_min).where(u'random', u'<', random_max).stream()
+            query = self.db.collection_group(database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS)\
+                .where(u'pipelineRunId', u'==', pipeline_run)\
+                .where(u'random', u'>=', random_min)\
+                .where(u'random', u'<', random_max)\
+                .stream()
         for doc in query:
-            doc_dict = add_id_to_dict(doc)
-            if database_schema.COLLECTION_IMAGES_SUBCOLLECTION_LABELS_FIELD_LABEL_IDS in doc_dict:
-                # Only label documents with a 'Label Ids' field are relevant for the
-                # pipeline's continuation. The documents will be used to delete the
-                # label ids from the parent image 'labels' array if needed.
-                yield doc_dict
-            doc.reference.delete() # Delete label doc from database.
+            doc_dict = doc.to_dict()
+            yield doc_dict[database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS_FIELD_PARENT_IMAGE_ID]
+            doc.reference.delete()  # Delete label doc from database.
 
-    # pylint: disable=abstract-method
-class UpdateLabelsInImageDocs(beam.DoFn):
+
+# pylint: disable=abstract-method
+class UpdateArraysInImageDocs(beam.DoFn):
     """Queries the project's database to get the image dataset to label.
 
     """
@@ -90,39 +90,50 @@ class UpdateLabelsInImageDocs(beam.DoFn):
         self.db = initialize_db()
 
     # pylint: disable=arguments-differ
-    def process(self, element, recognition_provider = None, recognition_run = None):
+    def process(self, element, image_provider=None, pipeline_run=None):
         """
 
         """
-        parent_image_id = element[database_schema.COLLECTION_IMAGES_SUBCOLLECTION_LABELS_FIELD_PARENT_IMAGE_ID]
-        parent_image_ref = self.db.collection(database_schema.COLLECTION_IMAGES).\
-            document(parent_image_id)
-        label_ids = element[database_schema.COLLECTION_IMAGES_SUBCOLLECTION_LABELS_FIELD_LABEL_IDS]
-        for label_id in label_ids:
-            query = self.db.collection_group(database_schema.COLLECTION_IMAGES_SUBCOLLECTION_LABELS\
-                ).where(database_schema.COLLECTION_IMAGES_SUBCOLLECTION_LABELS_FIELD_PARENT_IMAGE_ID\
-                    ,u'==', parent_image_id).where(database_schema.\
-                        COLLECTION_IMAGES_SUBCOLLECTION_LABELS_FIELD_LABEL_IDS,\
-                            u'array_contains', label_id).where(\
-                                database_schema.COLLECTION_IMAGES_SUBCOLLECTION_LABELS_FIELD_VISIBILITY, u'==',\
-                                    database_schema.LABEL_VISIBILITY_VISIBLE)
-            if recognition_provider:
-                query = query.where(database_schema.COLLECTION_IMAGES_SUBCOLLECTION_LABELS_FIELD_PROVIDER_ID, u'<',\
-                    recognition_provider).where(database_schema.COLLECTION_IMAGES_SUBCOLLECTION_LABELS_FIELD_PROVIDER_ID, u'>',\
-                        recognition_provider)
-            else:
-                query = query.where(database_schema.COLLECTION_IMAGES_SUBCOLLECTION_LABELS_FIELD_PIPELINE_RUN_ID, u'<',\
-                    recognition_run).where(database_schema.COLLECTION_IMAGES_SUBCOLLECTION_LABELS_FIELD_PIPELINE_RUN_ID, u'>',\
-                        recognition_run)
+        parent_image_id = element
+        parent_image_ref = \
+            self.db.collection(database_schema.COLLECTION_IMAGES).document(parent_image_id)
+
+        query = self.db.collection_group(database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS)\
+            .where(
+                database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS_FIELD_PARENT_IMAGE_ID,
+                u'==',
+                parent_image_id)
+        if(image_provider):
+            query = query\
+                .where(
+                    database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS_FIELD_PROVIDER_ID,
+                    u'==',
+                    image_provider)
             if len(query.get()) == 0:
-                self._delete_label_id_from_labels_array(parent_image_ref, label_id)
+                self._delete_element_from_array(parent_image_ref, image_provider)
+        else:
+            query = query\
+                .where(
+                    database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS_FIELD_PIPELINE_RUN_ID,
+                    u'==',
+                    pipeline_run)
+            if len(query.get()) == 0:
+                self._delete_element_from_array(parent_image_ref, pipeline_run)
 
-    def _delete_label_id_from_labels_array(self, image_doc_ref, label_id):
+    def _delete_element_from_array(self, image_doc_ref, image_provider=None, pipeline_run=None):
         image_doc_dict = image_doc_ref.get().to_dict()
-        labels_array = image_doc_dict[database_schema.COLLECTION_IMAGES_FIELD_LABELS]
-        if label_id in labels_array:
-            labels_array.remove(label_id)
-        image_doc_ref.update({
-            database_schema.COLLECTION_IMAGES_FIELD_LABELS: labels_array
-        })
-        
+        if image_provider:
+            providers_array = image_doc_dict[database_schema.COLLECTION_IMAGES_FIELD_INGESTED_PROVIDERS]
+            if image_provider in providers_array:
+                providers_array.remove(image_provider)
+            image_doc_ref.update({
+                database_schema.COLLECTION_IMAGES_FIELD_INGESTED_PROVIDERS: providers_array
+            })
+        else:
+            pipeline_runs_array = image_doc_dict[database_schema.COLLECTION_IMAGES_FIELD_INGESTED_RUNS]
+            if pipeline_run in pipeline_runs_array:
+                pipeline_runs_array.remove(pipeline_run)
+            image_doc_ref.update({
+                database_schema.COLLECTION_IMAGES_FIELD_INGESTED_RUNS: pipeline_runs_array
+            })
+    

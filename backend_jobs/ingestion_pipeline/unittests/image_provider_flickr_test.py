@@ -16,7 +16,8 @@
 import unittest
 from datetime import datetime
 from backend_jobs.ingestion_pipeline.providers import image_provider_flickr
- 
+
+
 class TestFlickrProvider(unittest.TestCase):
     element =  {'id': '39831840270', 'datetaken': '2018-04-22 16:41:11',
         'ownername': 'Marian Kloon (on and off)', 'originalformat': 'jpg',

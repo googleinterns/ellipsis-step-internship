@@ -38,5 +38,5 @@ def generate_cloud_dataflow_job_name(pipeline_type, provider):
     job_name = '{pipeline_type}_{provider}_{time_id}'.format(
       pipeline_type=pipeline_type,
       time_id=get_timestamp_id(),
-      provider=provider.provider_id.lower())
+      provider=str(provider).lower())
     return job_name.replace('_', '-')

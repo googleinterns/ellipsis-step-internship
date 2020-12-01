@@ -81,11 +81,6 @@ class ImageProvider(ABC, apache_beam.DoFn):
         raise NotImplementedError
 
     @property
-    def provider_name(self):
-        """ A friendly name of the provider, e.g. FlickrProvider. """
-        raise NotImplementedError
-
-    @property
     def provider_version(self):
         """ The version of the provider. """
         raise NotImplementedError

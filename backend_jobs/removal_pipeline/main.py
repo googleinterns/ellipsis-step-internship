@@ -26,75 +26,72 @@ import argparse
 import logging
 
 import apache_beam as beam
-from apache_beam.io import WriteToText
 from apache_beam.options.pipeline_options import PipelineOptions
 
-from backend_jobs.pipeline_utils.firestore_database import initialize_db
-from backend_jobs.recognition_pipeline.pipeline_lib.firestore_database import add_id_to_dict
-from backend_jobs.pipeline_utils.utils import generate_job_name
-from backend_jobs.recognition_removal.pipeline_lib.firestore_database import\
-    GetBatchedDatasetAndDeleteFromDatabase, UpdateLabelsInImageDocs
+from backend_jobs.removal_pipeline.pipeline_lib.firestore_database import GetBatchedDatasetAndDeleteFromDatabase
+from backend_jobs.removal_pipeline.pipeline_lib.firestore_database import UpdateArraysInImageDocs
+from backend_jobs.pipeline_utils.utils import generate_cloud_dataflow_job_name
 
-_PIPELINE_TYPE = 'recognition_removal'    
+
+_PIPELINE_TYPE = 'ingestion_removal'    
+
 
 def _validate_args(args):
     """ Checks whether the pipeline's arguments are valid.
     If not - throws an error.
 
     """
-    return True
-    if bool(args.input_recognition_run_id) == bool(args.input_recognition_provider):
-        raise ValueError('pipeline requires exactly one of out of recognition pipeline run \
-            and recognition provider - zero or two were given')
-    if args.input_recognition_run_id and\
-        not isinstance(args.input_recognition_run_id, str):
-        raise ValueError('recognition pipeline run id is not a string')
-    if args.input_recognition_provider and not isinstance(args.input_recognition_provider, str):
-        raise ValueError('recognition pipeline provider id is not a string')
+    if args.input_pipeline_run is not None and args.input_image_provider is not None:
+        raise ValueError('input can only be or input_image_provider or input_image_provider')
+    if args.input_pipeline_run is None and args.input_image_provider is None:
+        raise ValueError('missing input e.g. input_image_provider/input_image_provider')
+    if not isinstance(args.input_pipeline_run, str) and args.input_pipeline_run:
+        raise ValueError('pipeline run id is not a string')
+    if not isinstance(args.input_image_provider, str) and args.input_image_provider:
+        raise ValueError('image provider is not a string')
 
 
 def run(argv=None):
-    """Main entry point, defines and runs the image recognition pipeline."""
+    # """Main entry point, defines and runs the verify labels pipeline."""
     parser = argparse.ArgumentParser()
     parser.add_argument(
         '--input_pipeline_run',
         dest='input_pipeline_run',
-        help='Input of recognition pipeline run for the labels tht should be removed.')
+        default=None,
+        help='Input of pipeline run for ingested images.')
     parser.add_argument(
-        '--input_provider',
-        dest='input_provider',
-        help='Input of recognition pipeline provider for labels that should be removed.')
-    parser.add_argument(
-        '--output',
-        dest='output',
-        help='Output file to write results to for testing.')
+        '--input_image_provider',
+        dest='input_image_provider',
+        default=None,
+        help='Input of provider for ingested images.')
     known_args, pipeline_args = parser.parse_known_args(argv)
     _validate_args(known_args)
-    recognition_run = known_args.input_recognition_run_id
-    recognition_provider = known_args.input_recognition_provider
-    if recognition_run:
-        job_name = generate_job_name(_PIPELINE_TYPE, 'recognition_run')
+
+    pipeline_run = known_args.input_pipeline_run
+    image_provider = known_args.input_image_provider
+
+    if image_provider:
+        job_name = generate_cloud_dataflow_job_name(_PIPELINE_TYPE, image_provider)
     else:
-        job_name = generate_job_name(_PIPELINE_TYPE, 'recognition_provider')
+        job_name = generate_cloud_dataflow_job_name(_PIPELINE_TYPE, pipeline_run)
 
     pipeline_options = PipelineOptions(pipeline_args, job_name=job_name)
 
     with beam.Pipeline(options=pipeline_options) as pipeline:
 
         indices_for_batching = pipeline | 'create' >> beam.Create([i for i in range(10)])
-        if recognition_provider:
-            dataset = indices_for_batching | 'get labels dataset and delete Firebase docs' >> \
-                beam.ParDo(GetBatchedDatasetAndDeleteFromDatabase(),\
-                    recognition_provider=recognition_provider)
-            dataset | 'update database' >> beam.ParDo(UpdateLabelsInImageDocs(), recognition_provider = recognition_provider)
-        else:
-            dataset = indices_for_batching | 'get labels dataset and delete Firebase docs' >> \
-                beam.ParDo(GetBatchedDatasetAndDeleteFromDatabase(),\
-                    recognition_run=recognition_run)
-            dataset | 'update database' >> beam.ParDo(UpdateLabelsInImageDocs(), recognition_run = recognition_run)
+        dataset = indices_for_batching | 'get arrays dataset and delete Firebase docs' >> \
+            beam.ParDo(
+                GetBatchedDatasetAndDeleteFromDatabase(),
+                image_provider=image_provider,
+                pipeline_run=pipeline_run)
+        dataset_group_by_parent_image = dataset | 'group all by parent image' >>\
+            beam.GroupByKey()
+        dataset_group_by_parent_image | 'update database' >> beam.ParDo(
+            UpdateArraysInImageDocs(),
+            image_provider=image_provider,
+            pipeline_run=pipeline_run)
 
-        if known_args.output: # For testing.
-            dataset | 'Write' >> WriteToText(known_args.output)
 
 if __name__ == '__main__':
     logging.getLogger().setLevel(logging.INFO)

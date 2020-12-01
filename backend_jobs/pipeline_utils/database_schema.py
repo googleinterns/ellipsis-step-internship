@@ -13,7 +13,7 @@
   limitations under the License.
 """
 
-COLLECTION_IMAGES = 'ImagesTal'
+COLLECTION_IMAGES = 'Images'
 # constant fields names:
 # Type: array of strings, saves all providers that ingested this image.
 COLLECTION_IMAGES_FIELD_INGESTED_PROVIDERS = 'ingestedProviders'
@@ -77,7 +77,7 @@ COLLECTION_PIPELINE_RUNS_FIELD_VISIBILITY = 'visibility'
 COLLECTION_IMAGE_PROVIDERS = 'ImageProviders'
 COLLECTION_IMAGE_PROVIDERS_FIELD_PROVIDER_KEYS = 'providerKeys'
 
-COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS = 'PipelineRuns'
+COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS = 'ProvidersAndPipelineRuns'
 # Constant field names:
 # Type: string, the ingestion provider id.
 COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS_FIELD_PROVIDER_ID = 'providerId'

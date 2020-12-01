@@ -47,7 +47,7 @@ class AddOrUpdateImageDoFn(apache_beam.DoFn):
             .collection(database_schema.COLLECTION_IMAGES) \
             .document(element.image_id)
         doc = doc_ref.get()
-        sub_collection_ref = doc_ref.collection(database_schema.COLLECTION_PIPELINE_RUNS)
+        sub_collection_ref = doc_ref.collection(database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS)
         sub_collection_doc_ref = sub_collection_ref.document()
         if doc.exists:
             # Doc found- image has been ingested already
@@ -64,7 +64,7 @@ def _add_document(element, provider, job_name, doc_ref):
     geo_hashes_map = _get_geo_hashes_map(element.latitude, element.longitude)
     doc_ref.set({
         database_schema.COLLECTION_IMAGES_FIELD_URL: element.url,
-        database_schema.COLLECTION_IMAGES_FIELD_INGESTED_PROVIDERS: [provider.provider_name],
+        database_schema.COLLECTION_IMAGES_FIELD_INGESTED_PROVIDERS: [provider.provider_id],
         database_schema.COLLECTION_IMAGES_FIELD_INGESTED_RUNS: [job_name],
         database_schema.COLLECTION_IMAGES_FIELD_COORDINATES: geo_point_coordinates,
         database_schema.COLLECTION_IMAGES_FIELD_DATE_INGESTED: datetime.now(),
@@ -89,8 +89,8 @@ def _update_document(provider, doc, doc_ref, job_name):
     ingested_runs = doc_to_dict[database_schema.COLLECTION_IMAGES_FIELD_INGESTED_RUNS]
     ingested_runs.append(job_name)
     ingested_providers = doc_to_dict[database_schema.COLLECTION_IMAGES_FIELD_INGESTED_PROVIDERS]
-    if provider.provider_name not in ingested_providers:
-        ingested_providers.append(provider.provider_name)
+    if provider.provider_id not in ingested_providers:
+        ingested_providers.append(provider.provider_id)
     doc_ref.update({
         database_schema.COLLECTION_IMAGES_FIELD_INGESTED_RUNS: ingested_runs,
         database_schema.COLLECTION_IMAGES_FIELD_INGESTED_PROVIDERS: ingested_providers,
@@ -105,8 +105,6 @@ def _update_sub_collection(element, provider, job_name, sub_collection_doc_ref):
     sub_collection_doc_ref.set({
         database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS_FIELD_PROVIDER_ID:
             provider.provider_id,
-        database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS_FIELD_PROVIDER_NAME:
-            provider.provider_name,
         database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS_FIELD_PROVIDER_VERSION:
             provider.provider_version,
         database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS_FIELD_VISIBILITY:
