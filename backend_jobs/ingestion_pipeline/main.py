@@ -133,7 +133,7 @@ def run(argv=None):
         if known_args.output:
             generate_image_id | 'Write' >> WriteToText(known_args.output)
 
-    store_pipeline_run(image_provider, job_name)
+    store_pipeline_run(image_provider.provider_id, job_name)
 
 
 if __name__ == '__main__':
