@@ -15,6 +15,7 @@
 
 import enum
 
+
 class VisibilityType(enum.Enum):
     """ This enum represents the different visibility types.
     """
