@@ -16,7 +16,7 @@
 from backend_jobs.ingestion_pipeline.providers import image_provider_flickr
 
 # This map provides all the Providers.ImageProviders in the platform
-IMAGE_PROVIDERS = {'FlickrProvider': image_provider_flickr.FlickrProvider}
+IMAGE_PROVIDERS = {'FlickrProvider-2020': image_provider_flickr.FlickrProvider}
 
 
 def get_provider(name_to_provider_map, provider_name, arguments=None):
