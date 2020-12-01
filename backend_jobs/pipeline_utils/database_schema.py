@@ -52,6 +52,10 @@ COLLECTION_IMAGES_FIELD_URL = 'url'
 COLLECTION_IMAGES_FIELD_HASHMAP = 'hashmap'
 # Type: member, A VisibilityType member which represents whether the image was verified.
 COLLECTION_IMAGES_FIELD_VISIBILITY = 'visibility'
+# Type: string, the url of the image in a resolution that is supported by
+# the recognition provider's prerequisites.
+COLLECTION_IMAGES_FIELD_URL_FOR_RECOGNITION_API = 'url_for_recognition_api'
+
 
 COLLECTION_PIPELINE_RUNS = 'PipelineRuns'
 # Constant field names:

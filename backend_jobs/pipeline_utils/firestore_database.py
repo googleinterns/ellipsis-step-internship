@@ -50,6 +50,6 @@ def store_pipeline_run(provider_id, run_id):
         database_schema.COLLECTION_PIPELINE_RUNS_FIELD_START_DATE: 00,
         database_schema.COLLECTION_PIPELINE_RUNS_FIELD_END_DATE: 00,
         database_schema.COLLECTION_PIPELINE_RUNS_FIELD_VISIBILITY:
-            VisibilityType.INVISIBLE,
+            VisibilityType.INVISIBLE.value,
         database_schema.COLLECTION_PIPELINE_RUNS_FIELD_PIPELINE_RUN_ID: run_id
     })

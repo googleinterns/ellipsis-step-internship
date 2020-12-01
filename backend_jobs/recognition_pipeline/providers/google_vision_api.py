@@ -18,6 +18,8 @@ from backend_jobs.recognition_pipeline.pipeline_lib.image_recognition_provider\
     import ImageRecognitionProvider
 from backend_jobs.pipeline_utils import database_schema
 
+_MAX_IMAGES_IN_BATCH = 16
+
 # pylint: disable=abstract-method
 class GoogleVisionAPI(ImageRecognitionProvider):
     """ An implementation of the abstract class ImageRecognitionProvider
@@ -31,8 +33,8 @@ class GoogleVisionAPI(ImageRecognitionProvider):
     # pylint: disable=arguments-differ
     def process(self, element):
         images_and_labels = []
-        for i in range(0, len(element), 2000): # The provider supports a batch of max 2000 images.
-            images_and_labels.extend(self._get_labels_of_batch(element[i:2000+i]))
+        for i in range(0, len(element), _MAX_IMAGES_IN_BATCH): # The provider supports a batch of max 2000 images.
+            images_and_labels.extend(self._get_labels_of_batch(element[i:_MAX_IMAGES_IN_BATCH+i]))
         return images_and_labels
 
     def _get_labels_of_batch(self, image_docs):
@@ -40,7 +42,7 @@ class GoogleVisionAPI(ImageRecognitionProvider):
             Used to label each batch in the class's process method.
 
         Args:
-            image_docs: list of up to 2000 image docs represented by dictionaries as
+            image_docs: list of up to _MAX_IMAGES_IN_BATCH image docs represented by dictionaries as
             stored in the database_schema.COLLECTION_IMAGES.
 
         """
@@ -49,7 +51,7 @@ class GoogleVisionAPI(ImageRecognitionProvider):
         results = []
         docs = []
         for doc in image_docs:
-            url = doc[database_schema.COLLECTION_IMAGES_FIELD_URL]
+            url = doc[database_schema.COLLECTION_IMAGES_FIELD_URL_FOR_RECOGNITION_API]
             image = vision_v1.Image()
             image.source.image_uri = url
             request = vision_v1.AnnotateImageRequest(image=image, features=features)
