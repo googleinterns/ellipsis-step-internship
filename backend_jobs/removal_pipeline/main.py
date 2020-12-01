@@ -88,9 +88,7 @@ def run(argv=None):
         dataset_group_by_parent_image = dataset | 'group all by parent image' >>\
             beam.GroupByKey()
         dataset_group_by_parent_image | 'update database' >> beam.ParDo(
-            UpdateArraysInImageDocs(),
-            image_provider=image_provider,
-            pipeline_run=pipeline_run)
+            UpdateArraysInImageDocs())
 
 
 if __name__ == '__main__':

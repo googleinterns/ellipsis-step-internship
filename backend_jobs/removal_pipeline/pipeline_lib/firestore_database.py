@@ -39,6 +39,8 @@ class GetBatchedDatasetAndDeleteFromDatabase(beam.DoFn):
 
     # pylint: disable=arguments-differ
     def process(self, element, image_provider=None, pipeline_run=None):
+        print(image_provider)
+        print(pipeline_run)
         """Queries firestore database for labels recognized by the given
         recognition provider or run and deletes the documents from the
         database (by batch).
@@ -64,19 +66,23 @@ class GetBatchedDatasetAndDeleteFromDatabase(beam.DoFn):
         if image_provider:
             query = self.db\
                 .collection_group(database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS)\
-                .where(u'providerId', u'==', image_provider)\
-                .where(u'random', u'>=', random_min)\
-                .where(u'random', u'<', random_max)\
+                .where(database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS_FIELD_PROVIDER_ID, u'==', image_provider)\
+                .where(database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS_FIELD_RANDOM, u'>=', random_min)\
+                .where(database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS_FIELD_RANDOM, u'<', random_max)\
                 .stream()
         else:
-            query = self.db.collection_group(database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS)\
-                .where(u'pipelineRunId', u'==', pipeline_run)\
-                .where(u'random', u'>=', random_min)\
-                .where(u'random', u'<', random_max)\
+            query = self.db\
+                .collection_group(database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS)\
+                .where(database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS_FIELD_PIPELINE_RUN_ID, u'==', pipeline_run)\
+                .where(database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS_FIELD_RANDOM, u'>=', random_min)\
+                .where(database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS_FIELD_RANDOM, u'<', random_max)\
                 .stream()
         for doc in query:
             doc_dict = doc.to_dict()
-            yield doc_dict[database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS_FIELD_PARENT_IMAGE_ID]
+            parent_image_id = doc_dict[database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS_FIELD_PARENT_IMAGE_ID]
+            image_provider = doc_dict[database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS_FIELD_PIPELINE_RUN_ID]
+            pipeline_run = doc_dict[database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS_FIELD_PROVIDER_ID]
+            yield (parent_image_id, [image_provider, pipeline_run])
             doc.reference.delete()  # Delete label doc from database.
 
 
@@ -90,38 +96,45 @@ class UpdateArraysInImageDocs(beam.DoFn):
         self.db = initialize_db()
 
     # pylint: disable=arguments-differ
-    def process(self, element, image_provider=None, pipeline_run=None):
+    def process(self, element):
         """
 
         """
-        parent_image_id = element
-        parent_image_ref = \
-            self.db.collection(database_schema.COLLECTION_IMAGES).document(parent_image_id)
+        print(element)
+        print(element[0])
+        print(element[1][0][0])
+        print(element[1][0][1])
+        parent_image_id = element[0]
+        image_provider = element[1][0][0]
+        pipeline_run = element[1][0][1]
 
+        parent_image_ref = self.db.collection(database_schema.COLLECTION_IMAGES)\
+            .document(parent_image_id)
         query = self.db.collection_group(database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS)\
             .where(
                 database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS_FIELD_PARENT_IMAGE_ID,
                 u'==',
                 parent_image_id)
-        if(image_provider):
-            query = query\
-                .where(
-                    database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS_FIELD_PROVIDER_ID,
-                    u'==',
-                    image_provider)
-            if len(query.get()) == 0:
-                self._delete_element_from_array(parent_image_ref, image_provider)
-        else:
-            query = query\
-                .where(
-                    database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS_FIELD_PIPELINE_RUN_ID,
-                    u'==',
-                    pipeline_run)
-            if len(query.get()) == 0:
-                self._delete_element_from_array(parent_image_ref, pipeline_run)
+        query_provider = query\
+            .where(
+                database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS_FIELD_PROVIDER_ID,
+                u'==',
+                image_provider)
+        query_pipeline_run = query\
+            .where(
+                database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS_FIELD_PIPELINE_RUN_ID,
+                u'==',
+                pipeline_run)
+        if len(query_provider.get()) == 0 and len(query_pipeline_run.get()) != 0:
+            self._delete_element_from_array(parent_image_ref, image_provider=image_provider)
+        if len(query_provider.get()) != 0 and len(query_pipeline_run.get()) == 0:
+            self._delete_element_from_array(parent_image_ref, pipeline_run=pipeline_run)
+        if len(query_provider.get()) == 0 and len(query_pipeline_run.get()) == 0:
+            self._delete_element_from_array(parent_image_ref, image_provider=image_provider, pipeline_run=pipeline_run)
 
     def _delete_element_from_array(self, image_doc_ref, image_provider=None, pipeline_run=None):
         image_doc_dict = image_doc_ref.get().to_dict()
+        # 
         if image_provider:
             providers_array = image_doc_dict[database_schema.COLLECTION_IMAGES_FIELD_INGESTED_PROVIDERS]
             if image_provider in providers_array:
@@ -129,11 +142,13 @@ class UpdateArraysInImageDocs(beam.DoFn):
             image_doc_ref.update({
                 database_schema.COLLECTION_IMAGES_FIELD_INGESTED_PROVIDERS: providers_array
             })
-        else:
+        # 
+        if pipeline_run:
             pipeline_runs_array = image_doc_dict[database_schema.COLLECTION_IMAGES_FIELD_INGESTED_RUNS]
             if pipeline_run in pipeline_runs_array:
                 pipeline_runs_array.remove(pipeline_run)
             image_doc_ref.update({
                 database_schema.COLLECTION_IMAGES_FIELD_INGESTED_RUNS: pipeline_runs_array
             })
-    
+        if len(pipeline_runs_array) == 0 and len(providers_array) == 0:
+            image_doc_ref.reference.delete()  # Delete label doc from database.

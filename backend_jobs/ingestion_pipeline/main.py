@@ -16,6 +16,7 @@
 from __future__ import absolute_import
 import argparse
 import logging
+import hashlib
 import apache_beam
 from apache_beam.io import WriteToText
 from apache_beam.options.pipeline_options import PipelineOptions
@@ -34,7 +35,9 @@ def _generate_image_id(image):
     Returns:
         image: Type ImageAttributes with an updated unique id.
     """
-    image.image_id = str(hash(image.url))
+    hash_url = hashlib.sha1(image.url.encode())
+    hex_hash_id = hash_url.hexdigest()
+    image.image_id = hex_hash_id
     return image
 
 
