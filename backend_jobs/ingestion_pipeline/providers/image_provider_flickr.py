@@ -44,7 +44,7 @@ class FlickrProvider(ImageProvider):
             tags=self.query_arguments['tags'],
             # 'any' for an OR combination of tags, 'and' for an AND combination of tags.
             tag_mode=self.query_arguments['tag_mode'],
-            extras='url_c, geo, date_upload, date_taken, original_format, \
+            extras='url_o, geo, date_upload, date_taken, original_format, \
                 owner_name, original_format',
             per_page=_NUM_OF_IMAGES_PER_PAGE,
             page=page_number,
@@ -57,7 +57,7 @@ class FlickrProvider(ImageProvider):
 
     def get_image_attributes(self, element):
         image_attributes = ImageAttributes(
-            url=element.get('url_c'),
+            url=element.get('url_o'),
             image_id=None,
             image_type=ImageType.CAMERA,
             date_shot=_get_date(element),
@@ -66,9 +66,9 @@ class FlickrProvider(ImageProvider):
             latitude=float(element.get('latitude')),
             longitude=float(element.get('longitude')),
             # Extracts width from element, if the width equals str converts to int.
-            width_pixels=int(element.get('width_c')) if element.get('width_c') else None,
+            width_pixels=int(element.get('width_o')) if element.get('width_o') else None,
             # Extracts height from element, if the height equals str converts to int.
-            height_pixels=int(element.get('height_c')) if element.get('height_c') else None)
+            height_pixels=int(element.get('height_o')) if element.get('height_o') else None)
         return image_attributes
 
     def get_url_for_min_resolution(self,  min_height, min_width, image):
