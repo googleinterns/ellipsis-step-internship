@@ -21,7 +21,7 @@ import geohash2
 from google.cloud import firestore
 from backend_jobs.pipeline_utils import firestore_database
 from backend_jobs.pipeline_utils import database_schema
-from backend_jobs.ingestion_pipeline.pipeline_lib.data_types import VisibilityType
+from backend_jobs.pipeline_utils.data_types import VisibilityType
 
 
 class AddOrUpdateImageDoFn(apache_beam.DoFn):
@@ -62,7 +62,7 @@ def _add_document(element, provider, job_name, doc_ref):
     geo_hashes_map = _get_geo_hashes_map(element.latitude, element.longitude)
     doc_ref.set({
         database_schema.COLLECTION_IMAGES_FIELD_URL: element.url,
-        database_schema.COLLECTION_IMAGES_FIELD_INGESTED_PROVIDERS: [provider.provider_name],
+        database_schema.COLLECTION_IMAGES_FIELD_INGESTED_PROVIDERS: [provider.provider_id],
         database_schema.COLLECTION_IMAGES_FIELD_INGESTED_RUNS: [job_name],
         database_schema.COLLECTION_IMAGES_FIELD_COORDINATES: geo_point_coordinates,
         database_schema.COLLECTION_IMAGES_FIELD_DATE_INGESTED: datetime.now(),
@@ -78,7 +78,7 @@ def _add_document(element, provider, job_name, doc_ref):
         },
         database_schema.COLLECTION_IMAGES_FIELD_ATTRIBUTION: element.attribution,
         database_schema.COLLECTION_IMAGES_FIELD_RANDOM: random.random(),
-        database_schema.COLLECTION_IMAGES_FIELD_VISIBILITY: provider.visibility.value,
+        database_schema.COLLECTION_IMAGES_FIELD_VISIBILITY: VisibilityType.INVISIBLE,
     })
 
 
@@ -87,14 +87,14 @@ def _update_document(provider, doc, doc_ref, job_name):
     ingested_runs = doc_to_dict[database_schema.COLLECTION_IMAGES_FIELD_INGESTED_RUNS]
     ingested_runs.append(job_name)
     ingested_providers = doc_to_dict[database_schema.COLLECTION_IMAGES_FIELD_INGESTED_PROVIDERS]
-    if provider.provider_name not in ingested_providers:
-        ingested_providers.append(provider.provider_name)
+    if provider.provider_id not in ingested_providers:
+        ingested_providers.append(provider.provider_id)
     doc_ref.update({
         database_schema.COLLECTION_IMAGES_FIELD_INGESTED_RUNS: ingested_runs,
         database_schema.COLLECTION_IMAGES_FIELD_INGESTED_PROVIDERS: ingested_providers,
         database_schema.COLLECTION_IMAGES_FIELD_VISIBILITY: _get_max_visibility(
             doc_to_dict[database_schema.COLLECTION_IMAGES_FIELD_VISIBILITY],
-            provider.visibility).value
+            VisibilityType.INVISIBLE).value
     })
 
 
@@ -103,12 +103,10 @@ def _update_sub_collection(element, provider, job_name, sub_collection_doc_ref):
     sub_collection_doc_ref.set({
         database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS_FIELD_PROVIDER_ID:
             provider.provider_id,
-        database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS_FIELD_PROVIDER_NAME:
-            provider.provider_name,
         database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS_FIELD_PROVIDER_VERSION:
             provider.provider_version,
         database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS_FIELD_VISIBILITY:
-            provider.visibility.value,
+            VisibilityType.INVISIBLE,
         database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS_FIELD_PIPELINE_RUN_ID:
             job_name,
         database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS_FIELD_HASHMAP:
