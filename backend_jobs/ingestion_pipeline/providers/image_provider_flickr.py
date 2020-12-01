@@ -19,7 +19,6 @@ from backend_jobs.ingestion_pipeline.pipeline_lib.image_provider_interface impor
 from backend_jobs.ingestion_pipeline.pipeline_lib.data_types import ImageType
 from backend_jobs.ingestion_pipeline.pipeline_lib.data_types import ImageAttributes
 from backend_jobs.ingestion_pipeline.pipeline_lib.firestore_database import get_provider_keys
-from backend_jobs.pipeline_utils.data_types import VisibilityType
 
 _PROVIDER_ID = 'FlickrProvider-2020'
 _PROVIDER_KEYS = get_provider_keys(_PROVIDER_ID)
@@ -45,7 +44,7 @@ class FlickrProvider(ImageProvider):
             tags=self.query_arguments['tags'],
             # 'any' for an OR combination of tags, 'and' for an AND combination of tags.
             tag_mode=self.query_arguments['tag_mode'],
-            extras='url_c, geo, date_upload, date_taken, original_format, \
+            extras='url_o, geo, date_upload, date_taken, original_format, \
                 owner_name, original_format',
             per_page=_NUM_OF_IMAGES_PER_PAGE,
             page=page_number,
@@ -58,7 +57,7 @@ class FlickrProvider(ImageProvider):
 
     def get_image_attributes(self, element):
         image_attributes = ImageAttributes(
-            url=element.get('url_c'),
+            url=element.get('url_o'),
             image_id=None,
             image_type=ImageType.CAMERA,
             date_shot=_get_date(element),
@@ -67,9 +66,9 @@ class FlickrProvider(ImageProvider):
             latitude=float(element.get('latitude')),
             longitude=float(element.get('longitude')),
             # Extracts width from element, if the width equals str converts to int.
-            width_pixels=int(element.get('width_c')) if element.get('width_c') else None,
+            width_pixels=int(element.get('width_o')) if element.get('width_o') else None,
             # Extracts height from element, if the height equals str converts to int.
-            height_pixels=int(element.get('height_c')) if element.get('height_c') else None)
+            height_pixels=int(element.get('height_o')) if element.get('height_o') else None)
         return image_attributes
 
     def get_url_for_min_resolution(self,  min_height, min_width, image):
@@ -90,7 +89,7 @@ class FlickrProvider(ImageProvider):
                     if key == 500:
                         # Removing the char that represents the resolution to get max resolution of 500.
                         return url[:-6] + url[-4:]
-                    # Replacing the char that represents the resolution with the wonted key.
+                    # Replacing the char that represents the resolution with the wanted key.
                     return url[:-5] + flickr_resolution_map[key] + url[-4:]
             # Url in the format: https://live.staticflickr.com/{server-id}/{id}_{secret}.jpg
             else:
@@ -98,7 +97,7 @@ class FlickrProvider(ImageProvider):
                     if key == 500:
                         # Removing the char that represents the resolution to get max resolution of 500.
                         return url
-                    # Adding the char that represents the resolution with the wonted key.
+                    # Adding the char that represents the resolution with the wanted key.
                     return url[:-4] + '_' + flickr_resolution_map[key] + url[-4:]
         raise ValueError('No url with requested resolution')
 
@@ -106,7 +105,6 @@ class FlickrProvider(ImageProvider):
     provider_id = _PROVIDER_ID
     provider_version = '2.4.0'
     enabled = True
-    visibility = VisibilityType.INVISIBLE
 
 
 def _get_date(element):

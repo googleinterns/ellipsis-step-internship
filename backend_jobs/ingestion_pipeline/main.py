@@ -21,6 +21,7 @@ from apache_beam.io import WriteToText
 from apache_beam.options.pipeline_options import PipelineOptions
 from backend_jobs.ingestion_pipeline.pipeline_lib import firestore_database
 from backend_jobs.ingestion_pipeline.providers import providers
+from backend_jobs.pipeline_utils.firestore_database import store_pipeline_run
 from backend_jobs.pipeline_utils import utils
 
 
@@ -128,6 +129,8 @@ def run(argv=None):
 
         if known_args.output:
             generate_image_id | 'Write' >> WriteToText(known_args.output)
+
+    store_pipeline_run(image_provider.provider_id, job_name)
 
 
 if __name__ == '__main__':

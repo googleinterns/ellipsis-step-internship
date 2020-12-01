@@ -79,8 +79,8 @@ def _add_document(element, provider, job_name, doc_ref):
             },
         },
         database_schema.COLLECTION_IMAGES_FIELD_ATTRIBUTION: element.attribution,
-        database_schema.COLLECTION_IMAGES_FIELD_RANDOM: _RANDOM,
-        database_schema.COLLECTION_IMAGES_FIELD_VISIBILITY: provider.visibility.value,
+        database_schema.COLLECTION_IMAGES_FIELD_RANDOM: random.random(),
+        database_schema.COLLECTION_IMAGES_FIELD_VISIBILITY: VisibilityType.INVISIBLE.value,
     })
 
 
@@ -96,7 +96,7 @@ def _update_document(provider, doc, doc_ref, job_name):
         database_schema.COLLECTION_IMAGES_FIELD_INGESTED_PROVIDERS: ingested_providers,
         database_schema.COLLECTION_IMAGES_FIELD_VISIBILITY: _get_max_visibility(
             doc_to_dict[database_schema.COLLECTION_IMAGES_FIELD_VISIBILITY],
-            provider.visibility).value
+            VisibilityType.INVISIBLE).value
     })
 
 
@@ -108,7 +108,7 @@ def _update_sub_collection(element, provider, job_name, sub_collection_doc_ref):
         database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS_FIELD_PROVIDER_VERSION:
             provider.provider_version,
         database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS_FIELD_VISIBILITY:
-            provider.visibility.value,
+            VisibilityType.INVISIBLE.value,
         database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS_FIELD_PIPELINE_RUN_ID:
             job_name,
         database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS_FIELD_HASHMAP:

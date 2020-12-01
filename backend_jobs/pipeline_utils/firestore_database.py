@@ -18,8 +18,8 @@ from firebase_admin import firestore
 from backend_jobs.pipeline_utils import database_schema
 from backend_jobs.pipeline_utils.data_types import VisibilityType
 
-PROJECT_ID_NAME = 'step-project-ellispis'
-PROJECT_ID = 'projectId'
+_PROJECT_ID_NAME = 'step-project-ellispis'
+_PROJECT_ID = 'projectId'
 
 
 def initialize_db():
@@ -32,7 +32,7 @@ def initialize_db():
     # pylint: disable=protected-access
     if not firebase_admin._apps:
         firebase_admin.initialize_app(credentials.ApplicationDefault(), {
-            PROJECT_ID: PROJECT_ID_NAME,
+            _PROJECT_ID: _PROJECT_ID_NAME,
         })
     return firestore.client()
 
@@ -50,6 +50,6 @@ def store_pipeline_run(provider_id, run_id):
         database_schema.COLLECTION_PIPELINE_RUNS_FIELD_START_DATE: 00,
         database_schema.COLLECTION_PIPELINE_RUNS_FIELD_END_DATE: 00,
         database_schema.COLLECTION_PIPELINE_RUNS_FIELD_VISIBILITY:
-            VisibilityType.INVISIBLE,
+            VisibilityType.INVISIBLE.value,
         database_schema.COLLECTION_PIPELINE_RUNS_FIELD_PIPELINE_RUN_ID: run_id
     })

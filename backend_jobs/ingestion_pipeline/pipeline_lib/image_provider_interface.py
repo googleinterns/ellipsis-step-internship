@@ -13,11 +13,7 @@
   limitations under the License.
 
 
-Each ImageProvider that is added to the platform will inherit from the ImageProviders class.
-This class is in charge of:
-* Returning images from the provider.
-* Calculating the number of batches we want to run in parallel.
-* Extracting additional metadata.
+
 """
 
 from abc import ABC, abstractmethod
@@ -26,6 +22,10 @@ import apache_beam
 
 class ImageProvider(ABC, apache_beam.DoFn):
     """ ImageProvider is an interface that all the image ingestion providers inherit from.
+    This class is in charge of:
+    * Returning images from the provider.
+    * Calculating the number of batches we want to run in parallel.
+    * Extracting additional metadata.
     """
 
     @abstractmethod
@@ -88,9 +88,4 @@ class ImageProvider(ABC, apache_beam.DoFn):
     @property
     def enabled(self):
         """ Whether we can ingest images from this provider. """
-        raise NotImplementedError
-
-    @property
-    def visibility(self):
-        """ Type VisibilityType - The provider visibility. """
         raise NotImplementedError
