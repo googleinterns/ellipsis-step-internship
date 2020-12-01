@@ -25,7 +25,7 @@ from backend_jobs.pipeline_utils.firestore_database import initialize_db, RANGE_
 from backend_jobs.pipeline_utils import database_schema, data_types
 
 # pylint: disable=abstract-method
-class GetBatchedDatasetAndDeleteFromDatabase(beam.DoFn):
+class GetAndDeleteBatchedLabelsDataset(beam.DoFn):
     """Queries the project's database to get the labels dataset to remove,
     and deletes the documents from the database_schema.COLLECTION_IMAGES_SUBCOLLECTION_LABELS.
 

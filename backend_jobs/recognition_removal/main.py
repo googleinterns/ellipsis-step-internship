@@ -30,9 +30,9 @@ from apache_beam.io import WriteToText
 from apache_beam.options.pipeline_options import PipelineOptions
 
 from backend_jobs.pipeline_utils.utils import generate_cloud_dataflow_job_name
-from backend_jobs.pipeline_utils.firestore_database import store_pipeline_run
+from backend_jobs.pipeline_utils.firestore_database import store_pipeline_run, RANGE_OF_BATCH
 from backend_jobs.recognition_removal.pipeline_lib.firestore_database import\
-    GetBatchedDatasetAndDeleteFromDatabase, UpdateLabelsInImageDocs, update_pipelinerun_doc_to_invisible
+    GetAndDeleteBatchedLabelsDataset, UpdateLabelsInImageDocs, update_pipelinerun_doc_to_invisible
 
 _PIPELINE_TYPE = 'recognition_removal'
 
@@ -85,14 +85,14 @@ def run(argv=None):
     pipeline_options = PipelineOptions(pipeline_args, job_name=job_name)
 
     with beam.Pipeline(options=pipeline_options) as pipeline:
-        indices_for_batching = pipeline | 'create' >> beam.Create([i for i in range(10)])
+        indices_for_batching = pipeline | 'create' >> beam.Create([i for i in range(int(1/RANGE_OF_BATCH))])
         if recognition_provider:
             dataset = indices_for_batching | 'get labels dataset and delete Firebase docs' >> \
-                beam.ParDo(GetBatchedDatasetAndDeleteFromDatabase(),\
+                beam.ParDo(GetAndDeleteBatchedLabelsDataset(),\
                     recognition_provider=recognition_provider)
         else:
             dataset = indices_for_batching | 'get labels dataset and delete Firebase docs' >> \
-                beam.ParDo(GetBatchedDatasetAndDeleteFromDatabase(),\
+                beam.ParDo(GetAndDeleteBatchedLabelsDataset(),\
                     recognition_run=recognition_run)
             update_pipelinerun_doc_to_invisible(recognition_run)
         dataset_group_by_parent_image = dataset | 'group all labels by parent image' >>\

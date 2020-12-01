@@ -32,7 +32,7 @@ from backend_jobs.verify_labels.pipeline_lib.redefine_labels import RedefineLabe
 from backend_jobs.verify_labels.pipeline_lib.firestore_database import GetBatchedLabelsDataset,\
     UpdateDatabase, update_pipelinerun_doc_to_visible, get_provider_id_from_run_id
 from backend_jobs.pipeline_utils.utils import generate_cloud_dataflow_job_name
-from backend_jobs.pipeline_utils.firestore_database import store_pipeline_run
+from backend_jobs.pipeline_utils.firestore_database import store_pipeline_run, RANGE_OF_BATCH
 
 _PIPELINE_TYPE = 'verify_labels'
 
@@ -71,7 +71,7 @@ def run(argv=None):
     pipeline_options = PipelineOptions(pipeline_args, job_name=job_name)
 
     with beam.Pipeline(options=pipeline_options) as pipeline:
-        indices_for_batching = pipeline | 'create' >> beam.Create([i for i in range(10)])
+        indices_for_batching = pipeline | 'create' >> beam.Create([i for i in range(int(1/RANGE_OF_BATCH))])
         dataset = indices_for_batching | 'get labels dataset' >> \
             beam.ParDo(GetBatchedLabelsDataset(), recognition_run)
         provider_id = get_provider_id_from_run_id(recognition_run)
