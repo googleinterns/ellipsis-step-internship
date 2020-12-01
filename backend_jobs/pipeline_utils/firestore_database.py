@@ -18,9 +18,11 @@ from firebase_admin import firestore
 from backend_jobs.pipeline_utils import database_schema
 from backend_jobs.pipeline_utils.data_types import VisibilityType
 
-PROJECT_ID_NAME = 'step-project-ellispis'
-PROJECT_ID = 'projectId'
+_PROJECT_ID_NAME = 'step-project-ellispis'
+_PROJECT_ID = 'projectId'
 
+# Defines the range of each batch while querying the database.
+RANGE_OF_BATCH = 0.001
 
 def initialize_db():
     """Initializes project's Firestore database for writing and reading purposes
@@ -32,7 +34,7 @@ def initialize_db():
     # pylint: disable=protected-access
     if not firebase_admin._apps:
         firebase_admin.initialize_app(credentials.ApplicationDefault(), {
-            PROJECT_ID: PROJECT_ID_NAME,
+            _PROJECT_ID: _PROJECT_ID_NAME,
         })
     return firestore.client()
 

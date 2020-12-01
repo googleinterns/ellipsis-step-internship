@@ -22,11 +22,9 @@ By the end of the process, the project's admin group get notified.
 
 import apache_beam as beam
 
-from backend_jobs.pipeline_utils.firestore_database import initialize_db
+from backend_jobs.pipeline_utils.firestore_database import initialize_db, RANGE_OF_BATCH
 from backend_jobs.pipeline_utils import database_schema, data_types
 from backend_jobs.recognition_pipeline.pipeline_lib.firestore_database import add_id_to_dict
-
-RANGE_OF_BATCH = 0.1
 
 # pylint: disable=abstract-method
 class GetBatchedLabelsDataset(beam.DoFn):

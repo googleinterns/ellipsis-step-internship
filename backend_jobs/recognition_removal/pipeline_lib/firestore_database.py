@@ -21,10 +21,9 @@ By the end of the process, the project's admin group get notified.
 """
 import apache_beam as beam
 
-from backend_jobs.pipeline_utils.firestore_database import initialize_db
+from backend_jobs.pipeline_utils.firestore_database import initialize_db, RANGE_OF_BATCH
 from backend_jobs.pipeline_utils import database_schema, data_types
 
-_RANGE_OF_BATCH = 0.1
 # pylint: disable=abstract-method
 class GetBatchedDatasetAndDeleteFromDatabase(beam.DoFn):
     """Queries the project's database to get the labels dataset to remove,
@@ -69,9 +68,9 @@ class GetBatchedDatasetAndDeleteFromDatabase(beam.DoFn):
             raise ValueError('both recognition provider and run are provided -\
                 there should be only one')
         # The lower limit for querying the database by the random field.
-        random_min = element * _RANGE_OF_BATCH
+        random_min = element * RANGE_OF_BATCH
         # The higher limit for querying the database by the random field.
-        random_max = random_min + _RANGE_OF_BATCH
+        random_max = random_min + RANGE_OF_BATCH
         if recognition_provider:
             query = self.db.collection_group(database_schema.COLLECTION_IMAGES_SUBCOLLECTION_LABELS\
                 ).where(database_schema.COLLECTION_IMAGES_SUBCOLLECTION_LABELS_FIELD_PROVIDER_ID,\
@@ -127,7 +126,7 @@ class UpdateLabelsInImageDocs(beam.DoFn):
         """
         parent_image_id = element[0]
         label_ids_lists = element[1]
-        label_ids = _union(label_ids_lists)
+        label_ids = union(label_ids_lists)
         parent_image_ref = self.db.collection(database_schema.COLLECTION_IMAGES).\
             document(parent_image_id)
         for label_id in label_ids:
@@ -150,7 +149,7 @@ class UpdateLabelsInImageDocs(beam.DoFn):
             database_schema.COLLECTION_IMAGES_FIELD_LABELS: labels_array
         })
 
-def _union(list_of_lists):
+def union(list_of_lists):
     """ Returns a list which is the union of all lists in
     list_of_lists.
 

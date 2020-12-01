@@ -15,11 +15,8 @@
 import apache_beam as beam
 from backend_jobs.pipeline_utils import database_schema
 from backend_jobs.pipeline_utils.data_types import VisibilityType
-from backend_jobs.pipeline_utils.firestore_database import initialize_db
+from backend_jobs.pipeline_utils.firestore_database import initialize_db, RANGE_OF_BATCH
 import random
-
-# Defines the range of the random field to query the database by batches.
-_RANGE_OF_BATCH = 0.1
 
 # pylint: disable=abstract-method
 class GetBatchedImageDataset(beam.DoFn):
@@ -64,9 +61,9 @@ class GetBatchedImageDataset(beam.DoFn):
             raise ValueError('both ingestion provider and run are provided -\
                 there should be only one')
         # The lower limit for querying the database by the random field.
-        random_min = element * _RANGE_OF_BATCH
+        random_min = element * RANGE_OF_BATCH
         # The higher limit for querying the database by the random field.
-        random_max = random_min + _RANGE_OF_BATCH
+        random_max = random_min + RANGE_OF_BATCH
         if ingestion_run:
             query = self.db.collection(database_schema.COLLECTION_IMAGES).\
                 where(database_schema.COLLECTION_IMAGES_FIELD_INGESTED_RUNS, \
