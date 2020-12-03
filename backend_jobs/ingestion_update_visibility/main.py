@@ -12,28 +12,28 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 
-An Image Recognition pipeline to label images from specific dataset by a specific provider.
+An update visibility pipeline to update the visibility in documents/images from specific dataset
+by a specific provider/ pipeline run.
 
 The pipeline uses Python's Apache beam library to parallelize the different stages.
-The images are taken from a Firestore database and are labeled by a ML provider.
-The labeling content is updated in the database for each image.
-By the end of the process, the project's admin group get notified.
+The images are taken from a Firestore database.
 """
 
 from __future__ import absolute_import
 
 import argparse
 import logging
-
 import apache_beam as beam
 from apache_beam.options.pipeline_options import PipelineOptions
 
-from backend_jobs.removal_pipeline.pipeline_lib.firestore_database import GetBatchedDatasetAndDeleteFromDatabase
-from backend_jobs.removal_pipeline.pipeline_lib.firestore_database import UpdateArraysInImageDocs
+from backend_jobs.ingestion_update_visibility.pipeline_lib.firestore_database import GetDataset
+from backend_jobs.ingestion_update_visibility.pipeline_lib.firestore_database import UpdateVisibilityInDatabase
+from backend_jobs.ingestion_update_visibilityss.pipeline_lib.firestore_database import update_pipelinerun_doc_to_visible
 from backend_jobs.pipeline_utils.utils import generate_cloud_dataflow_job_name
+from backend_jobs.pipeline_utils.data_types import VisibilityType
 
 
-_PIPELINE_TYPE = 'ingestion_removal'    
+_PIPELINE_TYPE = 'update_visibility_pipeline'
 
 
 def _validate_args(args):
@@ -51,8 +51,20 @@ def _validate_args(args):
         raise ValueError('image provider is not a string')
 
 
+def _get_visibility(visibility):
+    """ Converts the given visibility(string) to VisibilityType.
+    If the visibility is not a valid string- throws an error.
+
+    """
+    if visibility == 'VISIBLE':
+        return VisibilityType.VISIBLE
+    if visibility == 'INVISIBLE':
+        return VisibilityType.INVISIBLE
+    raise ValueError('missing input_visibility can be VISIBLE/INVISIBLE')
+
+
 def run(argv=None):
-    # """Main entry point, defines and runs the verify labels pipeline."""
+    """Main entry point, defines and runs the updating visibility pipeline."""
     parser = argparse.ArgumentParser()
     parser.add_argument(
         '--input_pipeline_run',
@@ -64,11 +76,17 @@ def run(argv=None):
         dest='input_image_provider',
         default=None,
         help='Input of provider for ingested images.')
+    parser.add_argument(
+        '--input_visibility',
+        dest='input_visibility',
+        default=VisibilityType.VISIBLE,
+        help='Input of provider for ingested images.')
     known_args, pipeline_args = parser.parse_known_args(argv)
     _validate_args(known_args)
 
     pipeline_run = known_args.input_pipeline_run
     image_provider = known_args.input_image_provider
+    visibility = _get_visibility(known_args.input_visibility)
 
     if image_provider:
         job_name = generate_cloud_dataflow_job_name(_PIPELINE_TYPE, image_provider)
@@ -78,17 +96,12 @@ def run(argv=None):
     pipeline_options = PipelineOptions(pipeline_args, job_name=job_name)
 
     with beam.Pipeline(options=pipeline_options) as pipeline:
-
         indices_for_batching = pipeline | 'create' >> beam.Create([i for i in range(10)])
-        dataset = indices_for_batching | 'get arrays dataset and delete Firebase docs' >> \
-            beam.ParDo(
-                GetBatchedDatasetAndDeleteFromDatabase(),
-                image_provider=image_provider,
-                pipeline_run=pipeline_run)
-        dataset_group_by_parent_image = dataset | 'group all by parent image' >>\
-            beam.GroupByKey()
-        dataset_group_by_parent_image | 'update database' >> beam.ParDo(
-            UpdateArraysInImageDocs())
+        dataset = indices_for_batching | 'get dataset' >>\
+            beam.ParDo(GetDataset(), image_provider=image_provider, pipeline_run=pipeline_run)
+        dataset | 'update visibility database' >>\
+            beam.ParDo(UpdateVisibilityInDatabase(), visibility)
+        update_pipelinerun_doc_to_visible(image_provider)
 
 
 if __name__ == '__main__':

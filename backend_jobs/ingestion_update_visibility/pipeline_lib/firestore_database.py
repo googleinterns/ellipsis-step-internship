@@ -11,26 +11,15 @@
   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
   See the License for the specific language governing permissions and
   limitations under the License.
-
-An Image Recognition pipeline to label images from specific dataset by a specific provider.
-
-The pipeline uses Python's Apache beam library to parallelize the different stages.
-The images are taken from a Firestore database and are labeled by a ML provider.
-The labeling content is updated in the database for each image.
-By the end of the process, the project's admin group get notified.
 """
 
-import apache_beam as beam
+import apache_beam 
 from backend_jobs.pipeline_utils.firestore_database import initialize_db
 from backend_jobs.pipeline_utils import database_schema
-from backend_jobs.pipeline_utils import data_types
+from backend_jobs.pipeline_utils import constance
 
 
-RANGE_OF_BATCH = 0.1
-
-
-# pylint: disable=abstract-method
-class GetDataset(beam.DoFn):
+class GetDataset(apache_beam.DoFn):
     """Queries the project's database to get the image dataset to label.
 
     """
@@ -53,9 +42,9 @@ class GetDataset(beam.DoFn):
             of each one of the Firestore query's image documents.
         """
         # the lower limit for querying the database by the random field.
-        random_min = element * RANGE_OF_BATCH
+        random_min = element * constance.RANGE_OF_BATCH
         # the higher limit for querying the database by the random field.
-        random_max = random_min + RANGE_OF_BATCH
+        random_max = random_min + constance.RANGE_OF_BATCH
         if image_provider:
             query = self.db.collection_group(database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS)\
                 .where(
@@ -74,13 +63,13 @@ class GetDataset(beam.DoFn):
                 .where(database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS_FIELD_RANDOM, u'>=', random_min)\
                 .where(database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS_FIELD_RANDOM, u'<', random_max)\
                 .stream()
-        docs = (add_id_to_dict(doc) for doc in query)
+        docs = (_add_id_to_dict(doc) for doc in query)
         print(docs)
         return docs
 
 
 # pylint: disable=abstract-method
-class UpdateVisibilityInDatabase(beam.DoFn):
+class UpdateVisibilityInDatabase(apache_beam.DoFn):
     """ Updates Firestore Database visibility field to visible.
     Updates visibility inside pipeline document in 'PipelineRuns' subcollection
     and in the 'Images' collection.
@@ -105,17 +94,16 @@ class UpdateVisibilityInDatabase(beam.DoFn):
         })
 
 
-def update_pipelinerun_doc_to_visible(image_provider_id):
+def update_pipelinerun_doc_visibility(image_provider_id, visibility):
     """ Updates the pipeline run's document in the Pipeline runs Firestore collection to visible."""
     doc_ref = initialize_db().collection(database_schema.COLLECTION_PIPELINE_RUNS).\
         document(image_provider_id)
     doc_ref.update({
-        database_schema.COLLECTION_PIPELINE_RUNS_FIELD_PROVIDER_VISIBILITY:
-            data_types.VisibilityType.VISIBLE.value
+        database_schema.COLLECTION_PIPELINE_RUNS_FIELD_PROVIDER_VISIBILITY: visibility.value
     })
 
 
-def add_id_to_dict(doc):
+def _add_id_to_dict(doc):
     """ Adds the document's id to the document's fields dictionary."""
     full_dict = doc.to_dict()
     full_dict['id'] = doc.id
