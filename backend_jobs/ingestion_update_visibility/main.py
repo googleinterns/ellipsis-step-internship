@@ -30,6 +30,7 @@ from backend_jobs.ingestion_update_visibility.pipeline_lib.firestore_database im
 from backend_jobs.ingestion_update_visibility.pipeline_lib.firestore_database import UpdateVisibilityInDatabase
 from backend_jobs.pipeline_utils.utils import generate_cloud_dataflow_job_name
 from backend_jobs.pipeline_utils.data_types import VisibilityType
+from backend_jobs.pipeline_utils import constance
 
 
 _PIPELINE_TYPE = 'update_visibility_pipeline'
@@ -95,7 +96,7 @@ def run(argv=None):
     pipeline_options = PipelineOptions(pipeline_args, job_name=job_name)
 
     with beam.Pipeline(options=pipeline_options) as pipeline:
-        indices_for_batching = pipeline | 'create' >> beam.Create([i for i in range(10)])
+        indices_for_batching = pipeline | 'create' >> beam.Create(constance.LIST_FOR_BATCHES)
         dataset = indices_for_batching | 'get dataset' >>\
             beam.ParDo(GetDataset(), image_provider=image_provider, pipeline_run=pipeline_run)
         dataset | 'update visibility database' >>\
