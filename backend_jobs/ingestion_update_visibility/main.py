@@ -28,7 +28,6 @@ from apache_beam.options.pipeline_options import PipelineOptions
 
 from backend_jobs.ingestion_update_visibility.pipeline_lib.firestore_database import GetDataset
 from backend_jobs.ingestion_update_visibility.pipeline_lib.firestore_database import UpdateVisibilityInDatabase
-from backend_jobs.ingestion_update_visibilityss.pipeline_lib.firestore_database import update_pipelinerun_doc_to_visible
 from backend_jobs.pipeline_utils.utils import generate_cloud_dataflow_job_name
 from backend_jobs.pipeline_utils.data_types import VisibilityType
 
@@ -79,7 +78,7 @@ def run(argv=None):
     parser.add_argument(
         '--input_visibility',
         dest='input_visibility',
-        default=VisibilityType.VISIBLE,
+        default='VISIBLE',
         help='Input of provider for ingested images.')
     known_args, pipeline_args = parser.parse_known_args(argv)
     _validate_args(known_args)
@@ -101,7 +100,7 @@ def run(argv=None):
             beam.ParDo(GetDataset(), image_provider=image_provider, pipeline_run=pipeline_run)
         dataset | 'update visibility database' >>\
             beam.ParDo(UpdateVisibilityInDatabase(), visibility)
-        update_pipelinerun_doc_to_visible(image_provider)
+
 
 
 if __name__ == '__main__':
