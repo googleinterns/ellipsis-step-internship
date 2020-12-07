@@ -13,6 +13,7 @@
   limitations under the License.
 """
 from datetime import datetime
+from backend_jobs.pipeline_utils.firestore_database import RANGE_OF_BATCH
 
 
 def get_timestamp_id():
@@ -41,3 +42,9 @@ def generate_cloud_dataflow_job_name(pipeline_type, additional_info):
       additional_info = additional_info.lower())
       # Dataflow job names can only include '-' and not '_'.
     return job_name.replace('_','-')
+
+def create_query_indices():
+    """ Creates a list of indices for querying the database.
+
+    """
+    return [i for i in range(int(1/RANGE_OF_BATCH))]

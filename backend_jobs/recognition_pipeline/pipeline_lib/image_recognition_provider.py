@@ -19,6 +19,7 @@ from backend_jobs.recognition_pipeline.filters import filter_by_format, filter_b
 from backend_jobs.ingestion_pipeline.providers.providers import\
   get_provider, IMAGE_PROVIDERS
 from backend_jobs.pipeline_utils import database_schema
+from backend_jobs.recognition_pipeline.pipeline_lib import constants
 
 class ImageRecognitionProvider(ABC, beam.DoFn):
     """ Each recognition provider used in our project
@@ -29,11 +30,11 @@ class ImageRecognitionProvider(ABC, beam.DoFn):
 
     """
     @abstractmethod
-    def process(self, element):
+    def process(self, images):
         """Labels a batch of images from dataset using a specific recognition provider.
 
         Args:
-            element: a list of images information dictionaries.
+            images: a list of images information dictionaries.
             Each Python dictionary contains all of the images' fields and their
             values as stored in the database.
 

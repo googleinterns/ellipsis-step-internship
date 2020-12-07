@@ -12,6 +12,14 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 
+A recognition removal pipeline to remove all labels recognized by a specific provider
+or by a specific run.
+
+The pipeline uses Python's Apache beam library to parallelize the different stages.
+The labels are taken from a Firestore database using a query
+and are then deleted from the databse.
+The pipeline updates COLLECTION_IMAGES to make sure only existing labels are left
+for each image in the database.
 """
 
 from __future__ import absolute_import
@@ -23,8 +31,8 @@ import apache_beam as beam
 from apache_beam.io import WriteToText
 from apache_beam.options.pipeline_options import PipelineOptions
 
-from backend_jobs.pipeline_utils.utils import generate_cloud_dataflow_job_name
-from backend_jobs.pipeline_utils.firestore_database import store_pipeline_run, RANGE_OF_BATCH
+from backend_jobs.pipeline_utils.utils import generate_cloud_dataflow_job_name, create_query_indices
+from backend_jobs.pipeline_utils.firestore_database import store_pipeline_run
 from backend_jobs.recognition_removal.pipeline_lib.firestore_database import\
     GetAndDeleteBatchedLabelsDataset, UpdateLabelsInImageDocs, update_pipelinerun_doc_to_invisible
 
@@ -80,15 +88,11 @@ def run(argv=None):
     pipeline_options = PipelineOptions(pipeline_args, job_name=job_name)
 
     with beam.Pipeline(options=pipeline_options) as pipeline:
-        indices_for_batching = pipeline | 'create' >> beam.Create([i for i in range(int(1/RANGE_OF_BATCH))])
-        if recognition_provider:
-            dataset = indices_for_batching | 'get labels dataset and delete Firebase docs' >> \
-                beam.ParDo(GetAndDeleteBatchedLabelsDataset(),\
-                    recognition_provider=recognition_provider)
-        else:
-            dataset = indices_for_batching | 'get labels dataset and delete Firebase docs' >> \
-                beam.ParDo(GetAndDeleteBatchedLabelsDataset(),\
-                    recognition_run=recognition_run)
+        indices_for_batching = pipeline | 'create' >> beam.Create(create_query_indices())
+        dataset = indices_for_batching | 'get labels dataset and delete Firebase docs' >> \
+            beam.ParDo(GetAndDeleteBatchedLabelsDataset(),\
+                recognition_provider=recognition_provider, recognition_run=recognition_run)
+        if recognition_run:
             update_pipelinerun_doc_to_invisible(recognition_run)
         dataset_group_by_parent_image = dataset | 'group all labels by parent image' >>\
             beam.GroupByKey()

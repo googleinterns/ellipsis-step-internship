@@ -21,7 +21,9 @@ from backend_jobs.pipeline_utils.data_types import VisibilityType
 _PROJECT_ID_NAME = 'step-project-ellispis'
 _PROJECT_ID = 'projectId'
 
-# Defines the range of each batch while querying the database.
+# Each batch is queried by COLLECTION_IMAGES_FIELD_RANDOM.
+# RANGE_OF_BATCH defines the ratio of images processed
+# in each batch out of all images stored in the database.
 RANGE_OF_BATCH = 0.001
 
 def initialize_db():

@@ -25,7 +25,7 @@ class GetBatchedLabelsDataset(beam.DoFn):
     """Queries the project's database to get the labels needed to be verified.
 
     Input:
-       integer index between 0 and 9.
+       integer index.
 
     Output:
         generator of label's documents in a Python dictionary form.
@@ -39,12 +39,12 @@ class GetBatchedLabelsDataset(beam.DoFn):
         self.db = initialize_db()
 
     # pylint: disable=arguments-differ
-    def process(self, element, recognition_run):
+    def process(self, index, recognition_run):
         """Queries firestore database for labels recognizied by
         the recognition_run within a random range (by batch).
 
         Args:
-            element: the lower limit for querying the database by the random field.
+            index: the index for querying the database by the random field.
             recognition_run: the input of the pipeline, determines the labels dataset.
 
         Returns:
@@ -54,7 +54,7 @@ class GetBatchedLabelsDataset(beam.DoFn):
 
         """
         # the lower limit for querying the database by the random field.
-        random_min = element * RANGE_OF_BATCH
+        random_min = index * RANGE_OF_BATCH
         # the higher limit for querying the database by the random field.
         random_max = random_min + RANGE_OF_BATCH
         query = self.db.collection_group(database_schema.COLLECTION_IMAGES_SUBCOLLECTION_LABELS)\
@@ -66,7 +66,7 @@ class GetBatchedLabelsDataset(beam.DoFn):
         return (add_id_to_dict(doc) for doc in query)
 
 # pylint: disable=abstract-method
-class UpdateDatabase(beam.DoFn):
+class UpdateDatabaseWithVisibleLabels(beam.DoFn):
     """ Updates Firestore Database according to verified labels.
 
         Changes visibility inside label document in 'Labels' subcollection
@@ -76,6 +76,7 @@ class UpdateDatabase(beam.DoFn):
         tuple of a Python Dictionary representing the label document as
         stored in the database_schema.COLLECTION_IMAGES_SUBCOLLECTION_LABELS and
         a list of label ids.
+        (label_doc_dict, list_of_label_ids)
 
     """
 
@@ -84,17 +85,17 @@ class UpdateDatabase(beam.DoFn):
         self.db = initialize_db()
 
     # pylint: disable=arguments-differ
-    def process(self, element):
+    def process(self, label_info):
         """ Updates the Firestore database after verifying the labels.
         Updates parent image doc to include the new label ids.
         Updates the label doc to Visible.
 
             Args:
-                element: (label doc Python dictionary, list of label ids)
+                label_info: (label doc Python dictionary, list of label ids)
 
         """
-        image_doc_dict = element[0]
-        image_label_ids = element[1]
+        image_doc_dict = label_info[0]
+        image_label_ids = label_info[1]
         parent_image_ref = self.db.collection(database_schema.COLLECTION_IMAGES).\
             document(image_doc_dict[database_schema.\
                 COLLECTION_IMAGES_SUBCOLLECTION_LABELS_FIELD_PARENT_IMAGE_ID])

@@ -43,17 +43,17 @@ class RedefineLabels(beam.DoFn):
     """
 
     # pylint: disable=arguments-differ
-    def process(self, element, redefine_map):
+    def process(self, label_info, redefine_map):
         """Uses the global redefine map to map the different labels to the project's label Ids.
 
         Args:
-            element: Python dictionary of label properties.
+            label_info: Python dictionary of label properties.
             redefine_map: a specific provider's redefine map from the database.
 
         Yields:
             (dictionary of label doc properties, label ids list)
         """
         label_name =\
-            element[database_schema.COLLECTION_IMAGES_SUBCOLLECTION_LABELS_FIELD_LABEL_NAME]
+            label_info[database_schema.COLLECTION_IMAGES_SUBCOLLECTION_LABELS_FIELD_LABEL_NAME]
         if label_name in redefine_map:
-            yield (element, redefine_map[label_name])
+            yield (label_info, redefine_map[label_name])

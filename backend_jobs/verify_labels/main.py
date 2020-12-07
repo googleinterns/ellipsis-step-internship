@@ -12,6 +12,13 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 
+A verify labels pipeline to verify the labels recognized by a specific provider
+or by a specific run.
+
+The pipeline uses Python's Apache beam library to parallelize the different stages.
+The labels are taken from a Firestore database using a query and are change to visible.
+The pipeline updates COLLECTION_IMAGES to make sure all visible labels appear
+for each image in the database.
 """
 
 from __future__ import absolute_import
@@ -24,9 +31,9 @@ from apache_beam.options.pipeline_options import PipelineOptions
 
 from backend_jobs.verify_labels.pipeline_lib.redefine_labels import RedefineLabels, get_redefine_map
 from backend_jobs.verify_labels.pipeline_lib.firestore_database import GetBatchedLabelsDataset,\
-    UpdateDatabase, update_pipelinerun_doc_to_visible, get_provider_id_from_run_id
-from backend_jobs.pipeline_utils.utils import generate_cloud_dataflow_job_name
-from backend_jobs.pipeline_utils.firestore_database import store_pipeline_run, RANGE_OF_BATCH
+    UpdateDatabaseWithVisibleLabels, update_pipelinerun_doc_to_visible, get_provider_id_from_run_id
+from backend_jobs.pipeline_utils.utils import generate_cloud_dataflow_job_name, create_query_indices
+from backend_jobs.pipeline_utils.firestore_database import store_pipeline_run
 
 _PIPELINE_TYPE = 'verify_labels'
 
@@ -65,7 +72,7 @@ def run(argv=None):
     pipeline_options = PipelineOptions(pipeline_args, job_name=job_name)
 
     with beam.Pipeline(options=pipeline_options) as pipeline:
-        indices_for_batching = pipeline | 'create' >> beam.Create([i for i in range(int(1/RANGE_OF_BATCH))])
+        indices_for_batching = pipeline | 'create' >> beam.Create(create_query_indices())
         dataset = indices_for_batching | 'get labels dataset' >> \
             beam.ParDo(GetBatchedLabelsDataset(), recognition_run)
         provider_id = get_provider_id_from_run_id(recognition_run)
@@ -73,7 +80,7 @@ def run(argv=None):
         redefine_labels = dataset | 'redefine labels' >> \
             beam.ParDo(RedefineLabels(), redefine_map)
         # pylint: disable=expression-not-assigned
-        redefine_labels | 'update database' >> beam.ParDo(UpdateDatabase())
+        redefine_labels | 'update database' >> beam.ParDo(UpdateDatabaseWithVisibleLabels())
         update_pipelinerun_doc_to_visible(recognition_run)
 
         if known_args.output: # For testing.

@@ -30,8 +30,8 @@ from apache_beam.io import WriteToText
 from apache_beam.options.pipeline_options import PipelineOptions
 from backend_jobs.recognition_pipeline.pipeline_lib.firestore_database import\
     GetBatchedImageDataset, UpdateImageLabelsInDatabase
-from backend_jobs.pipeline_utils.firestore_database import store_pipeline_run, RANGE_OF_BATCH
-from backend_jobs.pipeline_utils.utils import generate_cloud_dataflow_job_name
+from backend_jobs.pipeline_utils.firestore_database import store_pipeline_run
+from backend_jobs.pipeline_utils.utils import generate_cloud_dataflow_job_name, create_query_indices
 from backend_jobs.recognition_pipeline.providers.providers import get_recognition_provider
 
 _PIPELINE_TYPE = 'recognition'
@@ -90,13 +90,9 @@ def run(argv=None):
     pipeline_options = PipelineOptions(pipeline_args, job_name=job_name)
 
     with beam.Pipeline(options=pipeline_options) as pipeline:
-        indices_for_batching = pipeline | 'create' >> beam.Create([i for i in range(int(1/RANGE_OF_BATCH))])
-        if ingestion_run:
-            dataset = indices_for_batching | 'get images dataset' >> \
-                beam.ParDo(GetBatchedImageDataset(), ingestion_run=ingestion_run)
-        else:
-            dataset = indices_for_batching | 'get images dataset' >> \
-                beam.ParDo(GetBatchedImageDataset(), ingestion_provider=ingestion_provider)
+        indices_for_batching = pipeline | 'create' >> beam.Create(create_query_indices())
+        dataset = indices_for_batching | 'get images dataset' >> \
+            beam.ParDo(GetBatchedImageDataset(), ingestion_run=ingestion_run, ingestion_provider=ingestion_provider)
         dataset_with_url_for_provider = dataset | 'add url for labeling' >> \
             beam.ParDo(recognition_provider.add_url_for_recognition_api)
         filtered_dataset = dataset_with_url_for_provider | 'filter images' >> \
