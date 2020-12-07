@@ -23,8 +23,6 @@ from backend_jobs.pipeline_utils import firestore_database
 from backend_jobs.pipeline_utils import database_schema
 from backend_jobs.pipeline_utils.data_types import VisibilityType
 
-_RANDOM = random.random()
-
 
 class AddOrUpdateImageDoFn(apache_beam.DoFn):
     """ Stores asynchronously the entity of ImageAttributes type from each image in the
