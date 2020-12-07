@@ -62,7 +62,7 @@ def run(argv=None):
     # Using external parser: https://docs.python.org/3/library/argparse.html
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        '--input-ingestion-pipelinerun-id',
+        '--input-ingestion-run-id',
         dest='input_ingestion_pipelinerun_id',
         help='Input of ingestion pipeline run for images dataset.')
     parser.add_argument(
@@ -97,7 +97,9 @@ def run(argv=None):
         else:
             dataset = indices_for_batching | 'get images dataset' >> \
                 beam.ParDo(GetBatchedImageDataset(), ingestion_provider=ingestion_provider)
-        filtered_dataset = dataset | 'filter images' >> \
+        dataset_with_url_for_provider = dataset | 'add url for labeling' >> \
+            beam.ParDo(recognition_provider.add_url_for_recognition_api)
+        filtered_dataset = dataset_with_url_for_provider | 'filter images' >> \
             beam.Filter(recognition_provider.is_eligible)
         images_batch = filtered_dataset | 'combine to batches' >> \
             beam.GroupBy(lambda doc: int(doc['random']*100)) |\
