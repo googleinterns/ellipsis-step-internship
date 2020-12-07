@@ -1,4 +1,4 @@
-# Platform to map plastic waste pollution
+# Platform to analyze images and map objects
 
 This repository contains the code for the
 [STEP internship](https://buildyourfuture.withgoogle.com/programs/step/)
