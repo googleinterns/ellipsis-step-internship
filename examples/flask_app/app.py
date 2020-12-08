@@ -4,6 +4,12 @@ import os
 
 app = Flask(__name__)
 
+BUCKET='demo-bucket-step'
+REGION='europe-west2'
+PROJECT='step-project-ellispis'
+INPUT_TYPE_PROVIDER = 'provider'
+INPUT_TYPE_RUN_ID = 'run-id'
+
 
 @app.route('/')
 def home_page():
@@ -44,7 +50,11 @@ def recognition_removal_page():
 def submit_recognition():
     input_type = request.form['input_type']
     input_value = request.form['input_value']
-    #os.system('python3 ../../backend_jobs/recognition_pipeline/main.py  --region europe-west2  --input-ingestion-provider  FlickrProvider-2020 --input-recognition-provider Google_Vision_API --output gs://demo-bucket-step/results/outputs --runner DataflowRunner   --project step-project-ellispis   --temp_location gs://demo-bucket-step/tmp/ --requirements_file ../../requirements.txt --extra_package dist/pipeline-BACKEND_JOBS-0.0.1.tar.gz')
+    if input_type == INPUT_TYPE_PROVIDER:
+        pass
+        # os.system('python3 ../../backend_jobs/recognition_pipeline/main.py  --region europe-west2  --input-ingestion-provider  {provider} --input-recognition-provider Google_Vision_API --output gs://demo-bucket-step/results/outputs --runner DataflowRunner   --project step-project-ellispis   --temp_location gs://demo-bucket-step/tmp/ --requirements_file ../../requirements.txt --extra_package dist/pipeline-BACKEND_JOBS-0.0.1.tar.gz'.format(provider = input_value))
+    else:
+        pass
     return render_template('run.html', input_type=input_type, input_value=input_value)
 
 
@@ -56,8 +66,22 @@ def submit_ingestion():
     return render_template('run.html', provider=provider, pipeline=pipeline)
 
 @app.route('/result', methods=['POST'])
-def submit_recognition_removal():
+def submit_recognition_verification():
     pass
+
+@app.route('/result', methods=['POST'])
+def submit_ingestion_verification():
+    pass
+
+@app.route('/result', methods=['POST'])
+def submit_recognition_removal():
+    input_type = request.form['input_type']
+    input_value = request.form['input_value']
+
+@app.route('/result', methods=['POST'])
+def submit_ingestion_removal():
+    pass
+
 
 
 app.run()
