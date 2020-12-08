@@ -40,3 +40,5 @@ backend_jobs/verify_labels/pipeline_lib/__pycache__/
 backend_jobs/verify_labels/__pycache__/
 backend_jobs/recognition_removal/pipeline_lib/__pycache__/
 backend_jobs/verify_labels/build/lib/
+backend_pipelines.egg-info/
+dist/backend-pipelines-0.0.1.tar.gz
