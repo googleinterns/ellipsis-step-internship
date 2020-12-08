@@ -14,6 +14,8 @@
 """
 
 import unittest
+from unittest import mock
+import math
 from backend_jobs.recognition_pipeline.providers.google_vision_api import GoogleVisionAPI
 
 _SIZE_OF_LARGE_BATCH = 1000
@@ -23,12 +25,12 @@ class TestImageRecognitionProviders(unittest.TestCase):
 
     """
     def setUp(self):
-        self.eligible_image1= {'url': \
+        self.eligible_image1= {'url_for_recognition_api': \
             'https://live.staticflickr.com/3677/13545844805_170ec3746b_c.jpg',\
                 'imageAttributes':{'format': 'jpg', 'resolution': {'width': 800, 'height': 600}},\
                     'ingestedProviders': []}
-        self.eligible_image2 =  {'url':\
-            'https://live.staticflickr.com/5284/5338762379_59f7435b93_c.jpg',\
+        self.eligible_image2 =  {'url_for_recognition_api':\
+            'https://live.staticflickr.com/5284/5338762379_59f7435b93_c.jpg',
                 'imageAttributes': {'format': 'pdf', 'resolution': {'width': 800, 'height': 600}},\
                     'ingestedProviders': []}
         self.uneligible_image = {'url':\
@@ -60,28 +62,27 @@ class TestImageRecognitionProviders(unittest.TestCase):
             # Checks that the 'label images' method did recognize the dog in the image.
             self.assertTrue('dog' in image2_labels)
 
-    def test_label_large_batch_of_images(self):
+    def test_slice_large_batch_of_images(self):
         """ Tests labeling a large batch of images at once.
 
         """
-        image_batch = [self.eligible_image1 for i in range(_SIZE_OF_LARGE_BATCH)]
+        image_batch = [i for i in range(_SIZE_OF_LARGE_BATCH)]
         for provider in self.providers:
             provider.setup()
-            images_and_labels = provider.process(image_batch)
-            # Checks if no images were lost on the way.
-            self.assertEqual(len(images_and_labels), _SIZE_OF_LARGE_BATCH)
-            prev_image = images_and_labels[0][0][0]
-            prev_labels = images_and_labels[0][0][1]
-            self.assertGreater(len(prev_labels), 0) # Checks that at least one label was recognized.
-            for i in range(_SIZE_OF_LARGE_BATCH-1):
-                next_image = images_and_labels[i+1][0][0]
-                next_labels = images_and_labels[i+1][0][1]
-                # Checks that all images are still the same.
-                self.assertEqual(prev_image, next_image)
-                # Checks that all labels returned are the same.
-                self.assertEqual(prev_labels, next_labels)
-                prev_image = next_image
-                prev_labels = next_labels
+            #pylint: disable=protected-access
+            provider._get_labels_of_batch = mock.MagicMock(name='label_by_batch')
+            mocked_method = provider._get_labels_of_batch
+            max_images_in_batch = provider._MAX_IMAGES_IN_BATCH
+            provider.process(image_batch)
+            num_of_expected_batches = math.ceil(_SIZE_OF_LARGE_BATCH/max_images_in_batch)
+            # Checks that _get_labels_of_batch was called the correct number of times.
+            self.assertEqual(mocked_method.call_count, num_of_expected_batches)
+            # Checks that each call for _get_labels_of_batch did not recieve a batch of
+            # more than _MAX_IMAGES_IN_BATCH images.
+            call_args_list = mocked_method.call_args_list
+            for call_args in call_args_list:
+                args = call_args[0][0]
+                self.assertGreaterEqual(max_images_in_batch, len(args))
 
     def test_is_eligible(self):
         """ Tests both supported and unsupported images by is_eligible method

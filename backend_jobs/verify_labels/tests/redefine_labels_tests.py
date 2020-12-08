@@ -31,8 +31,7 @@ class TestRedefineLables(unittest.TestCase):
         self.dog_image =  {'url':'https://live.staticflickr.com/5284/5338762379_59f7435b93_c.jpg',\
             'imageAttributes': {'format': 'pdf', 'resolution': {'width': 800, 'height': 600}},\
                 'ingestedProviders': [], 'labelName': 'dog'}
-        provider_id = 'For_Tests' # A document in the Firestore database designated for tests.
-        self.redefine_map = get_redefine_map(provider_id)
+        self.redefine_map = {'cat': 'id_for_cat', 'cats':'id_for_cat'}
 
     def test_redefine_known_labels(self):
         """ Tests for redefining labels that are known to the project's database.
