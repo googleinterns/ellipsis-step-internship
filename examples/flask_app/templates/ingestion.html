@@ -1,6 +1,7 @@
 <body>
     <h1> Run Python Pipelines</h1>
-    <form action="{{ url_for('submit') }}" method="post">
+    <h2> Ingestion Pipeline</h2>
+    <form action="{{ url_for('submit_ingestion') }}" method="post">
         <label for="pipeline name">pipeline name:</label>
         <input type="text" id="pipeline_name" name="pipeline_name"><br><br>
         <label for="provider">provider:</label>
