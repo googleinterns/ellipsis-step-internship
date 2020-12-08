@@ -16,7 +16,6 @@
 from google.cloud import vision_v1
 from backend_jobs.recognition_pipeline.pipeline_lib.image_recognition_provider\
     import ImageRecognitionProvider
-from backend_jobs.pipeline_utils import database_schema
 from backend_jobs.recognition_pipeline.pipeline_lib import constants
 
 # Google Vision API supports labeling a batch of up to 16 images at once.
@@ -30,12 +29,14 @@ class GoogleVisionAPI(ImageRecognitionProvider):
     """
 
     def setup(self):
+        # pylint: disable=attribute-defined-outside-init
         self.client = vision_v1.ImageAnnotatorClient()
 
     # pylint: disable=arguments-differ
     def process(self, element):
         images_and_labels = []
-        for i in range(0, len(element), _MAX_IMAGES_IN_BATCH): # The provider supports a batch of max 2000 images.
+         # The provider supports a batch of max _MAX_IMAGES_IN_BATCH images.
+        for i in range(0, len(element), _MAX_IMAGES_IN_BATCH):
             images_and_labels.extend(self._get_labels_of_batch(element[i:_MAX_IMAGES_IN_BATCH+i]))
         return images_and_labels
 
