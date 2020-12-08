@@ -63,7 +63,7 @@ class TestImageRecognitionProviders(unittest.TestCase):
             self.assertTrue('dog' in image2_labels)
 
     def test_slice_large_batch_of_images(self):
-        """ Tests labeling a large batch of images at once.
+        """ Tests slicing when labeling a large batch of images at once.
 
         """
         image_batch = [i for i in range(_SIZE_OF_LARGE_BATCH)]
