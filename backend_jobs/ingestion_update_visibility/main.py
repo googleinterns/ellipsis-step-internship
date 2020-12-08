@@ -12,7 +12,7 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 
-An update visibility pipeline to update the visibility in documents/images from specific dataset
+A pipeline to update the visibility in documents/images from a specific dataset
 by a specific provider/ pipeline run.
 
 The pipeline uses Python's Apache beam library to parallelize the different stages.
@@ -30,7 +30,7 @@ from backend_jobs.ingestion_update_visibility.pipeline_lib.firestore_database im
 from backend_jobs.ingestion_update_visibility.pipeline_lib.firestore_database import UpdateVisibilityInDatabase
 from backend_jobs.pipeline_utils.utils import generate_cloud_dataflow_job_name
 from backend_jobs.pipeline_utils.data_types import VisibilityType
-from backend_jobs.pipeline_utils import constance
+from backend_jobs.pipeline_utils import constants
 
 
 _PIPELINE_TYPE = 'update_visibility_pipeline'
@@ -96,12 +96,11 @@ def run(argv=None):
     pipeline_options = PipelineOptions(pipeline_args, job_name=job_name)
 
     with beam.Pipeline(options=pipeline_options) as pipeline:
-        indices_for_batching = pipeline | 'create' >> beam.Create(constance.LIST_FOR_BATCHES)
+        indices_for_batching = pipeline | 'create' >> beam.Create(constants.LIST_FOR_BATCHES)
         dataset = indices_for_batching | 'get dataset' >>\
-            beam.ParDo(GetDataset(), image_provider=image_provider, pipeline_run=pipeline_run)
+            beam.ParDo(GetDataset(image_provider=image_provider, pipeline_run=pipeline_run))
         dataset | 'update visibility database' >>\
             beam.ParDo(UpdateVisibilityInDatabase(), visibility)
-
 
 
 if __name__ == '__main__':

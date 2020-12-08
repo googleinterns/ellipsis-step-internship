@@ -17,13 +17,12 @@
 import apache_beam
 from backend_jobs.pipeline_utils.firestore_database import initialize_db
 from backend_jobs.pipeline_utils import database_schema
-from backend_jobs.pipeline_utils import constance
+from backend_jobs.pipeline_utils import constants
+from backend_jobs.pipeline_utils import utils
 
 
 class GetBatchedDatasetAndDeleteFromDatabase(apache_beam.DoFn):
-    """Queries the project's database to get the labels dataset to remove,
-    and deleted the documents from the 'Labels' subcollection in the database.
-
+    """
     """
     def setup(self):
         # pylint: disable=attribute-defined-outside-init
@@ -44,22 +43,26 @@ class GetBatchedDatasetAndDeleteFromDatabase(apache_beam.DoFn):
             e.g. if in this functions input was an image provider- in the tuple we
             return the pipeline run of the deleted document.
         """
-        _valedate_one_arg(image_provider, pipeline_run)
+        utils.validate_one_arg(image_provider, pipeline_run)
         # The lower limit for querying the database by the random field.
-        random_min = element * constance.RANGE_OF_BATCH
+        random_min = element * constants.RANGE_OF_BATCH
         # The higher limit for querying the database by the random field.
-        random_max = random_min + constance.RANGE_OF_BATCH
+        random_max = random_min + constants.RANGE_OF_BATCH
         if image_provider:
             query = self.db\
                 .collection_group(database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS)\
-                .where(database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS_FIELD_PROVIDER_ID, u'==', image_provider)\
+                .where(
+                    database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS_FIELD_PROVIDER_ID, u'==',
+                    image_provider)\
                 .where(database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS_FIELD_RANDOM, u'>=', random_min)\
                 .where(database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS_FIELD_RANDOM, u'<', random_max)\
                 .stream()
         else:  # if pipeline_run.
             query = self.db\
                 .collection_group(database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS)\
-                .where(database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS_FIELD_PIPELINE_RUN_ID, u'==', pipeline_run)\
+                .where(
+                    database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS_FIELD_PIPELINE_RUN_ID, u'==',
+                    pipeline_run)\
                 .where(database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS_FIELD_RANDOM, u'>=', random_min)\
                 .where(database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS_FIELD_RANDOM, u'<', random_max)\
                 .stream()
@@ -72,19 +75,19 @@ class GetBatchedDatasetAndDeleteFromDatabase(apache_beam.DoFn):
             if image_provider:
                 pipeline_run = doc_dict[
                     database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS_FIELD_PIPELINE_RUN_ID]
-                yield (parent_image_id, pipeline_run)
+                yield (parent_image_id, [None, pipeline_run])
             # If we remove by pipeline_run we will return the image provider to remove if the provider
             # is pipeline run specific.
             else:
                 image_provider = doc_dict[
                     database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS_FIELD_PROVIDER_ID]
-                yield (parent_image_id, image_provider) 
-            doc.reference.delete()  # Delete label doc from database.
+                yield (parent_image_id, [image_provider, None])
+            # doc.reference.delete()  # Delete label doc from database.
 
 
 # pylint: disable=abstract-method
-class UpdateArraysInImageDocs(apache_beam.DoFn):
-    """Queries the project's database to get the image dataset to label.
+class UpdateArraysAndDeleteImagesIfNecessary(apache_beam.DoFn):
+    """Removes an image, if there is no other pipeline run / provider that ingested it.
 
     """
     def setup(self):
@@ -102,12 +105,10 @@ class UpdateArraysInImageDocs(apache_beam.DoFn):
             image_provider: The image provider from whom we are remove the images.
             pipeline_run: The image pipeline_run from whom we are remove the images.
         """
-        _valedate_one_arg(image_provider, pipeline_run)
+        utils.validate_one_arg(image_provider, pipeline_run)
         parent_image_id = element[0]
-        if image_provider:
-            pipeline_runs = element[1]
-        else:
-            image_providers = element[1]
+        image_providers = element[1]
+        pipeline_runs = element[2]
         parent_image_ref = self.db.collection(database_schema.COLLECTION_IMAGES).document(parent_image_id)
         query = self.db.collection_group(database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS)\
             .where(
@@ -126,7 +127,8 @@ class UpdateArraysInImageDocs(apache_beam.DoFn):
                         database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS_FIELD_PIPELINE_RUN_ID,
                         u'==',
                         pipeline_run)
-                self._delete_if_statements(query_provider, query_pipeline_run, parent_image_ref, image_provider, pipeline_run)
+                self._delete_if_statements(
+                    query_provider, query_pipeline_run, parent_image_ref, image_provider, pipeline_run)
         else:
             query_pipeline_run = query\
                 .where(
@@ -139,7 +141,8 @@ class UpdateArraysInImageDocs(apache_beam.DoFn):
                         database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS_FIELD_PROVIDER_ID,
                         u'==',
                         image_provider)
-                self._delete_if_statements(query_provider, query_pipeline_run, parent_image_ref, image_provider, pipeline_run)
+                self._delete_if_statements(
+                    query_provider, query_pipeline_run, parent_image_ref, image_provider, pipeline_run)
 
     def _delete_if_statements(
             self, query_provider, query_pipeline_run, parent_image_ref,
@@ -159,7 +162,8 @@ class UpdateArraysInImageDocs(apache_beam.DoFn):
         if len(query_provider.get()) != 0 and len(query_pipeline_run.get()) == 0:
             self._updating_array_and_removing_image(parent_image_ref, pipeline_run=pipeline_run)
         if len(query_provider.get()) == 0 and len(query_pipeline_run.get()) == 0:
-            self._updating_array_and_removing_image(parent_image_ref, image_provider=image_provider, pipeline_run=pipeline_run)
+            self._updating_array_and_removing_image(
+                parent_image_ref, image_provider=image_provider, pipeline_run=pipeline_run)
 
     def _updating_array_and_removing_image(self, parent_image_ref, image_provider=None, pipeline_run=None):
         """ This function is incharge of updating the ingested providers and ingested runs arrays,
@@ -190,21 +194,3 @@ class UpdateArraysInImageDocs(apache_beam.DoFn):
         # If there is no image in the sub collection remove the image.
         if len(pipeline_runs_array) == 0 and len(providers_array) == 0:
             parent_image_ref.delete()  # Delete label doc from database.
-
-
-def _valedate_one_arg(image_provider=None, pipeline_run=None):
-    """ Checks whether we only get one arguments.
-    If not - throws an error.
-
-    Arguments:
-        image_provider: The image provider from whom we are removing the images.
-        pipeline_run: The image pipeline_run from whom we are removing the images.
-
-    Raises:
-        Raises an error if both image_provider and pipeline_run
-        are provided, or nether ar provided.
-    """
-    if pipeline_run is not None and image_provider is not None:
-        raise ValueError('can only get image_provider or pipeline_run')
-    if pipeline_run is None and image_provider is None:
-        raise ValueError('missing input e.g. image_provider or pipeline_run')

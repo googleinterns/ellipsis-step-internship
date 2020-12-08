@@ -53,3 +53,10 @@ def store_pipeline_run(provider_id, run_id):
             VisibilityType.INVISIBLE.value,
         database_schema.COLLECTION_PIPELINE_RUNS_FIELD_PIPELINE_RUN_ID: run_id
     })
+
+
+def add_id_to_dict(doc):
+    """ Adds the document's id to the document's fields dictionary."""
+    full_dict = doc.to_dict()
+    full_dict['id'] = doc.id
+    return full_dict

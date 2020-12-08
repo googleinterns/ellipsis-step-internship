@@ -15,16 +15,24 @@
 
 import apache_beam
 from backend_jobs.pipeline_utils.firestore_database import initialize_db
+from backend_jobs.pipeline_utils.firestore_database import add_id_to_dict
 from backend_jobs.pipeline_utils import database_schema
-from backend_jobs.pipeline_utils import constance
+from backend_jobs.pipeline_utils import utils
+from backend_jobs.pipeline_utils import constants
 
 
 class GetDataset(apache_beam.DoFn):
     """Queries the project's database to get the image dataset to update."""
+    
+    def __init__(self, image_provider=None, pipeline_run=None):
+        utils.validate_one_arg(image_provider, pipeline_run)
+        self.image_provider = image_provider
+        self.pipeline_run = pipeline_run
+    
     def setup(self):
         self.db = initialize_db()
 
-    def process(self, element, image_provider=None, pipeline_run=None):
+    def process(self, element, ):
         """Queries firestore database for images given a image_provider/ pipeline_run
         within a random range (by batch).
 
@@ -37,17 +45,17 @@ class GetDataset(apache_beam.DoFn):
             A list of dictionaries with all the information (fields and id)
             of each one of the Firestore query's image documents.
         """
-        _valedate_one_arg(image_provider, pipeline_run)
+        
         # the lower limit for querying the database by the random field.
-        random_min = element * constance.RANGE_OF_BATCH
+        random_min = element * constants.RANGE_OF_BATCH
         # the higher limit for querying the database by the random field.
-        random_max = random_min + constance.RANGE_OF_BATCH
-        if image_provider:
+        random_max = random_min + constants.RANGE_OF_BATCH
+        if self.image_provider:
             query = self.db.collection_group(database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS)\
                 .where(
                     database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS_FIELD_PROVIDER_ID,
                     u'==',
-                    image_provider)\
+                    self.image_provider)\
                 .where(database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS_FIELD_RANDOM, u'>=', random_min)\
                 .where(database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS_FIELD_RANDOM, u'<', random_max)\
                 .stream()
@@ -56,11 +64,11 @@ class GetDataset(apache_beam.DoFn):
                 .where(
                     database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS_FIELD_PIPELINE_RUN_ID,
                     u'==',
-                    pipeline_run)\
+                    self.pipeline_run)\
                 .where(database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS_FIELD_RANDOM, u'>=', random_min)\
                 .where(database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS_FIELD_RANDOM, u'<', random_max)\
                 .stream()
-        return (_add_id_to_dict(doc) for doc in query)
+        return (add_id_to_dict(doc) for doc in query)
 
 
 class UpdateVisibilityInDatabase(apache_beam.DoFn):
@@ -87,7 +95,6 @@ class UpdateVisibilityInDatabase(apache_beam.DoFn):
         parent_image_ref.update({
             database_schema.COLLECTION_IMAGES_FIELD_VISIBILITY:
                 visibility.value  # TODO: fix functionality to be the max between all doc in subcollection.
-                 
         })
         doc_ref.update({
             database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS_FIELD_VISIBILITY:
@@ -108,28 +115,3 @@ def update_pipelinerun_doc_visibility(image_provider_id, visibility):
     doc_ref.update({
         database_schema.COLLECTION_PIPELINE_RUNS_FIELD_PROVIDER_VISIBILITY: visibility.value
     })
-
-
-def _add_id_to_dict(doc):
-    """ Adds the document's id to the document's fields dictionary."""
-    full_dict = doc.to_dict()
-    full_dict['id'] = doc.id
-    return full_dict
-
-
-def _valedate_one_arg(image_provider=None, pipeline_run=None):
-    """ Checks whether we only get one arguments.
-    If not - throws an error.
-
-    Arguments:
-        image_provider: The image provider from whom we are removing the images.
-        pipeline_run: The image pipeline_run from whom we are removing the images.
-
-    Raises:
-        Raises an error if both image_provider and pipeline_run
-        are provided, or nether ar provided.
-    """
-    if pipeline_run is not None and image_provider is not None:
-        raise ValueError('can only get image_provider or pipeline_run')
-    if pipeline_run is None and image_provider is None:
-        raise ValueError('missing input e.g. image_provider or pipeline_run')

@@ -40,3 +40,21 @@ def generate_cloud_dataflow_job_name(pipeline_type, provider):
       time_id=get_timestamp_id(),
       provider=str(provider).lower())
     return job_name.replace('_', '-')
+
+
+def validate_one_arg(image_provider=None, pipeline_run=None):
+    """ Checks whether we only get one arguments.
+    If not - throws an error.
+
+    Arguments:
+        image_provider: The image provider from whom we are removing the images.
+        pipeline_run: The image pipeline_run from whom we are removing the images.
+
+    Raises:
+        Raises an error if both image_provider and pipeline_run
+        are provided, or nether ar provided.
+    """
+    if pipeline_run is not None and image_provider is not None:
+        raise ValueError('can only get image_provider or pipeline_run')
+    if pipeline_run is None and image_provider is None:
+        raise ValueError('missing input e.g. image_provider or pipeline_run')
