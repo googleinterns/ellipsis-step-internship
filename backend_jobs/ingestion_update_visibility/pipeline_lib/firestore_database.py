@@ -15,15 +15,14 @@
 
 import apache_beam
 from backend_jobs.pipeline_utils.firestore_database import initialize_db
-from backend_jobs.pipeline_utils.firestore_database import add_id_to_dict
 from backend_jobs.pipeline_utils import database_schema
 from backend_jobs.pipeline_utils import utils
 from backend_jobs.pipeline_utils import constants
+from backend_jobs.pipeline_utils import data_types
 
 
 class GetDataset(apache_beam.DoFn):
     """Queries the project's database to get the image dataset to update."""
-    
     def __init__(self, image_provider=None, pipeline_run=None):
         utils.validate_one_arg(image_provider, pipeline_run)
         self.image_provider = image_provider
@@ -32,20 +31,16 @@ class GetDataset(apache_beam.DoFn):
     def setup(self):
         self.db = initialize_db()
 
-    def process(self, element, ):
-        """Queries firestore database for images given a image_provider/ pipeline_run
+    def process(self, element):
+        """Queries firestore database for images given an image_provider/ pipeline_run
         within a random range (by batch).
 
         Args:
             element: the lower limit for querying the database by the random field.
-            image_provider: the input of the pipeline, determines to update by image provider.
-            pipeline_run: the input of the pipeline, determines to update by pipeline run.
 
-        Returns:
-            A list of dictionaries with all the information (fields and id)
-            of each one of the Firestore query's image documents.
+        Yields:
+            A tuple containing a parent's image id and the doc id.
         """
-        
         # the lower limit for querying the database by the random field.
         random_min = element * constants.RANGE_OF_BATCH
         # the higher limit for querying the database by the random field.
@@ -68,38 +63,90 @@ class GetDataset(apache_beam.DoFn):
                 .where(database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS_FIELD_RANDOM, u'>=', random_min)\
                 .where(database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS_FIELD_RANDOM, u'<', random_max)\
                 .stream()
-        return (add_id_to_dict(doc) for doc in query)
+        for doc in query:
+            doc_dict = doc.to_dict()
+            parent_image_id = doc_dict[
+                database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS_FIELD_PARENT_IMAGE_ID]
+            yield (parent_image_id, doc.id)
 
 
-class UpdateVisibilityInDatabase(apache_beam.DoFn):
-    """ Updates Firestore Database visibility field to visible.
-    Updates visibility inside pipeline document in 'PipelineRuns' subcollection
-    and in the 'Images' collection.
+class UpdateVisibilityInDatabaseSubcollection(apache_beam.DoFn):
+    """ Updates Firestore Database visibility field to the given visibility.
+    Updates visibility inside document in the 'PipelineRuns' subcollection.
     """
+    def __init__(self, image_provider=None, pipeline_run=None):
+        utils.validate_one_arg(image_provider, pipeline_run)
+        self.image_provider = image_provider
+        self.pipeline_run = pipeline_run
 
     def setup(self):
         self.db = initialize_db()
 
     def process(self, element, visibility):
-        """This function updates the visibility in the Images/ PipelineRun firestore database.
+        """This function updates the visibility in PipelineRun subcollection to the given visibility.
 
         Args:
-            element: A dictionaries with all the information (fields and id) to update.
+            element: A tuple containing a parent's image id and the doc id.
             visibility: The visibility we are updating the doc to, e.g. 'VISIBLE'/ 'INVISIBLE'
         """
-        parent_image_id = element[database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS_FIELD_PARENT_IMAGE_ID]
+        parent_image_id = element[0]
         parent_image_ref = self.db.collection(database_schema.COLLECTION_IMAGES)\
             .document(parent_image_id)
-        doc_ref = parent_image_ref.collection(database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS)\
-            .document(element['id'])
+        subcollection_ids = element[1]
+        for subcollection_id in subcollection_ids:
+            doc_ref = parent_image_ref.collection(database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS)\
+                .document(subcollection_id)
+            doc_ref.update({
+                database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS_FIELD_VISIBILITY:
+                    visibility.value
+            })
+        return [parent_image_id]
+
+
+class UpdateVisibilityInDatabaseCollection(apache_beam.DoFn):
+    """ Updates Firestore Database visibility field in the 'Images' collection to the max visibility
+    in the subcollection 'PipelineRuns'.
+    """
+    def __init__(self, image_provider=None, pipeline_run=None):
+        utils.validate_one_arg(image_provider, pipeline_run)
+        self.image_provider = image_provider
+        self.pipeline_run = pipeline_run
+
+    def setup(self):
+        self.db = initialize_db()
+
+    def process(self, parent_image_id):
+        """This function updates the visibility in the Images collection.
+
+        Args:
+            parent_image_id: The image doc id.
+        """
+        parent_image_ref = self.db.collection(database_schema.COLLECTION_IMAGES)\
+            .document(parent_image_id)
         parent_image_ref.update({
             database_schema.COLLECTION_IMAGES_FIELD_VISIBILITY:
-                visibility.value  # TODO: fix functionality to be the max between all doc in subcollection.
+                self._max_visibility(parent_image_id).value
         })
-        doc_ref.update({
-            database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS_FIELD_VISIBILITY:
-                visibility.value
-        })
+
+    def _max_visibility(self, parent_image_id):
+        """This function finds the max visibility in the PipelineRun subcollection.
+
+        Args:
+            parent_image_id: The image doc id.
+        """
+        utils.validate_one_arg(self.image_provider, self.pipeline_run)
+        query = initialize_db().collection_group(database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS)\
+            .where(
+                database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS_FIELD_PARENT_IMAGE_ID,
+                u'==',
+                parent_image_id)\
+            .where(
+                database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS_FIELD_VISIBILITY,
+                u'==',
+                1)  # 1 == VISIBLE
+        if len(query.get()) == 0:
+            return data_types.VisibilityType.INVISIBLE
+        return data_types.VisibilityType.VISIBLE
 
 
 def update_pipelinerun_doc_visibility(image_provider_id, visibility):

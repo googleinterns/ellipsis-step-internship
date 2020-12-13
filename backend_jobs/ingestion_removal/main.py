@@ -26,8 +26,10 @@ import logging
 
 import apache_beam as beam
 from apache_beam.options.pipeline_options import PipelineOptions
-from backend_jobs.ingestion_removal.pipeline_lib.pipeline_run import IngestionRemovalByPipelineRun
-from backend_jobs.ingestion_removal.pipeline_lib.provider import IngestionRemovalByProvider
+from backend_jobs.ingestion_removal.pipeline_lib.remove_by_pipeline_run import\
+    IngestionRemovalByPipelineRun
+from backend_jobs.ingestion_removal.pipeline_lib.remove_by_provider import\
+    IngestionRemovalByProvider
 from backend_jobs.pipeline_utils.utils import generate_cloud_dataflow_job_name
 from backend_jobs.pipeline_utils import constants
 
@@ -41,17 +43,17 @@ def _validate_args(args):
 
     """
     if args.input_pipeline_run is not None and args.input_image_provider is not None:
-        raise ValueError('input can only be or input_image_provider or input_pipeline_run')
+        raise ValueError('Input can only be or input_image_provider or input_pipeline_run')
     if args.input_pipeline_run is None and args.input_image_provider is None:
-        raise ValueError('missing input e.g. input_image_provider/input_pipeline_run')
+        raise ValueError('Missing input e.g. input_image_provider/input_pipeline_run')
     if not isinstance(args.input_pipeline_run, str) and args.input_pipeline_run:
-        raise ValueError('pipeline run id is not a string')
+        raise ValueError('Pipeline run id is not a string')
     if not isinstance(args.input_image_provider, str) and args.input_image_provider:
-        raise ValueError('image provider is not a string')
+        raise ValueError('Image provider is not a string')
 
 
 def run(argv=None):
-    """Main entry point, defines and runs the remove images pipeline.
+    """Main entry point, defines and runs the image removal pipeline.
     """
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -85,8 +87,10 @@ def run(argv=None):
             beam.ParDo(removal_pipeline.get_batched_dataset_and_delete_from_database, remove_by_arg)
         dataset_group_by_parent_image = dataset | 'group all by parent image' >>\
             beam.GroupByKey()
-        dataset_group_by_parent_image | 'update database' >>\
+        updated_images = dataset_group_by_parent_image | 'update database' >>\
             beam.ParDo(removal_pipeline.update_arrays_in_image_docs, remove_by_arg)
+        updated_images | 'remove doc if necessary' >>\
+            beam.Map(removal_pipeline.remove_image_doc_if_necessary)
 
 
 if __name__ == '__main__':

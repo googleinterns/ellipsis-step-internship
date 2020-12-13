@@ -46,7 +46,7 @@ def validate_one_arg(image_provider=None, pipeline_run=None):
     """ Checks whether we only get one arguments.
     If not - throws an error.
 
-    Arguments:
+    Args:
         image_provider: The image provider from whom we are removing the images.
         pipeline_run: The image pipeline_run from whom we are removing the images.
 

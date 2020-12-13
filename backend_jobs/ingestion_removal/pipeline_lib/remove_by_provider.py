@@ -12,14 +12,15 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 """
-from backend_jobs.ingestion_removal.pipeline_lib.interface import IngestionRemovalPipelineIntrface
-from backend_jobs.pipeline_utils.firestore_database import initialize_db
+
+from backend_jobs.ingestion_removal.pipeline_lib.removal_pipeline_interface import\
+    IngestionRemovalPipelineInterface
 from backend_jobs.pipeline_utils import database_schema
 from backend_jobs.pipeline_utils import constants
 
 
-class IngestionRemovalByPipelineRun(IngestionRemovalPipelineIntrface):
-    def get_batched_dataset_and_delete_from_database(self, num_of_batch, pipeline_run):
+class IngestionRemovalByProvider(IngestionRemovalPipelineInterface):
+    def get_batched_dataset_and_delete_from_database(self, num_of_batch, image_provider):
         # The lower limit for querying the database by the random field.
         random_min = num_of_batch * constants.RANGE_OF_BATCH
         # The higher limit for querying the database by the random field.
@@ -27,8 +28,8 @@ class IngestionRemovalByPipelineRun(IngestionRemovalPipelineIntrface):
         query = self.db\
             .collection_group(database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS)\
             .where(
-                database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS_FIELD_PIPELINE_RUN_ID, u'==',
-                pipeline_run)\
+                database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS_FIELD_PROVIDER_ID, u'==',
+                image_provider)\
             .where(database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS_FIELD_RANDOM, u'>=', random_min)\
             .where(database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS_FIELD_RANDOM, u'<', random_max)\
             .stream()
@@ -36,30 +37,31 @@ class IngestionRemovalByPipelineRun(IngestionRemovalPipelineIntrface):
             doc_dict = doc.to_dict()
             parent_image_id = doc_dict[
                 database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS_FIELD_PARENT_IMAGE_ID]
-            image_provider = doc_dict[
-                database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS_FIELD_PROVIDER_ID]
-            yield (parent_image_id, image_provider)
+            pipeline_run = doc_dict[
+                database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS_FIELD_PIPELINE_RUN_ID]
+            yield (parent_image_id, pipeline_run)
             doc.reference.delete()  # Delete label doc from database.
 
-    def update_arrays_in_image_docs(self, element, pipeline_run):
+    def update_arrays_in_image_docs(self, element, image_provider):
         parent_image_id = element[0]
-        image_providers = element[1]
+        pipeline_runs = element[1]
         parent_image_ref = self.db.collection(database_schema.COLLECTION_IMAGES).document(parent_image_id)
         query = self.db.collection_group(database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS)\
             .where(
                 database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS_FIELD_PARENT_IMAGE_ID,
                 u'==',
                 parent_image_id)
-        query_pipeline_run = query\
+        query_provider = query\
             .where(
-                database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS_FIELD_PIPELINE_RUN_ID,
+                database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS_FIELD_PROVIDER_ID,
                 u'==',
-                pipeline_run)
-        for image_provider in image_providers:
-            query_provider = query\
+                image_provider)
+        for pipeline_run in pipeline_runs:
+            query_pipeline_run = query\
                 .where(
-                    database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS_FIELD_PROVIDER_ID,
+                    database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS_FIELD_PIPELINE_RUN_ID,
                     u'==',
-                    image_provider)
-            self.delete_if_statements(
+                    pipeline_run)
+            self.update_provider_and_pipeline_arrays(
                 query_provider, query_pipeline_run, parent_image_ref, image_provider, pipeline_run)
+        return [parent_image_id]

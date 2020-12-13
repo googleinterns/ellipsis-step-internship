@@ -27,7 +27,10 @@ import apache_beam as beam
 from apache_beam.options.pipeline_options import PipelineOptions
 
 from backend_jobs.ingestion_update_visibility.pipeline_lib.firestore_database import GetDataset
-from backend_jobs.ingestion_update_visibility.pipeline_lib.firestore_database import UpdateVisibilityInDatabase
+from backend_jobs.ingestion_update_visibility.pipeline_lib.firestore_database import \
+    UpdateVisibilityInDatabaseCollection
+from backend_jobs.ingestion_update_visibility.pipeline_lib.firestore_database import \
+    UpdateVisibilityInDatabaseSubcollection
 from backend_jobs.pipeline_utils.utils import generate_cloud_dataflow_job_name
 from backend_jobs.pipeline_utils.data_types import VisibilityType
 from backend_jobs.pipeline_utils import constants
@@ -42,13 +45,13 @@ def _validate_args(args):
 
     """
     if args.input_pipeline_run is not None and args.input_image_provider is not None:
-        raise ValueError('input can only be or input_image_provider or input_image_provider')
+        raise ValueError('Input can only be or input_image_provider or input_image_provider')
     if args.input_pipeline_run is None and args.input_image_provider is None:
-        raise ValueError('missing input e.g. input_image_provider/input_image_provider')
+        raise ValueError('Missing input e.g. input_image_provider/input_image_provider')
     if not isinstance(args.input_pipeline_run, str) and args.input_pipeline_run:
-        raise ValueError('pipeline run id is not a string')
+        raise ValueError('Pipeline run id is not a string')
     if not isinstance(args.input_image_provider, str) and args.input_image_provider:
-        raise ValueError('image provider is not a string')
+        raise ValueError('Image provider is not a string')
 
 
 def _get_visibility(visibility):
@@ -60,7 +63,7 @@ def _get_visibility(visibility):
         return VisibilityType.VISIBLE
     if visibility == 'INVISIBLE':
         return VisibilityType.INVISIBLE
-    raise ValueError('missing input_visibility can be VISIBLE/INVISIBLE')
+    raise ValueError('Missing input_visibility can be VISIBLE/INVISIBLE')
 
 
 def run(argv=None):
@@ -80,7 +83,7 @@ def run(argv=None):
         '--input_visibility',
         dest='input_visibility',
         default='VISIBLE',
-        help='Input of provider for ingested images.')
+        help='Input visibility to update to.')
     known_args, pipeline_args = parser.parse_known_args(argv)
     _validate_args(known_args)
 
@@ -99,8 +102,15 @@ def run(argv=None):
         indices_for_batching = pipeline | 'create' >> beam.Create(constants.LIST_FOR_BATCHES)
         dataset = indices_for_batching | 'get dataset' >>\
             beam.ParDo(GetDataset(image_provider=image_provider, pipeline_run=pipeline_run))
-        dataset | 'update visibility database' >>\
-            beam.ParDo(UpdateVisibilityInDatabase(), visibility)
+        dataset_group_by_parent_image = dataset | 'group all by parent image' >>\
+            beam.GroupByKey()
+        updated_subcollection = dataset_group_by_parent_image | 'update visibility subcollection' >>\
+            beam.ParDo(UpdateVisibilityInDatabaseSubcollection(
+                image_provider=image_provider, pipeline_run=pipeline_run),
+                visibility)
+        updated_subcollection | 'update visibility collection' >>\
+            beam.ParDo(UpdateVisibilityInDatabaseCollection(
+                image_provider=image_provider, pipeline_run=pipeline_run))
 
 
 if __name__ == '__main__':
