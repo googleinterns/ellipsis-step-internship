@@ -134,4 +134,4 @@ if __name__ == '__main__':
     input_ingestion_provider = args.input_ingestion_provider
     input_recognition_provider = args.input_recognition_provider
     test_output = args.output
-    run(input_recognition_provider, input_ingestion_run, input_ingestion_provider, test_output, True)
+    run(input_recognition_provider, input_ingestion_run, input_ingestion_provider, test_output)
