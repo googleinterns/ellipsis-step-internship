@@ -1,7 +1,7 @@
 """ demo app"""
 from flask import Flask, request, render_template 
-import os 
-
+from backend_jobs.recognition_pipeline.main import run
+from threading import Thread
 app = Flask(__name__)
 
 BUCKET='demo-bucket-step'
@@ -9,6 +9,7 @@ REGION='europe-west2'
 PROJECT='step-project-ellispis'
 INPUT_TYPE_PROVIDER = 'provider'
 INPUT_TYPE_RUN_ID = 'run-id'
+TEST_OUTPUT = 'outputs'
 
 
 @app.route('/')
@@ -46,16 +47,20 @@ def recognition_removal_page():
     return render_template('recognition_removal.html')
 
 
-@app.route('/result', methods=['POST'])
+@app.route('/', methods=['POST'])
 def submit_recognition():
     input_type = request.form['input_type']
     input_value = request.form['input_value']
+    input_recognition_provider = request.form['recognition_provider']
     if input_type == INPUT_TYPE_PROVIDER:
-        pass
-        # os.system('python3 ../../backend_jobs/recognition_pipeline/main.py  --region europe-west2  --input-ingestion-provider  {provider} --input-recognition-provider Google_Vision_API --output gs://demo-bucket-step/results/outputs --runner DataflowRunner   --project step-project-ellispis   --temp_location gs://demo-bucket-step/tmp/ --requirements_file ../../requirements.txt --extra_package dist/pipeline-BACKEND_JOBS-0.0.1.tar.gz'.format(provider = input_value))
+        thread = Thread(target=run, kwargs={
+            'recognition_provider_name': input_recognition_provider, 'ingestion_provider': input_value, 'output_name': TEST_OUTPUT, 'run_locally': True})
+        thread.start()
     else:
-        pass
-    return render_template('run.html', input_type=input_type, input_value=input_value)
+        thread = Thread(target=run, kwargs={
+            'recognition_provider_name': input_recognition_provider, 'ingestion_run': input_value, 'output_name': TEST_OUTPUT, 'run_locally': True})
+        thread.start()
+    return render_template('index.html')
 
 
 @app.route('/result', methods=['POST'])
