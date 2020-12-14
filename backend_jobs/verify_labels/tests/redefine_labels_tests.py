@@ -14,7 +14,7 @@
 """
 
 import unittest
-from backend_jobs.verify_labels.pipeline_lib.redefine_labels import RedefineLabels, get_redefine_map
+from backend_jobs.verify_labels.pipeline_lib.redefine_labels import RedefineLabels
 
 class TestRedefineLables(unittest.TestCase):
     """ Tests FilterBy interface implementations.
