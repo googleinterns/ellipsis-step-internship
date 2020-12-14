@@ -71,11 +71,12 @@ def parse_arguments():
     parser.add_argument(
         '--output',
         dest='output',
-        required = False, # Optional - only for development reasons.
+        required=False,  # Optional - only for development reasons.
         help='Output file to write results to for testing.')
     return parser.parse_known_args()
 
-def run(recognition_provider_name, ingestion_run, ingestion_provider, output_name=None, run_locally=False):
+
+def run(recognition_provider_name, ingestion_run=None, ingestion_provider=None, output_name=None, run_locally=False):
     """Main entry point, defines and runs the image recognition pipeline.
 
     Input: either ingestion run id or ingestion provider id.
@@ -89,12 +90,12 @@ def run(recognition_provider_name, ingestion_run, ingestion_provider, output_nam
         recognition_options = PipelineOptions()
     else:
         recognition_options = PipelineOptions(
-        flags=None,
-        runner='DataflowRunner',
-        project='step-project-ellispis',
-        job_name=job_name,
-        temp_location='gs://demo-bucket-step/temp',
-        region='europe-west2',
+            flags=None,
+            runner='DataflowRunner',
+            project='step-project-ellispis',
+            job_name=job_name,
+            temp_location='gs://demo-bucket-step/temp',
+            region='europe-west2',
         )
     with beam.Pipeline(options=recognition_options) as pipeline:
         indices_for_batching = pipeline | 'create' >> beam.Create([i for i in range(10)])
@@ -126,6 +127,7 @@ def run(recognition_provider_name, ingestion_run, ingestion_provider, output_nam
             output = labeled_images | 'Format' >> beam.MapTuple(format_result)
             output | 'Write' >> WriteToText(output_name)
     store_pipeline_run(recognition_provider.provider_id, job_name)
+
 
 if __name__ == '__main__':
     logging.getLogger().setLevel(logging.INFO)

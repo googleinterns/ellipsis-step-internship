@@ -1,8 +1,16 @@
 """ demo app"""
 from flask import Flask, request, render_template 
 from backend_jobs.recognition_pipeline.main import run
-from threading import Thread
+from celery import Celery
+
+
 app = Flask(__name__)
+# Set up celery client
+client = Celery(app.name)
+client.conf.update(app.config)
+
+
+
 
 BUCKET='demo-bucket-step'
 REGION='europe-west2'
@@ -10,6 +18,23 @@ PROJECT='step-project-ellispis'
 INPUT_TYPE_PROVIDER = 'provider'
 INPUT_TYPE_RUN_ID = 'run-id'
 TEST_OUTPUT = 'outputs'
+
+
+@client.task
+def create_recognition_task(input_type, input_value, input_recognition_provider):
+    if input_type == INPUT_TYPE_PROVIDER:
+        run(recognition_provider_name=input_recognition_provider, ingestion_provider=input_value, output_name=TEST_OUTPUT, run_locally=True)
+    else:
+        run(recognition_provider_name=input_recognition_provider, ingestion_run=input_value, output_name=TEST_OUTPUT, run_locally=True)
+    '''
+    if input_type == INPUT_TYPE_PROVIDER:
+            thread = Thread(target=run, kwargs={
+            'recognition_provider_name': input_recognition_provider, 'ingestion_provider': input_value, 'output_name': TEST_OUTPUT, 'run_locally': True})
+        thread.start()
+    else:
+        thread = Thread(target=run, kwargs={
+            'recognition_provider_name': input_recognition_provider, 'ingestion_run': input_value, 'output_name': TEST_OUTPUT, 'run_locally': True})
+        thread.start()'''
 
 
 @app.route('/')
@@ -47,19 +72,12 @@ def recognition_removal_page():
     return render_template('recognition_removal.html')
 
 
-@app.route('/', methods=['POST'])
+@app.route('/', methods=['POST', 'GET'])
 def submit_recognition():
     input_type = request.form['input_type']
     input_value = request.form['input_value']
     input_recognition_provider = request.form['recognition_provider']
-    if input_type == INPUT_TYPE_PROVIDER:
-        thread = Thread(target=run, kwargs={
-            'recognition_provider_name': input_recognition_provider, 'ingestion_provider': input_value, 'output_name': TEST_OUTPUT, 'run_locally': True})
-        thread.start()
-    else:
-        thread = Thread(target=run, kwargs={
-            'recognition_provider_name': input_recognition_provider, 'ingestion_run': input_value, 'output_name': TEST_OUTPUT, 'run_locally': True})
-        thread.start()
+    create_recognition_task.delay(input_type, input_value, input_recognition_provider)
     return render_template('index.html')
 
 
