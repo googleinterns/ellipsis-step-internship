@@ -3,11 +3,12 @@ from flask import Flask, request, render_template
 from backend_jobs.recognition_pipeline.main import run
 from celery import Celery
 
+CELERY_BROKER_URL = 'redis://localhost:6379/0'
+CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
 
 app = Flask(__name__)
-# Set up celery client
-client = Celery(app.name)
-client.conf.update(app.config)
+client = Celery(app.name, broker='pyamqp://guest@localhost//')
+
 
 
 
@@ -77,7 +78,7 @@ def submit_recognition():
     input_type = request.form['input_type']
     input_value = request.form['input_value']
     input_recognition_provider = request.form['recognition_provider']
-    create_recognition_task.delay(input_type, input_value, input_recognition_provider)
+    task = create_recognition_task.delay(input_type, input_value, input_recognition_provider)
     return render_template('index.html')
 
 

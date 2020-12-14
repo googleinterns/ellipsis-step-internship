@@ -41,12 +41,12 @@ def _generate_image_id(image):
     return image
 
 
-def _validate_args(args):
+def _validate_args(input_provider_name):
     """ Checks whether the pipeline's arguments are valid.
     If not - throws an error.
 
     """
-    if not isinstance(args.input_provider_name, str):
+    if not isinstance(input_provider_name, str):
         raise ValueError('ingestion provider is not a string')
 
 
@@ -62,24 +62,7 @@ def _is_valid_image(image):
         image.width_pixels > 100 and \
         image.height_pixels > 100
 
-
-def run(argv=None):
-    """Main entry point,  defines and runs the image ingestion pipeline.
-
-    Input:
-        input_provider_name- the image provider to ingest images from.
-        input_provider_args- optional query to pass to the image provider.
-        e.g 'tags:cat,dog-tag_mode:any'.
-
-        Additional parameters that are being forwarded to the PipelineOptions:
-        region- The rigion the job runs, e.g. europe-west2.
-        output- Where to save the outpot, e.g. outputs.txt.
-        runner- The runner of the job, e.g. DataflowRunner.
-        project- Project id, e.g. step-project-ellispis.
-        requirements_file- A file with all externall imports, e.g. requirements.txt.
-        extra_package- A zip file with all internal import packages,
-        e.g. pipeline-BACKEND_JOBS-0.0.1.tar.gz.
-    """
+def parse_arguments():
     # Using external parser: https://docs.python.org/3/library/argparse.html
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -97,19 +80,46 @@ def run(argv=None):
         dest='output',
         required=False,  # Optional - only for development reasons.
         help='Output file to write results to.')
+    return parser.parse_known_args()
 
-    known_args, pipeline_args = parser.parse_known_args(argv)
-    _validate_args(known_args)
+def run(input_provider_name, input_provider_args=None, output_name=None, run_locally=False):
+    """Main entry point,  defines and runs the image ingestion pipeline.
+
+    Input:
+        input_provider_name- the image provider to ingest images from.
+        input_provider_args- optional query to pass to the image provider.
+        e.g 'tags:cat,dog-tag_mode:any'.
+
+        Additional parameters that are being forwarded to the PipelineOptions:
+        region- The rigion the job runs, e.g. europe-west2.
+        output- Where to save the outpot, e.g. outputs.txt.
+        runner- The runner of the job, e.g. DataflowRunner.
+        project- Project id, e.g. step-project-ellispis.
+        requirements_file- A file with all externall imports, e.g. requirements.txt.
+        extra_package- A zip file with all internal import packages,
+        e.g. pipeline-BACKEND_JOBS-0.0.1.tar.gz.
+    """
+    _validate_args(input_provider_name)
     image_provider = providers.get_provider(
         providers.IMAGE_PROVIDERS,
-        known_args.input_provider_name,
-        known_args.input_provider_args)
+        input_provider_name,
+        input_provider_args)
 
     if not image_provider.enabled:
         raise ValueError('ingestion provider is not enabled')
 
     job_name = utils.generate_cloud_dataflow_job_name('ingestion', image_provider)
-    pipeline_options = PipelineOptions(pipeline_args, job_name=job_name)
+    if run_locally:
+        pipeline_options = PipelineOptions()
+    else:
+        pipeline_options = PipelineOptions(
+            flags=None,
+            runner='DataflowRunner',
+            project='step-project-ellispis',
+            job_name=job_name,
+            temp_location='gs://demo-bucket-step/temp',
+            region='europe-west2',
+        )
 
     # The pipeline will be run on exiting the with block.
     # pylint: disable=expression-not-assigned
@@ -117,7 +127,7 @@ def run(argv=None):
 
         num_of_pages = image_provider.get_num_of_pages()
         create_batch = pipeline | 'create' >> \
-            apache_beam.Create([i for i in range(1, int(num_of_pages)+1)])
+            apache_beam.Create([i for i in range(1, int(5)+1)])
         images = create_batch | 'call API' >> \
             apache_beam.ParDo(image_provider.get_images)
         extracted_elements = images | 'extract attributes' >> \
@@ -130,12 +140,13 @@ def run(argv=None):
         generate_image_id | 'store_image' >> \
             apache_beam.ParDo(firestore_database.AddOrUpdateImageDoFn(), image_provider, job_name)
 
-        if known_args.output:
-            generate_image_id | 'Write' >> WriteToText(known_args.output)
+        if output_name:
+            generate_image_id | 'Write' >> WriteToText(output_name)
 
     store_pipeline_run(image_provider.provider_id, job_name)
 
 
 if __name__ == '__main__':
     logging.getLogger().setLevel(logging.INFO)
-    run()
+    args, pipeline_args = parse_arguments()
+    run(args.input_provider_name, args.input_provider_args, args.output, run_locally=True)

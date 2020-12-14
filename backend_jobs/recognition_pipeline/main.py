@@ -75,7 +75,6 @@ def parse_arguments():
         help='Output file to write results to for testing.')
     return parser.parse_known_args()
 
-
 def run(recognition_provider_name, ingestion_run=None, ingestion_provider=None, output_name=None, run_locally=False):
     """Main entry point, defines and runs the image recognition pipeline.
 
@@ -132,8 +131,4 @@ def run(recognition_provider_name, ingestion_run=None, ingestion_provider=None, 
 if __name__ == '__main__':
     logging.getLogger().setLevel(logging.INFO)
     args, pipeline_args = parse_arguments()
-    input_ingestion_run = args.input_ingestion_pipelinerun_id
-    input_ingestion_provider = args.input_ingestion_provider
-    input_recognition_provider = args.input_recognition_provider
-    test_output = args.output
-    run(input_recognition_provider, input_ingestion_run, input_ingestion_provider, test_output, True)
+    run(args.input_recognition_provider, args.input_ingestion_pipelinerun_id, args.input_ingestion_provider, args.output, run_locally=True)
