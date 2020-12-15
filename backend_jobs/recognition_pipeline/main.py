@@ -36,29 +36,23 @@ from backend_jobs.recognition_pipeline.providers.providers import get_recognitio
 
 _PIPELINE_TYPE = 'recognition'
 
-def _validate_args(args):
+def _validate_args(recognition_provider, ingestion_pipelinerun_id, ingestion_provider):
     """ Checks whether the pipeline's arguments are valid.
     If not - throws an error.
 
     """
-    if bool(args.input_ingestion_pipelinerun_id) == bool(args.input_ingestion_provider):
+    if bool(ingestion_pipelinerun_id) == bool(ingestion_provider):
         raise ValueError('pipeline requires exactly one of out of ingestion pipeline run \
             and ingestion provider - zero or two were given')
-    if args.input_ingestion_pipelinerun_id and\
-        not isinstance(args.input_ingestion_pipelinerun_id, str):
+    if ingestion_pipelinerun_id and\
+        not isinstance(ingestion_pipelinerun_id, str):
         raise ValueError('ingestion pipeline run id is not a string')
-    if args.input_ingestion_provider and not isinstance(args.input_ingestion_provider, str):
+    if ingestion_provider and not isinstance(ingestion_provider, str):
         raise ValueError('ingestion pipeline provider id is not a string')
-    if not isinstance(args.input_recognition_provider, str):
+    if not isinstance(recognition_provider, str):
         raise ValueError('recognition provider is not a string')
 
-def run(argv=None):
-    """Main entry point, defines and runs the image recognition pipeline.
-
-    Input: either ingestion run id or ingestion provider id.
-    The input is used for querying the database for image ingested by
-    either one of the optional inputs.
-    """
+def parse_arguments():
     # Using external parser: https://docs.python.org/3/library/argparse.html
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -79,20 +73,37 @@ def run(argv=None):
         dest='output',
         required = False, # Optional - only for development reasons.
         help='Output file to write results to for testing.')
-    known_args, pipeline_args = parser.parse_known_args(argv)
-    _validate_args(known_args)
-    ingestion_run = known_args.input_ingestion_pipelinerun_id
-    ingestion_provider = known_args.input_ingestion_provider
-    # Creating an object of type ImageRecognitionProvider
-    # for the specific image recognition provider input.
-    recognition_provider = get_recognition_provider(known_args.input_recognition_provider)
-    job_name = generate_cloud_dataflow_job_name(_PIPELINE_TYPE, recognition_provider.provider_id)
-    pipeline_options = PipelineOptions(pipeline_args, job_name=job_name)
+    return parser.parse_known_args()
 
+def run(recognition_provider_name, ingestion_run=None, ingestion_provider=None, output_name=None, run_locally=False):
+    """Main entry point, defines and runs the image recognition pipeline.
+
+    Input: either ingestion run id or ingestion provider id.
+    The input is used for querying the database for image ingested by
+    either one of the optional inputs.
+    """
+    _validate_args(recognition_provider_name, ingestion_run, ingestion_provider)
+    recognition_provider = get_recognition_provider(recognition_provider_name)
+    job_name = generate_cloud_dataflow_job_name(_PIPELINE_TYPE, recognition_provider)
+    if run_locally:
+        pipeline_options = PipelineOptions()
+    else:
+        pipeline_options = PipelineOptions(
+            flags=None,
+            runner='DataflowRunner',
+            project='step-project-ellispis',
+            job_name=job_name,
+            temp_location='gs://demo-bucket-step/temp',
+            region='europe-west2',
+        )
     with beam.Pipeline(options=pipeline_options) as pipeline:
-        indices_for_batching = pipeline | 'create' >> beam.Create(create_query_indices())
-        dataset = indices_for_batching | 'get images dataset' >> \
-            beam.ParDo(GetBatchedImageDataset(), ingestion_run=ingestion_run, ingestion_provider=ingestion_provider)
+        indices_for_batching = pipeline | 'create' >> beam.Create([i for i in range(10)])
+        if ingestion_run:
+            dataset = indices_for_batching | 'get images dataset' >> \
+                beam.ParDo(GetBatchedImageDataset(), ingestion_run=ingestion_run)
+        else:
+            dataset = indices_for_batching | 'get images dataset' >> \
+                beam.ParDo(GetBatchedImageDataset(), ingestion_provider=ingestion_provider)
         dataset_with_url_for_provider = dataset | 'add url for labeling' >> \
             beam.ParDo(recognition_provider.add_url_for_recognition_api)
         filtered_dataset = dataset_with_url_for_provider | 'filter images' >> \
@@ -109,14 +120,14 @@ def run(argv=None):
         labeled_images | 'store in database' >> beam.ParDo(UpdateImageLabelsInDatabase(),\
             job_name, recognition_provider.provider_id)
 
-        if known_args.output: # For testing.
+        if output_name: # For testing.
             def format_result(image, labels):
                 return '%s: %s' % (image['url'], labels)
             output = labeled_images | 'Format' >> beam.MapTuple(format_result)
-            output | 'Write' >> WriteToText(known_args.output)
-
-    store_pipeline_run(job_name, provider_id=recognition_provider.provider_id)
+            output | 'Write' >> WriteToText(output_name)
+    store_pipeline_run(recognition_provider.provider_id, job_name)
 
 if __name__ == '__main__':
     logging.getLogger().setLevel(logging.INFO)
-    run()
+    args, pipeline_args = parse_arguments()
+    run(args.input_recognition_provider, args.input_ingestion_pipelinerun_id, args.input_ingestion_provider, args.output, run_locally=True)
