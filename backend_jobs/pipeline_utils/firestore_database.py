@@ -21,6 +21,10 @@ from backend_jobs.pipeline_utils.data_types import VisibilityType
 _PROJECT_ID_NAME = 'step-project-ellispis'
 _PROJECT_ID = 'projectId'
 
+# Each batch is queried by COLLECTION_IMAGES_FIELD_RANDOM.
+# RANGE_OF_BATCH defines the ratio of images processed
+# in each batch out of all images stored in the database.
+RANGE_OF_BATCH = 0.001
 
 def initialize_db():
     """Initializes project's Firestore database for writing and reading purposes
@@ -37,19 +41,27 @@ def initialize_db():
     return firestore.client()
 
 
-def store_pipeline_run(provider_id, run_id):
+def store_pipeline_run(run_id, provider_id = None):
     """ Uploads information about the pipeline run to the
-    database_schema.COLLECTION_PIPELINE_RUNS collection
+    database_schema.COLLECTION_PIPELINE_RUNS collection.
+
+    Args:
+        run_id: the pipeline run's unique id.
+        provider_id: Optional. Used for recognition and ingestion pipelines only.
 
     """
     # pylint: disable=fixme
     # TODO: get start, end and quality of current pipeline run.
     db = initialize_db()
-    db.collection(database_schema.COLLECTION_PIPELINE_RUNS).document(run_id).set({
-        database_schema.COLLECTION_PIPELINE_RUNS_FIELD_PROVIDER_ID: provider_id,
+    new_doc = db.collection(database_schema.COLLECTION_PIPELINE_RUNS).document(run_id)
+    new_doc.set({
         database_schema.COLLECTION_PIPELINE_RUNS_FIELD_START_DATE: 00,
         database_schema.COLLECTION_PIPELINE_RUNS_FIELD_END_DATE: 00,
-        database_schema.COLLECTION_PIPELINE_RUNS_FIELD_VISIBILITY:
-            VisibilityType.INVISIBLE.value,
         database_schema.COLLECTION_PIPELINE_RUNS_FIELD_PIPELINE_RUN_ID: run_id
     })
+    if provider_id: # For recognition and ingestion main pipelines.
+        new_doc.set({
+            database_schema.COLLECTION_PIPELINE_RUNS_FIELD_PROVIDER_ID: provider_id,
+            database_schema.COLLECTION_PIPELINE_RUNS_FIELD_VISIBILITY:
+            VisibilityType.INVISIBLE.value,
+        }, merge=True)
