@@ -68,7 +68,7 @@ def parse_arguments():
     parser.add_argument(
         '--input_provider_name',
         dest='input_provider_name',
-        default='FlickrProvider',
+        default='FlickrProvider-2020',
         help='Provider name to process.')
     parser.add_argument(
         '--input_provider_args',
@@ -81,6 +81,7 @@ def parse_arguments():
         required=False,  # Optional - only for development reasons.
         help='Output file to write results to.')
     return parser.parse_known_args()
+
 
 def run(input_provider_name, input_provider_args=None, output_name=None, run_locally=False):
     """Main entry point,  defines and runs the image ingestion pipeline.
