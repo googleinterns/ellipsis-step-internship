@@ -38,29 +38,21 @@ from backend_jobs.recognition_removal.pipeline_lib.firestore_database import\
 
 _PIPELINE_TYPE = 'recognition_removal'
 
-def _validate_args(args):
+def _validate_args(input_recognition_run_id, input_recognition_provider):
     """ Checks whether the pipeline's arguments are valid.
     If not - throws an error.
 
     """
-    if bool(args.input_recognition_run_id) == bool(args.input_recognition_provider):
+    if bool(input_recognition_run_id) == bool(input_recognition_provider):
         raise ValueError('pipeline requires exactly one of out of recognition pipeline run \
             and recognition provider - zero or two were given')
-    if args.input_recognition_run_id and\
-        not isinstance(args.input_recognition_run_id, str):
+    if input_recognition_run_id and\
+        not isinstance(input_recognition_run_id, str):
         raise ValueError('recognition pipeline run id is not a string')
-    if args.input_recognition_provider and not isinstance(args.input_recognition_provider, str):
+    if input_recognition_provider and not isinstance(input_recognition_provider, str):
         raise ValueError('recognition pipeline provider id is not a string')
 
-
-def run(argv=None):
-    """Main entry point, defines and runs the labels removal pipeline.
-
-    Input: either recognition run id or recognition provider id.
-    The input is used for querying the database for labels recognized by
-    either one of the optional inputs.
-    
-    """
+def parse_arguments():
     # Using external parser: https://docs.python.org/3/library/argparse.html
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -76,16 +68,33 @@ def run(argv=None):
         dest='output',
         required = False, # Optional - only for development reasons.
         help='Output file to write results to for testing.')
-    known_args, pipeline_args = parser.parse_known_args(argv)
-    _validate_args(known_args)
-    recognition_run = known_args.input_recognition_run_id
-    recognition_provider = known_args.input_recognition_provider
+    return parser.parse_known_args()
+
+def run(recognition_run=None, recognition_provider=None, output=None, run_locally=False):
+    """Main entry point, defines and runs the labels removal pipeline.
+
+    Input: either recognition run id or recognition provider id.
+    The input is used for querying the database for labels recognized by
+    either one of the optional inputs.
+    
+    """
+    _validate_args(recognition_run, recognition_provider)
     if recognition_run:
         job_name = generate_cloud_dataflow_job_name(_PIPELINE_TYPE, recognition_run)
     else:
         job_name = generate_cloud_dataflow_job_name(_PIPELINE_TYPE, recognition_provider)
 
-    pipeline_options = PipelineOptions(pipeline_args, job_name=job_name)
+    if run_locally:
+        pipeline_options = PipelineOptions()
+    else:
+        pipeline_options = PipelineOptions(
+            flags=None,
+            runner='DataflowRunner',
+            project='step-project-ellispis',
+            job_name=job_name,
+            temp_location='gs://demo-bucket-step/temp',
+            region='europe-west2',
+        )
 
     with beam.Pipeline(options=pipeline_options) as pipeline:
         indices_for_batching = pipeline | 'create' >> beam.Create(create_query_indices())
@@ -99,12 +108,13 @@ def run(argv=None):
         # pylint: disable=expression-not-assigned
         dataset_group_by_parent_image | 'update database' >> beam.ParDo(UpdateLabelsInImageDocs())
 
-        if known_args.output: # For testing.
+        if output: # For testing.
             # pylint: disable=expression-not-assigned
-            dataset_group_by_parent_image | 'Write' >> WriteToText(known_args.output)
-    
+            dataset_group_by_parent_image | 'Write' >> WriteToText(output)
+
     store_pipeline_run(job_name)
 
 if __name__ == '__main__':
     logging.getLogger().setLevel(logging.INFO)
-    run()
+    args, pipeline_args = parse_arguments()
+    run(args.input_recognition_run_id, args.input_recognition_provider, args.output, run_locally=True)
