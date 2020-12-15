@@ -136,4 +136,4 @@ def run(recognition_provider_name, ingestion_run=None, ingestion_provider=None, 
 if __name__ == '__main__':
     logging.getLogger().setLevel(logging.INFO)
     args, pipeline_args = parse_arguments()
-    run(args.input_recognition_provider, args.input_ingestion_pipelinerun_id, args.input_ingestion_provider, args.output)
+    run(args.input_recognition_provider, args.input_ingestion_pipelinerun_id, args.input_ingestion_provider, args.output, run_locally=True)
