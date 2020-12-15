@@ -71,6 +71,8 @@ COLLECTION_PIPELINE_RUNS_FIELD_PIPELINE_RUN_ID = 'pipelineRunId'
 COLLECTION_PIPELINE_RUNS_FIELD_START_DATE = 'startDate'
 # Type: Timestamp, the run's end time.
 COLLECTION_PIPELINE_RUNS_FIELD_END_DATE = 'endDate'
+# Type: string, indicated run's status.
+COLLECTION_PIPELINE_RUNS_FIELD_STATUS = 'status'
 # Type: number, a VisibilityType which represents whether the
 # pipeline run was verified.
 COLLECTION_PIPELINE_RUNS_FIELD_VISIBILITY = 'visibility'

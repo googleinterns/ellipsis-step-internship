@@ -30,7 +30,8 @@ from apache_beam.io import WriteToText
 from apache_beam.options.pipeline_options import PipelineOptions
 from backend_jobs.recognition_pipeline.pipeline_lib.firestore_database import\
     GetBatchedImageDataset, UpdateImageLabelsInDatabase
-from backend_jobs.pipeline_utils.firestore_database import store_pipeline_run
+from backend_jobs.pipeline_utils.firestore_database import store_pipeline_run,\
+    update_pipeline_run_when_succeeded, update_pipeline_run_when_failed
 from backend_jobs.pipeline_utils.utils import generate_cloud_dataflow_job_name
 from backend_jobs.recognition_pipeline.providers.providers import get_recognition_provider
 
@@ -96,36 +97,40 @@ def run(recognition_provider_name, ingestion_run=None, ingestion_provider=None, 
             temp_location='gs://demo-bucket-step/temp',
             region='europe-west2',
         )
-    with beam.Pipeline(options=recognition_options) as pipeline:
-        indices_for_batching = pipeline | 'create' >> beam.Create([i for i in range(10)])
-        if ingestion_run:
-            dataset = indices_for_batching | 'get images dataset' >> \
-                beam.ParDo(GetBatchedImageDataset(), ingestion_run=ingestion_run)
-        else:
-            dataset = indices_for_batching | 'get images dataset' >> \
-                beam.ParDo(GetBatchedImageDataset(), ingestion_provider=ingestion_provider)
-        dataset_with_url_for_provider = dataset | 'add url for labeling' >> \
-            beam.ParDo(recognition_provider.add_url_for_recognition_api)
-        filtered_dataset = dataset_with_url_for_provider | 'filter images' >> \
-            beam.Filter(recognition_provider.is_eligible)
-        images_batch = filtered_dataset | 'combine to batches' >> \
-            beam.GroupBy(lambda doc: int(doc['random']*100)) |\
-                beam.ParDo(lambda element: [element[1]])
-        # Labels the images by the process method of the provider.
-        labeled_images_batch = images_batch | 'label by batch' >> \
-            beam.ParDo(recognition_provider)
-        labeled_images = labeled_images_batch | \
-            beam.FlatMap(lambda elements: elements)
-        # pylint: disable=expression-not-assigned
-        labeled_images | 'store in database' >> beam.ParDo(UpdateImageLabelsInDatabase(),\
-            job_name, recognition_provider.provider_id)
-
-        if output_name: # For testing.
-            def format_result(image, labels):
-                return '%s: %s' % (image['url'], labels)
-            output = labeled_images | 'Format' >> beam.MapTuple(format_result)
-            output | 'Write' >> WriteToText(output_name)
     store_pipeline_run(recognition_provider.provider_id, job_name)
+    try:
+        with beam.Pipeline(options=recognition_options) as pipeline:
+            indices_for_batching = pipeline | 'create' >> beam.Create([i for i in range(10)])
+            if ingestion_run:
+                dataset = indices_for_batching | 'get images dataset' >> \
+                    beam.ParDo(GetBatchedImageDataset(), ingestion_run=ingestion_run)
+            else:
+                dataset = indices_for_batching | 'get images dataset' >> \
+                    beam.ParDo(GetBatchedImageDataset(), ingestion_provider=ingestion_provider)
+            dataset_with_url_for_provider = dataset | 'add url for labeling' >> \
+                beam.ParDo(recognition_provider.add_url_for_recognition_api)
+            filtered_dataset = dataset_with_url_for_provider | 'filter images' >> \
+                beam.Filter(recognition_provider.is_eligible)
+            images_batch = filtered_dataset | 'combine to batches' >> \
+                beam.GroupBy(lambda doc: int(doc['random']*100)) |\
+                    beam.ParDo(lambda element: [element[1]])
+            # Labels the images by the process method of the provider.
+            labeled_images_batch = images_batch | 'label by batch' >> \
+                beam.ParDo(recognition_provider)
+            labeled_images = labeled_images_batch | \
+                beam.FlatMap(lambda elements: elements)
+            # pylint: disable=expression-not-assigned
+            labeled_images | 'store in database' >> beam.ParDo(UpdateImageLabelsInDatabase(),\
+                job_name, recognition_provider.provider_id)
+
+            if output_name: # For testing.
+                def format_result(image, labels):
+                    return '%s: %s' % (image['url'], labels)
+                output = labeled_images | 'Format' >> beam.MapTuple(format_result)
+                output | 'Write' >> WriteToText(output_name)
+        update_pipeline_run_when_succeeded(job_name)
+    except:
+        update_pipeline_run_when_failed(job_name)
 
 
 if __name__ == '__main__':
