@@ -1,7 +1,6 @@
 """ demo app"""
 from flask import request, render_template 
 from backend_jobs.recognition_pipeline.main import run
-from examples.flask_app import config
 from flask import Flask
 from flask_celery import make_celery
 
@@ -13,10 +12,6 @@ app.config.update(
 celery = make_celery(app)
 
 
-
-BUCKET='demo-bucket-step'
-REGION='europe-west2'
-PROJECT='step-project-ellispis'
 INPUT_TYPE_PROVIDER = 'provider'
 INPUT_TYPE_RUN_ID = 'run-id'
 TEST_OUTPUT = 'outputs'
