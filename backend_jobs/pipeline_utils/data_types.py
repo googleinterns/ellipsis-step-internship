@@ -22,6 +22,7 @@ class VisibilityType(enum.Enum):
     INVISIBLE = 0
     VISIBLE = 1
 
+
 class PipelineRunStatus(enum.Enum):
     """ This enum represents the different status types for pipeline runs.
     """

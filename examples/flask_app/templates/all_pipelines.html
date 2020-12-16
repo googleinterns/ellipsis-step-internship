@@ -1,0 +1,36 @@
+<body>
+    <h1> View All Pipelines</h1>
+    <form action="{{ url_for('submit_all_pipelines_page') }}" method="post">
+        <label for="status">status:</label>
+        <select name="status_type" id="status_type">
+            <option value="STARTED">STARTED</option>
+            <option value="SUCCEEDED">SUCCEEDED</option>
+            <option value="FAILED">FAILED</option>
+        </select><br><br>
+        <input type="submit" value="Submit">
+    </form>
+    <table>
+        <thead style="border: 1px solid black;">
+        <tr>
+            <th>pipelineRunId</th>
+            <th>providerId</th>
+            <th>startDate</th>
+            <th>endDate</th>
+            <th>status</th>
+            <th>visibility</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for ob in my_objects %}
+        <tr>
+            <td>{{ ob['pipelineRunId'] }}</td>
+            <td>{{ ob['providerId'] }}</td>
+            <td>{{ ob['startDate'] }}</td>
+            <td>{{ ob['endDate'] }}</td>
+            <td>{{ ob['status'] }}</td>
+            <td>{{ ob['visibility'] }}</td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</body>
