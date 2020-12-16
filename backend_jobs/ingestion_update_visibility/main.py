@@ -26,11 +26,7 @@ import logging
 import apache_beam as beam
 from apache_beam.options.pipeline_options import PipelineOptions
 
-from backend_jobs.ingestion_update_visibility.pipeline_lib.firestore_database import GetDataset
-from backend_jobs.ingestion_update_visibility.pipeline_lib.firestore_database import \
-    UpdateVisibilityInDatabaseCollection
-from backend_jobs.ingestion_update_visibility.pipeline_lib.firestore_database import \
-    UpdateVisibilityInDatabaseSubcollection
+from backend_jobs.ingestion_update_visibility.pipeline_lib import firestore_database 
 from backend_jobs.pipeline_utils.utils import generate_cloud_dataflow_job_name
 from backend_jobs.pipeline_utils.data_types import VisibilityType
 from backend_jobs.pipeline_utils import constants
@@ -101,15 +97,16 @@ def run(argv=None):
     with beam.Pipeline(options=pipeline_options) as pipeline:
         indices_for_batching = pipeline | 'create' >> beam.Create(constants.LIST_FOR_BATCHES)
         dataset = indices_for_batching | 'get dataset' >>\
-            beam.ParDo(GetDataset(image_provider=image_provider, pipeline_run=pipeline_run))
+            beam.ParDo(firestore_database.GetDataset(
+                image_provider=image_provider, pipeline_run=pipeline_run))
         dataset_group_by_parent_image = dataset | 'group all by parent image' >>\
             beam.GroupByKey()
         updated_subcollection = dataset_group_by_parent_image | 'update visibility subcollection' >>\
-            beam.ParDo(UpdateVisibilityInDatabaseSubcollection(
+            beam.ParDo(firestore_database.UpdateVisibilityInDatabaseSubcollection(
                 image_provider=image_provider, pipeline_run=pipeline_run),
                 visibility)
         updated_subcollection | 'update visibility collection' >>\
-            beam.ParDo(UpdateVisibilityInDatabaseCollection(
+            beam.ParDo(firestore_database.UpdateVisibilityInDatabaseCollection(
                 image_provider=image_provider, pipeline_run=pipeline_run))
 
 

@@ -60,21 +60,18 @@ class IngestionRemovalPipelineInterface(ABC, apache_beam.DoFn):
         the ingested runs array, neither or both.
 
         Args:
-            query_provider: All docs with the image_provider as provider.
-            query_pipeline_run: All docs with the pipeline_run as pipeline_run.
+            query_provider: All documents from the pipelinerun subcollection with the image_provider as provider.
+            query_pipeline_run: All documents from the pipelinerun subcollection with the pipeline_run as pipeline_run.
             parent_image_ref: A reference to the image doc in the image collection.
             image_provider: The image provider we remove the images by.
             pipeline_run: The image pipeline_run we remove the images by.
         """
-        if len(query_provider.get()) == 0 and len(query_pipeline_run.get()) != 0:
-            self._update_provider_array(parent_image_ref, image_provider)
-        if len(query_provider.get()) != 0 and len(query_pipeline_run.get()) == 0:
-            self._update_pipeline_array(parent_image_ref, pipeline_run)
-        if len(query_provider.get()) == 0 and len(query_pipeline_run.get()) == 0:
-            self._update_provider_array(parent_image_ref, image_provider)
-            self._update_pipeline_array(parent_image_ref, pipeline_run)
+        if len(query_provider.get()) == 0:
+            self._remove_provider_from_array(parent_image_ref, image_provider)
+        if len(query_pipeline_run.get()) == 0:
+            self._remove_pipeline_from_array(parent_image_ref, pipeline_run)
 
-    def _update_provider_array(self, parent_image_ref, image_provider):
+    def _remove_provider_from_array(self, parent_image_ref, image_provider):
         """ This function is in charge of removing the given image_provider from the ingested providers
         array.
 
@@ -91,7 +88,7 @@ class IngestionRemovalPipelineInterface(ABC, apache_beam.DoFn):
             database_schema.COLLECTION_IMAGES_FIELD_INGESTED_PROVIDERS: providers_array
         })
 
-    def _update_pipeline_array(self, parent_image_ref, pipeline_run):
+    def _remove_pipeline_from_array(self, parent_image_ref, pipeline_run):
         """ This function is in charge of removing the given pipeline_run from the ingested pipeline runs
         array.
 
@@ -109,13 +106,13 @@ class IngestionRemovalPipelineInterface(ABC, apache_beam.DoFn):
         })
 
     def remove_image_doc_if_necessary(self, parent_image_id):
-        ''' This function is in charge of removing the original image if the subcollection
+        """ This function is in charge of removing the original image if the subcollection
         pipeline_runs does not contain any documents
         (both the arrays ingested pipeline runs and ingested providers are empty).
 
         Args:
             parent_image_id: The id of the image doc in the image collection.
-        '''
+        """
         parent_image_ref = self.db.collection(database_schema.COLLECTION_IMAGES).document(parent_image_id)
         image_doc_dict = parent_image_ref.get().to_dict()
         providers_array = image_doc_dict[database_schema.COLLECTION_IMAGES_FIELD_INGESTED_PROVIDERS]
