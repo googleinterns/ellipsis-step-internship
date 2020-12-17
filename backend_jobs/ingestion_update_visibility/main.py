@@ -26,11 +26,7 @@ import logging
 import apache_beam as beam
 from apache_beam.options.pipeline_options import PipelineOptions
 
-from backend_jobs.ingestion_update_visibility.pipeline_lib.firestore_database import GetDataset
-from backend_jobs.ingestion_update_visibility.pipeline_lib.firestore_database import \
-    UpdateVisibilityInDatabaseCollection
-from backend_jobs.ingestion_update_visibility.pipeline_lib.firestore_database import \
-    UpdateVisibilityInDatabaseSubcollection
+from backend_jobs.ingestion_update_visibility.pipeline_lib import firestore_database 
 from backend_jobs.pipeline_utils.utils import generate_cloud_dataflow_job_name
 from backend_jobs.pipeline_utils.data_types import VisibilityType
 from backend_jobs.pipeline_utils import constants
@@ -39,18 +35,18 @@ from backend_jobs.pipeline_utils import constants
 _PIPELINE_TYPE = 'update_visibility_pipeline'
 
 
-def _validate_args(args):
+def _validate_args(input_image_provider, input_pipeline_run):
     """ Checks whether the pipeline's arguments are valid.
     If not - throws an error.
 
     """
-    if args.input_pipeline_run is not None and args.input_image_provider is not None:
-        raise ValueError('Input can only be or input_image_provider or input_image_provider')
-    if args.input_pipeline_run is None and args.input_image_provider is None:
-        raise ValueError('Missing input e.g. input_image_provider/input_image_provider')
-    if not isinstance(args.input_pipeline_run, str) and args.input_pipeline_run:
+    if input_pipeline_run is not None and input_image_provider is not None:
+        raise ValueError('Input can only be or input_image_provider or input_pipeline_run')
+    if input_pipeline_run is None and input_image_provider is None:
+        raise ValueError('Missing input e.g. input_image_provider/input_pipeline_run')
+    if not isinstance(input_pipeline_run, str) and input_pipeline_run:
         raise ValueError('Pipeline run id is not a string')
-    if not isinstance(args.input_image_provider, str) and args.input_image_provider:
+    if not isinstance(input_image_provider, str) and input_image_provider:
         raise ValueError('Image provider is not a string')
 
 
@@ -66,8 +62,9 @@ def _get_visibility(visibility):
     raise ValueError('Missing input_visibility can be VISIBLE/INVISIBLE')
 
 
-def run(argv=None):
-    """Main entry point, defines and runs the updating visibility pipeline."""
+
+def parse_arguments():
+    # Using external parser: https://docs.python.org/3/library/argparse.html
     parser = argparse.ArgumentParser()
     parser.add_argument(
         '--input_pipeline_run',
@@ -84,35 +81,50 @@ def run(argv=None):
         dest='input_visibility',
         default='VISIBLE',
         help='Input visibility to update to.')
-    known_args, pipeline_args = parser.parse_known_args(argv)
-    _validate_args(known_args)
+    return parser.parse_known_args()
 
-    pipeline_run = known_args.input_pipeline_run
-    image_provider = known_args.input_image_provider
-    visibility = _get_visibility(known_args.input_visibility)
+
+def run(input_image_provider=None, input_pipeline_run=None, input_visibility=None, run_locally=False):
+    """Main entry point, defines and runs the updating visibility pipeline."""
+    _validate_args(input_image_provider, input_pipeline_run)
+    pipeline_run = input_pipeline_run
+    image_provider = input_image_provider
+    visibility = _get_visibility(input_visibility)
 
     if image_provider:
         job_name = generate_cloud_dataflow_job_name(_PIPELINE_TYPE, image_provider)
     else:
         job_name = generate_cloud_dataflow_job_name(_PIPELINE_TYPE, pipeline_run)
 
-    pipeline_options = PipelineOptions(pipeline_args, job_name=job_name)
+    if run_locally:
+        pipeline_options = PipelineOptions()
+    else:
+        pipeline_options = PipelineOptions(
+            flags=None,
+            runner='DataflowRunner',
+            project='step-project-ellispis',
+            job_name=job_name,
+            temp_location='gs://demo-bucket-step/temp',
+            region='europe-west2',
+        )
 
     with beam.Pipeline(options=pipeline_options) as pipeline:
         indices_for_batching = pipeline | 'create' >> beam.Create(constants.LIST_FOR_BATCHES)
         dataset = indices_for_batching | 'get dataset' >>\
-            beam.ParDo(GetDataset(image_provider=image_provider, pipeline_run=pipeline_run))
+            beam.ParDo(firestore_database.GetDataset(
+                image_provider=image_provider, pipeline_run=pipeline_run))
         dataset_group_by_parent_image = dataset | 'group all by parent image' >>\
             beam.GroupByKey()
         updated_subcollection = dataset_group_by_parent_image | 'update visibility subcollection' >>\
-            beam.ParDo(UpdateVisibilityInDatabaseSubcollection(
+            beam.ParDo(firestore_database.UpdateVisibilityInDatabaseSubcollection(
                 image_provider=image_provider, pipeline_run=pipeline_run),
                 visibility)
         updated_subcollection | 'update visibility collection' >>\
-            beam.ParDo(UpdateVisibilityInDatabaseCollection(
+            beam.ParDo(firestore_database.UpdateVisibilityInDatabaseCollection(
                 image_provider=image_provider, pipeline_run=pipeline_run))
 
 
 if __name__ == '__main__':
     logging.getLogger().setLevel(logging.INFO)
-    run()
+    args, pipeline_args = parse_arguments()
+    run(args.input_image_provider, args.input_pipeline_run, args.input_visibility, run_locally=True)

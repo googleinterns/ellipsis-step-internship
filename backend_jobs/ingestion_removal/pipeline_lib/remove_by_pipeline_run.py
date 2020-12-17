@@ -39,12 +39,12 @@ class IngestionRemovalByPipelineRun(IngestionRemovalPipelineInterface):
                 database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS_FIELD_PARENT_IMAGE_ID]
             image_provider = doc_dict[
                 database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS_FIELD_PROVIDER_ID]
-            yield (parent_image_id, image_provider)
             doc.reference.delete()  # Delete label doc from database.
-
-    def update_arrays_in_image_docs(self, element, pipeline_run):
-        parent_image_id = element[0]
-        image_providers = element[1]
+            yield (parent_image_id, image_provider)
+            
+    def update_arrays_in_image_docs(self, image_id_and_providers, pipeline_run):
+        parent_image_id = image_id_and_providers[0]
+        image_providers = image_id_and_providers[1]
         parent_image_ref = self.db.collection(database_schema.COLLECTION_IMAGES).document(parent_image_id)
         query = self.db.collection_group(database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS)\
             .where(

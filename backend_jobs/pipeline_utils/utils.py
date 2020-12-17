@@ -13,6 +13,7 @@
   limitations under the License.
 """
 from datetime import datetime
+from backend_jobs.pipeline_utils.firestore_database import RANGE_OF_BATCH
 
 
 def get_timestamp_id():
@@ -23,7 +24,7 @@ def get_timestamp_id():
     return str(datetime.timestamp(datetime.now())).replace('.', '')
 
 
-def generate_cloud_dataflow_job_name(pipeline_type, provider):
+def generate_cloud_dataflow_job_name(pipeline_type, additional_info):
     """ Returns a unique job_name given pipeline_type and a provider.
     Strips '_' and changes it to '-' since Dataflow does not support it.
 
@@ -35,10 +36,11 @@ def generate_cloud_dataflow_job_name(pipeline_type, provider):
     Returns:
       A unique job_name type str.
     """
-    job_name = '{pipeline_type}_{provider}_{time_id}'.format(
+    job_name = '{pipeline_type}_{additional_info}_{time_id}'.format(
       pipeline_type=pipeline_type,
       time_id=get_timestamp_id(),
-      provider=str(provider).lower())
+      additional_info=str(additional_info).lower())
+      # Dataflow job names can only include '-' and not '_'.
     return job_name.replace('_', '-')
 
 
@@ -58,3 +60,10 @@ def validate_one_arg(image_provider=None, pipeline_run=None):
         raise ValueError('can only get image_provider or pipeline_run')
     if pipeline_run is None and image_provider is None:
         raise ValueError('missing input e.g. image_provider or pipeline_run')
+
+
+def create_query_indices():
+    """ Creates a list of indices for querying the database.
+
+    """
+    return [i for i in range(int(1/RANGE_OF_BATCH))]
