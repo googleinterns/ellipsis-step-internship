@@ -24,7 +24,7 @@ class TestFirestoreDatabase(unittest.TestCase):
     """
   
     def test_get_geo_hashes_map1(self):
-        """ This test, given a latitude and longitude,
+        """ This test, given values of latitude and longitude,
         expects to receive a map object with all the geohashes.
 
         Given:
@@ -66,15 +66,15 @@ class TestFirestoreDatabase(unittest.TestCase):
         self.assertEqual(expected_hashes_map, hashes_map['hash10'])
     
     def test_get_date_fields(self):
-        """ This test, given a datetime date,
-        expects to receive a map object with all the date fields.
+        """ This test, given a datetime object,
+        expects to receive a map object with the date fields parsed.
         """
         expected_date = {'year': 2019, 'month': 4, 'day': 13}
         date = firestore_database._get_date_fields(datetime.date(2019, 4, 13))
         self.assertEqual(expected_date, date)
 
     def test_get_max_visibility_visible(self):
-        """ This test, given two visibilities, expects the max visibility.
+        """ This test, given two visibilities, expects to receive the max visibility.
 
         Given:
             first_visibility=VISIBLE, second_visibility=INVISIBLE
@@ -89,8 +89,8 @@ class TestFirestoreDatabase(unittest.TestCase):
         self.assertEqual(expected_visibility, visibility)
 
     def test_get_max_visibility_invisible(self):
-        """ This test, given two visibilities, expects the max visibility.
-
+        """ This test, given two visibilities, expects to receive the max visibility.
+        
         Given:
             first_visibility=INVISIBLE, second_visibility=INVISIBLE
 
