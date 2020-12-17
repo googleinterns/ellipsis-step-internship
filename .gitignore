@@ -1,7 +1,5 @@
-.idea/
-*.iml
-
 .vscode
+.gitignore
 webapp/maps_heatmaps/.firebase/hosting.cHVibGlj.cache
 
 examples/pipeline-demo/__pycache__
@@ -40,5 +38,11 @@ backend_jobs/verify_labels/pipeline_lib/__pycache__/
 backend_jobs/verify_labels/__pycache__/
 backend_jobs/recognition_removal/pipeline_lib/__pycache__/
 backend_jobs/verify_labels/build/lib/
-backend_pipelines.egg-info/
-dist/backend-pipelines-0.0.1.tar.gz
+
+backend_jobs/ingestion_update_visibility/pipeline_lib/__pycache__/
+examples/flask_app/
+backend_jobs/ingestion_pipeline/unit_tests
+backend_jobs/__pycache__/
+backend_jobs/ingestion_removal/pipeline_lib/__pycache__/
+outputs-00000-of-00001
+.gitignore

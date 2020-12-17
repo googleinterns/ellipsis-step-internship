@@ -18,6 +18,7 @@ from itertools import chain
 from backend_jobs.pipeline_utils.firestore_database import initialize_db, RANGE_OF_BATCH
 from backend_jobs.pipeline_utils import database_schema, data_types
 
+
 # pylint: disable=abstract-method
 class GetAndDeleteBatchedLabelsDataset(beam.DoFn):
     """Queries the project's database to get the labels dataset to remove,

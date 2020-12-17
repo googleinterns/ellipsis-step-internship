@@ -26,6 +26,7 @@ _PROJECT_ID = 'projectId'
 # in each batch out of all images stored in the database.
 RANGE_OF_BATCH = 0.001
 
+
 def initialize_db():
     """Initializes project's Firestore database for writing and reading purposes
     and returns a client that can interact with Firestore.
@@ -41,7 +42,7 @@ def initialize_db():
     return firestore.client()
 
 
-def store_pipeline_run(run_id, provider_id = None):
+def store_pipeline_run(run_id, provider_id=None):
     """ Uploads information about the pipeline run to the
     database_schema.COLLECTION_PIPELINE_RUNS collection.
 
@@ -59,9 +60,16 @@ def store_pipeline_run(run_id, provider_id = None):
         database_schema.COLLECTION_PIPELINE_RUNS_FIELD_END_DATE: 00,
         database_schema.COLLECTION_PIPELINE_RUNS_FIELD_PIPELINE_RUN_ID: run_id
     })
-    if provider_id: # For recognition and ingestion main pipelines.
+    if provider_id:  # For recognition and ingestion main pipelines.
         new_doc.set({
             database_schema.COLLECTION_PIPELINE_RUNS_FIELD_PROVIDER_ID: provider_id,
             database_schema.COLLECTION_PIPELINE_RUNS_FIELD_VISIBILITY:
             VisibilityType.INVISIBLE.value,
         }, merge=True)
+
+
+def add_id_to_dict(doc):
+    """ Adds the document's id to the document's fields dictionary."""
+    full_dict = doc.to_dict()
+    full_dict['id'] = doc.id
+    return full_dict
