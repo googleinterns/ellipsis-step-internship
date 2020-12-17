@@ -37,24 +37,23 @@ from backend_jobs.pipeline_utils import constants
 _PIPELINE_TYPE = 'ingestion_removal'
 
 
-def _validate_args(args):
+def _validate_args(input_image_provider, input_pipeline_run):
     """ Checks whether the pipeline's arguments are valid.
     If not - throws an error.
 
     """
-    if args.input_pipeline_run is not None and args.input_image_provider is not None:
+    if input_pipeline_run is not None and input_image_provider is not None:
         raise ValueError('Input can only be or input_image_provider or input_pipeline_run')
-    if args.input_pipeline_run is None and args.input_image_provider is None:
+    if input_pipeline_run is None and input_image_provider is None:
         raise ValueError('Missing input e.g. input_image_provider/input_pipeline_run')
-    if not isinstance(args.input_pipeline_run, str) and args.input_pipeline_run:
+    if not isinstance(input_pipeline_run, str) and input_pipeline_run:
         raise ValueError('Pipeline run id is not a string')
-    if not isinstance(args.input_image_provider, str) and args.input_image_provider:
+    if not isinstance(input_image_provider, str) and input_image_provider:
         raise ValueError('Image provider is not a string')
 
 
-def run(argv=None):
-    """Main entry point, defines and runs the image removal pipeline.
-    """
+def parse_arguments():
+    # Using external parser: https://docs.python.org/3/library/argparse.html
     parser = argparse.ArgumentParser()
     parser.add_argument(
         '--input_pipeline_run',
@@ -66,11 +65,16 @@ def run(argv=None):
         dest='input_image_provider',
         default=None,
         help='Input of provider for ingested images.')
-    known_args, pipeline_args = parser.parse_known_args(argv)
-    _validate_args(known_args)
+    return parser.parse_known_args()
 
-    pipeline_run = known_args.input_pipeline_run
-    image_provider = known_args.input_image_provider
+
+def run(input_image_provider=None, input_pipeline_run=None, run_locally=False):
+    """Main entry point, defines and runs the image removal pipeline.
+    """
+    _validate_args(input_image_provider, input_pipeline_run)
+    pipeline_run = input_pipeline_run
+    image_provider = input_image_provider
+
     if image_provider:
         remove_by_arg = image_provider
         job_name = generate_cloud_dataflow_job_name(_PIPELINE_TYPE, image_provider)
@@ -79,7 +83,18 @@ def run(argv=None):
         remove_by_arg = pipeline_run
         job_name = generate_cloud_dataflow_job_name(_PIPELINE_TYPE, pipeline_run)
         removal_pipeline = IngestionRemovalByPipelineRun()
-    pipeline_options = PipelineOptions(pipeline_args, job_name=job_name)
+
+    if run_locally:
+        pipeline_options = PipelineOptions()
+    else:
+        pipeline_options = PipelineOptions(
+            flags=None,
+            runner='DataflowRunner',
+            project='step-project-ellispis',
+            job_name=job_name,
+            temp_location='gs://demo-bucket-step/temp',
+            region='europe-west2',
+        )
 
     with beam.Pipeline(options=pipeline_options) as pipeline:
         indices_for_batching = pipeline | 'create' >> beam.Create(constants.LIST_FOR_BATCHES)
@@ -95,4 +110,5 @@ def run(argv=None):
 
 if __name__ == '__main__':
     logging.getLogger().setLevel(logging.INFO)
-    run()
+    args, pipeline_args = parse_arguments()
+    run(args.input_image_provider, args.input_pipeline_run, run_locally=True)
