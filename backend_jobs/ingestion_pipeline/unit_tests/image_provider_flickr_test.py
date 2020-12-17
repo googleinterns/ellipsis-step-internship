@@ -23,15 +23,8 @@ class TestFlickrProvider(unittest.TestCase):
     """
 
     def test_get_date(self):
-        """ This function extracts the date the image was taken from the image element
-        and converts it to a datetime format.
-
-
-        Given a url with a max resolution of 500, min height of 600 and min width of 750,
-        expects to receive a new url with closest above fit resolution of 750.
-
-        Expects:
-            Url with max resolution of 800.
+        """ This test, given an image with a date in the format of a string,
+        expects to receive a new date in the format of datetime object.
         """
         image_with_datetaken = {
             'id': '39831840270', 'datetaken': '2018-04-22 16:41:11', 'ownername': 'Marian',
@@ -42,7 +35,14 @@ class TestFlickrProvider(unittest.TestCase):
         self.assertEqual(expected_datetime_date_taken, date_taken)
 
     def test_parse_query_arguments_given_tags_and_tagmode(self):
-        """ 
+        """ This test, given a string of arguments,
+        expects to receive a map object with the arguments parsed.
+
+        Given:
+            'tags:cat,plastic-tag_mode:any'
+
+        Expects:
+            {'tags': 'cat,plastic', 'tag_mode': 'any', 'text': ''}
         """
         query_arguments_string = 'tags:cat,plastic-tag_mode:any'
         expected_query_arguments_map = {'tags': 'cat,plastic', 'tag_mode': 'any', 'text': ''}
@@ -50,7 +50,14 @@ class TestFlickrProvider(unittest.TestCase):
         self.assertEqual(expected_query_arguments_map, query_arguments_map)
 
     def test_parse_query_arguments_given_text(self):
-        """ 
+        """ This test, given a string of arguments,
+        expects to receive a map object with the arguments parsed.
+
+        Given:
+            'text:cat'
+
+        Expects:
+            {'tags': 'all', 'tag_mode': 'any', 'text': 'cat'}
         """
         query_arguments_string = 'text:cat'
         expected_query_arguments_map = {'tags': 'all', 'tag_mode': 'any', 'text': 'cat'}
@@ -58,7 +65,14 @@ class TestFlickrProvider(unittest.TestCase):
         self.assertEqual(expected_query_arguments_map, query_arguments_map)
 
     def test_parse_query_arguments_given_tags(self):
-        """ 
+        """ This test, given a string of arguments,
+        expects to receive a map object with the arguments parsed.
+
+        Given:
+            'tags:cat,plastic'
+
+        Expects:
+            {'tags': 'cat,plastic', 'tag_mode': 'any', 'text': ''}
         """
         query_arguments_string = 'tags:cat,plastic'
         expected_query_arguments_map = {'tags': 'cat,plastic', 'tag_mode': 'any', 'text': ''}

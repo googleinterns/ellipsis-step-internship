@@ -22,12 +22,13 @@ IMAGE_PROVIDERS = {'FlickrProvider': FlickrProvider()}
 
 
 class TestProviderIntrface(unittest.TestCase):
-    """ This class is incharge of testing the image provider interface.
+    """ This class is in charge of testing the image provider interface.
     """
 
     def test_get_images_and_exract_attributes(self):
-        """ This function tests both the get_images function and the get_image_attributes function.
-        We test given an image from a provider when calling the get_image_attributes function
+        """ This test checks both the get_images function and the get_image_attributes function
+        implementation for all providers.
+        We test, given an image when calling the get_image_attributes function
         the output is in the right format.
         """
         for provider in IMAGE_PROVIDERS:
@@ -48,8 +49,8 @@ class TestProviderIntrface(unittest.TestCase):
                 self.assertIsInstance(image_attributes.longitude, float)
 
     def test_get_num_of_batches(self):
-        """ This function tests the get_num_of_batches function.
-        We test wether the return value foreach provider from the get_num_of_batches function
+        """ This test checks the get_num_of_batches function.
+        We test wether the return value from the get_num_of_batches function
         is an int.
         """
         for provider in IMAGE_PROVIDERS:
