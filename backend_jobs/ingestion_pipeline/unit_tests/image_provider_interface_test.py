@@ -26,10 +26,10 @@ class TestProviderIntrface(unittest.TestCase):
     """
 
     def test_get_images_and_exract_attributes(self):
-        """ This test checks both the get_images function and the get_image_attributes function
+        """ This test checks both the get_images and the get_image_attributes functions'
         implementation for all providers.
-        We test, given an image when calling the get_image_attributes function
-        the output is in the right format.
+        We test, given an image when calling the get_image_attributes function,
+        that the output is in the right format.
         """
         for provider in IMAGE_PROVIDERS:
             current_provider = IMAGE_PROVIDERS[provider]
@@ -50,7 +50,7 @@ class TestProviderIntrface(unittest.TestCase):
 
     def test_get_num_of_batches(self):
         """ This test checks the get_num_of_batches function.
-        We test wether the return value from the get_num_of_batches function
+        We test whether the return value from the get_num_of_batches function
         is an int.
         """
         for provider in IMAGE_PROVIDERS:
