@@ -13,6 +13,7 @@
   limitations under the License.
 """
 from datetime import datetime
+import geohash2
 from backend_jobs.pipeline_utils.firestore_database import RANGE_OF_BATCH
 
 
@@ -48,3 +49,20 @@ def create_query_indices():
 
     """
     return [i for i in range(int(1/RANGE_OF_BATCH))]
+
+def get_geo_hashes_map(latitude, longitude):
+    """ This function, given a coordinates (lat,long), calculates the geohash
+    and builds a map containing a geohash in different lengths.
+
+    Args:
+        coordinates: Coordinates in the format {'latitude': float, 'longitude': float}.
+
+    Returns:
+        A dict contaning geohash in all the diffrent lengths
+        e.g.: {'hash1':'d', 'hash2':'dp', 'hash3':'dph', ... 'hash10':'dph1qz7y88',}.
+    """
+    geo_hashes_map = {}
+    geohash = geohash2.encode(latitude, longitude)
+    for i in range(1, 11):
+        geo_hashes_map['hash' + str(i)] = geohash[0:i]
+    return geo_hashes_map
