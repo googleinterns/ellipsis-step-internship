@@ -13,19 +13,6 @@
   limitations under the License.
  """
 
-import enum
-
-
-class VisibilityType(enum.Enum):
-    """ This enum represents the different visibility types.
-    """
-    INVISIBLE = 0
-    VISIBLE = 1
-
-
-class PipelineRunStatus(enum.Enum):
-    """ This enum represents the different status types for pipeline runs.
-    """
-    STARTED = 'STARTED'
-    SUCCEEDED = 'SUCCEEDED'
-    FAILED = 'FAILED'
+RANGE_OF_BATCH = 0.1
+NUM_OF_BATCHES = 10
+LIST_FOR_BATCHES = [i for i in range(NUM_OF_BATCHES)]

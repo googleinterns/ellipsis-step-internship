@@ -38,11 +38,30 @@ def generate_cloud_dataflow_job_name(pipeline_type, additional_info):
       A unique job_name type str.
     """
     job_name = '{pipeline_type}_{additional_info}_{time_id}'.format(
-      pipeline_type = pipeline_type,
-      time_id = get_timestamp_id(),
-      additional_info = additional_info.lower())
+      pipeline_type=pipeline_type,
+      time_id=get_timestamp_id(),
+      additional_info=str(additional_info).lower())
       # Dataflow job names can only include '-' and not '_'.
-    return job_name.replace('_','-')
+    return job_name.replace('_', '-')
+
+
+def validate_one_arg(image_provider=None, pipeline_run=None):
+    """ Checks whether we only get one arguments.
+    If not - throws an error.
+
+    Args:
+        image_provider: The image provider from whom we are removing the images.
+        pipeline_run: The image pipeline_run from whom we are removing the images.
+
+    Raises:
+        Raises an error if both image_provider and pipeline_run
+        are provided, or nether ar provided.
+    """
+    if pipeline_run is not None and image_provider is not None:
+        raise ValueError('can only get image_provider or pipeline_run')
+    if pipeline_run is None and image_provider is None:
+        raise ValueError('missing input e.g. image_provider or pipeline_run')
+
 
 def create_query_indices():
     """ Creates a list of indices for querying the database.

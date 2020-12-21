@@ -71,6 +71,8 @@ COLLECTION_PIPELINE_RUNS_FIELD_PIPELINE_RUN_ID = 'pipelineRunId'
 COLLECTION_PIPELINE_RUNS_FIELD_START_DATE = 'startDate'
 # Type: Timestamp, the run's end time.
 COLLECTION_PIPELINE_RUNS_FIELD_END_DATE = 'endDate'
+# Type: string, indicated run's status.
+COLLECTION_PIPELINE_RUNS_FIELD_STATUS = 'status'
 # Type: number, a VisibilityType which represents whether the
 # pipeline run was verified.
 COLLECTION_PIPELINE_RUNS_FIELD_VISIBILITY = 'visibility'
@@ -78,7 +80,7 @@ COLLECTION_PIPELINE_RUNS_FIELD_VISIBILITY = 'visibility'
 COLLECTION_IMAGE_PROVIDERS = 'ImageProviders'
 COLLECTION_IMAGE_PROVIDERS_FIELD_PROVIDER_KEYS = 'providerKeys'
 
-COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS = 'PipelineRun'
+COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS = 'ProvidersAndPipelineRuns'
 # Constant field names:
 # Type: string, the ingestion provider id.
 COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS_FIELD_PROVIDER_ID = 'providerId'
