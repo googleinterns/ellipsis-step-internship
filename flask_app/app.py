@@ -147,7 +147,7 @@ def submit_recognition_verification():
     input_value = request.form['input_value']
     thread = Thread(target=run_recognition_verification, kwargs={
         'recognition_run': input_value,
-        'output_name': _TEST_OUTPUT,
+        'output': _TEST_OUTPUT,
         'run_locally': _RUN_LOCALLY})
     thread.start()
     return render_template('index.html')
@@ -184,13 +184,13 @@ def submit_recognition_removal():
     if input_type == _INPUT_TYPE_PROVIDER:
         thread = Thread(target=run_recognition_removal, kwargs={
             'recognition_provider': input_value,
-            'output_name': _TEST_OUTPUT,
+            'output': _TEST_OUTPUT,
             'run_locally': _RUN_LOCALLY})
         thread.start()
     else:
         thread = Thread(target=run_recognition_removal, kwargs={
             'recognition_run': input_value,
-            'output_name': _TEST_OUTPUT,
+            'output': _TEST_OUTPUT,
             'run_locally': _RUN_LOCALLY})
         thread.start()
     return render_template('index.html')

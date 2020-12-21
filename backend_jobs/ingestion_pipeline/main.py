@@ -123,7 +123,7 @@ def run(input_provider_name, input_provider_args=None, output_name=None, run_loc
             temp_location='gs://demo-bucket-step/temp',
             region='europe-west2',
         )
-    store_pipeline_run(image_provider.provider_id, job_name)
+    store_pipeline_run(job_name, image_provider.provider_id)
     try:
         # The pipeline will be run on exiting the with block.
         # pylint: disable=expression-not-assigned

@@ -27,6 +27,8 @@ import apache_beam as beam
 from apache_beam.options.pipeline_options import PipelineOptions
 
 from backend_jobs.ingestion_update_visibility.pipeline_lib import firestore_database 
+from backend_jobs.pipeline_utils.firestore_database import store_pipeline_run,\
+    update_pipeline_run_when_failed, update_pipeline_run_when_succeeded
 from backend_jobs.pipeline_utils.utils import generate_cloud_dataflow_job_name
 from backend_jobs.pipeline_utils.data_types import VisibilityType
 from backend_jobs.pipeline_utils import constants
@@ -108,20 +110,25 @@ def run(input_image_provider=None, input_pipeline_run=None, input_visibility=Non
             region='europe-west2',
         )
 
-    with beam.Pipeline(options=pipeline_options) as pipeline:
-        indices_for_batching = pipeline | 'create' >> beam.Create(constants.LIST_FOR_BATCHES)
-        dataset = indices_for_batching | 'get dataset' >>\
-            beam.ParDo(firestore_database.GetDataset(
-                image_provider=image_provider, pipeline_run=pipeline_run))
-        dataset_group_by_parent_image = dataset | 'group all by parent image' >>\
-            beam.GroupByKey()
-        updated_subcollection = dataset_group_by_parent_image | 'update visibility subcollection' >>\
-            beam.ParDo(firestore_database.UpdateVisibilityInDatabaseSubcollection(
-                image_provider=image_provider, pipeline_run=pipeline_run),
-                visibility)
-        updated_subcollection | 'update visibility collection' >>\
-            beam.ParDo(firestore_database.UpdateVisibilityInDatabaseCollection(
-                image_provider=image_provider, pipeline_run=pipeline_run))
+    store_pipeline_run(job_name)
+    try:
+        with beam.Pipeline(options=pipeline_options) as pipeline:
+            indices_for_batching = pipeline | 'create' >> beam.Create(constants.LIST_FOR_BATCHES)
+            dataset = indices_for_batching | 'get dataset' >>\
+                beam.ParDo(firestore_database.GetDataset(
+                    image_provider=image_provider, pipeline_run=pipeline_run))
+            dataset_group_by_parent_image = dataset | 'group all by parent image' >>\
+                beam.GroupByKey()
+            updated_subcollection = dataset_group_by_parent_image | 'update visibility subcollection' >>\
+                beam.ParDo(firestore_database.UpdateVisibilityInDatabaseSubcollection(
+                    image_provider=image_provider, pipeline_run=pipeline_run),
+                    visibility)
+            updated_subcollection | 'update visibility collection' >>\
+                beam.ParDo(firestore_database.UpdateVisibilityInDatabaseCollection(
+                    image_provider=image_provider, pipeline_run=pipeline_run))
+        update_pipeline_run_when_succeeded(job_name)
+    except:
+        update_pipeline_run_when_failed(job_name)
 
 
 if __name__ == '__main__':
