@@ -29,3 +29,5 @@ backend_jobs/verify_labels/dist/verify_labels_OFRI_AVIELI-0.0.1-py3.7.egg
 backend_jobs/recognition_removal/pipeline_lib/__pycache__/
 backend_jobs/verify_labels/__pycache__/
 backend_jobs/verify_labels/build/lib/
+backend_jobs/__pycache__/
+backend_jobs/heatmap_aggregation/pipeline_lib/__pycache__/

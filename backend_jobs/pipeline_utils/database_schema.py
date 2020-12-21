@@ -137,8 +137,8 @@ COLLECTION_HEATMAP_SUBCOLLECTION_WEIGHTED_POINTS = 'WeightedPoints'
 # Type: string, the unique label id.
 COLLECTION_HEATMAP_SUBCOLLECTION_WEIGHTED_POINTS_FIELD_LABEL_ID = 'labelId'
 # Type: geopoint, quantized coordinates.
-COLLECTION_HEATMAP_SUBCOLLECTION_WEIGHTED_POINTS_FIELD_QUANTIZED_COORDINATES =\
-  'quantizedCoordinates'
+COLLECTION_HEATMAP_SUBCOLLECTION_WEIGHTED_POINTS_FIELD_COORDINATES =\
+  'coordinates'
 # Type: number, counts the number images represented by this point.
 COLLECTION_HEATMAP_SUBCOLLECTION_WEIGHTED_POINTS_FIELD_WEIGHT = 'weight'
 # Type: map of String, a string which is used for geographic query.

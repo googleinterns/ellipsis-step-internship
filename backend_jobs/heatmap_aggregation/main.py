@@ -28,10 +28,11 @@ import apache_beam as beam
 from apache_beam.io import WriteToText
 from apache_beam.options.pipeline_options import PipelineOptions
 
-from backend_jobs.heatmap_agrgregation.pipeline_lib.firestore_database import\
-    GetBatchedLabelsDataset, UpdateDatabase
+from backend_jobs.heatmap_aggregation.pipeline_lib.firestore_database import\
+    GetPointKeysByBatch, UpdateHeatmapDatabase
 from backend_jobs.pipeline_utils.utils import generate_cloud_dataflow_job_name, create_query_indices
-from backend_jobs.pipeline_utils.firestore_database import store_pipeline_run
+from backend_jobs.pipeline_utils.firestore_database import store_pipeline_run, \
+    update_pipeline_run_when_failed, update_pipeline_run_when_succeeded
 
 _PIPELINE_TYPE = 'heatmap_aggreation'
 
@@ -49,6 +50,8 @@ def run(output=None, run_locally=False):
     """Main entry point, runs the heatmap aggregation pipeline.
 
     """
+    if not output:
+        raise ValueError('hi')
     job_name = generate_cloud_dataflow_job_name(_PIPELINE_TYPE, 'all images') #TODO: change additional info.
     
     if run_locally:
@@ -62,21 +65,25 @@ def run(output=None, run_locally=False):
             temp_location='gs://demo-bucket-step/temp',
             region='europe-west2',
         )
-
-    with beam.Pipeline(options=pipeline_options) as pipeline:
-        indices_for_batching = pipeline | 'create' >> beam.Create(create_query_indices())
-        point_keys = indices_for_batching | 'get labels dataset' >> \
-            beam.ParDo(GetBatchedLabelsDataset())
-        point_keys_and_sum = point_keys | 'combine all point keys' >> \
-            beam.CombinePerKey(sum)
-        # pylint: disable=expression-not-assigned
-        point_keys_and_sum | 'update database' >> beam.ParDo(UpdateDatabase())
-
-        if output: # For testing.
-            # pylint: disable=expression-not-assigned
-            point_keys_and_sum | 'Write' >> WriteToText(output)
-
+    
     store_pipeline_run(job_name)
+    try:
+        with beam.Pipeline(options=pipeline_options) as pipeline:
+            indices_for_batching = pipeline | 'create' >> beam.Create(create_query_indices())
+            point_keys = indices_for_batching | 'get point keys' >> \
+                beam.ParDo(GetPointKeysByBatch())
+            point_keys_and_sum = point_keys | 'combine all point keys' >> \
+                beam.CombinePerKey(sum)
+            # pylint: disable=expression-not-assigned
+            point_keys | 'update database' >> beam.ParDo(UpdateHeatmapDatabase())
+
+            if output: # For testing.
+                # pylint: disable=expression-not-assigned
+                point_keys_and_sum | 'Write' >> WriteToText(output)
+
+        update_pipeline_run_when_succeeded(job_name)
+    except:
+        update_pipeline_run_when_failed(job_name)
 
 if __name__ == '__main__':
     logging.getLogger().setLevel(logging.INFO)
