@@ -18,9 +18,6 @@ from backend_jobs.recognition_pipeline.pipeline_lib.image_recognition_provider\
     import ImageRecognitionProvider
 from backend_jobs.recognition_pipeline.pipeline_lib import constants
 
-# Google Vision API supports labeling a batch of up to 16 images at once.
-_MAX_IMAGES_IN_BATCH = 16
-
 # pylint: disable=abstract-method
 class GoogleVisionAPI(ImageRecognitionProvider):
     """ An implementation of the abstract class ImageRecognitionProvider
@@ -31,14 +28,6 @@ class GoogleVisionAPI(ImageRecognitionProvider):
     def setup(self):
         # pylint: disable=attribute-defined-outside-init
         self.client = vision_v1.ImageAnnotatorClient()
-
-    # pylint: disable=arguments-differ
-    def process(self, element):
-        images_and_labels = []
-         # The provider supports a batch of max _MAX_IMAGES_IN_BATCH images.
-        for i in range(0, len(element), _MAX_IMAGES_IN_BATCH):
-            images_and_labels.extend(self._get_labels_of_batch(element[i:_MAX_IMAGES_IN_BATCH+i]))
-        return images_and_labels
 
     def _get_labels_of_batch(self, image_docs):
         """ Labels the images in the batch using one call to the Google Vision API.
@@ -67,6 +56,8 @@ class GoogleVisionAPI(ImageRecognitionProvider):
             results.append([(docs[i], all_labels)])
         return results
 
+    # Google Vision API supports labeling a batch of up to 16 images at once.
+    _MAX_IMAGES_IN_BATCH = 16
     _resolution_prerequisites = {'height':480, 'width': 640}
     _format_prerequisites =  ['JPG', 'JPEG', 'PNG8', 'PNG24', 'GIF', \
         'BMP', 'WEBP', 'RAW', 'ICO', 'PDF', 'TIFF']

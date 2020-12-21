@@ -11,21 +11,8 @@
   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
   See the License for the specific language governing permissions and
   limitations under the License.
+ """
 
-  Sets up the packages required for cloud dataflow pipeline imports.
-
-"""
-import setuptools
-
-setuptools.setup(
-    name="recognition-pipeline-OFRI-AVIELI",
-    version="0.0.1",
-    packages=setuptools.find_packages(),
-    classifiers=[
-        "Programming Language :: Python :: 3",
-        "License :: OSI Approved :: MIT License",
-        "Operating System :: OS Independent",
-    ],
-    python_requires='>=3.6',
-    install_requires=['firebase-admin==4.4.0', 'apache-beam==2.24.0', 'google-cloud-vision==2.0.0']
-)
+RANGE_OF_BATCH = 0.1
+NUM_OF_BATCHES = 10
+LIST_FOR_BATCHES = [i for i in range(NUM_OF_BATCHES)]

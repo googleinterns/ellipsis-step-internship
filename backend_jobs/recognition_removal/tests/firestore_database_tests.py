@@ -11,21 +11,25 @@
   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
   See the License for the specific language governing permissions and
   limitations under the License.
- """
+"""
 
-import enum
+import unittest
+from backend_jobs.recognition_removal.pipeline_lib.firestore_database import union
 
+class TestUnionMethod(unittest.TestCase):
+    """ Tests union method.
 
-class VisibilityType(enum.Enum):
-    """ This enum represents the different visibility types.
     """
-    INVISIBLE = 0
-    VISIBLE = 1
+    def setUp(self):
+        self.list_of_lists = [[1], [2], [1, 2], []]
 
+    def test_union_method(self):
+        """ Tests that the union method works as it should.
+        Returns a list of all distinct elements in list_of_lists.
 
-class PipelineRunStatus(enum.Enum):
-    """ This enum represents the different status types for pipeline runs.
-    """
-    STARTED = 'STARTED'
-    SUCCEEDED = 'SUCCEEDED'
-    FAILED = 'FAILED'
+        """
+        expected_result = [1, 2]
+        self.assertEqual(union(self.list_of_lists), expected_result)
+
+if __name__ == '__main__':
+    unittest.main()

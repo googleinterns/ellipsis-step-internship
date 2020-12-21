@@ -45,7 +45,7 @@ class AddOrUpdateImageDoFn(apache_beam.DoFn):
             .collection(database_schema.COLLECTION_IMAGES) \
             .document(element.image_id)
         doc = doc_ref.get()
-        sub_collection_ref = doc_ref.collection(database_schema.COLLECTION_PIPELINE_RUNS)
+        sub_collection_ref = doc_ref.collection(database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS)
         sub_collection_doc_ref = sub_collection_ref.document()
         if doc.exists:
             # Doc found- image has been ingested already
