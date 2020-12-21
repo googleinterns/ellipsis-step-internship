@@ -63,6 +63,7 @@ def _is_valid_image(image):
         image.width_pixels > 100 and \
         image.height_pixels > 100
 
+
 def parse_arguments():
     # Using external parser: https://docs.python.org/3/library/argparse.html
     parser = argparse.ArgumentParser()
@@ -110,7 +111,7 @@ def run(input_provider_name, input_provider_args=None, output_name=None, run_loc
     if not image_provider.enabled:
         raise ValueError('ingestion provider is not enabled')
 
-    job_name = utils.generate_cloud_dataflow_job_name('ingestion', image_provider)
+    job_name = utils.generate_cloud_dataflow_job_name('ingestion', image_provider.provider_id)
     if run_locally:
         pipeline_options = PipelineOptions()
     else:
@@ -155,4 +156,3 @@ if __name__ == '__main__':
     logging.getLogger().setLevel(logging.INFO)
     args, pipeline_args = parse_arguments()
     run(args.input_provider_name, args.input_provider_args, args.output, run_locally=True)
-    

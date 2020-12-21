@@ -22,6 +22,11 @@ from datetime import datetime
 _PROJECT_ID_NAME = 'step-project-ellispis'
 _PROJECT_ID = 'projectId'
 
+# Each batch is queried by COLLECTION_IMAGES_FIELD_RANDOM.
+# RANGE_OF_BATCH defines the ratio of images processed
+# in each batch out of all images stored in the database.
+RANGE_OF_BATCH = 0.001
+
 
 def initialize_db():
     """Initializes project's Firestore database for writing and reading purposes
@@ -38,10 +43,13 @@ def initialize_db():
     return firestore.client()
 
 
-def store_pipeline_run(provider_id, run_id):
+def store_pipeline_run(run_id, provider_id=None):
     """ Uploads information about the pipeline run to the
-    database_schema.COLLECTION_PIPELINE_RUNS collection
-    when pipeline starts.
+    database_schema.COLLECTION_PIPELINE_RUNS collection.
+
+    Args:
+        run_id: the pipeline run's unique id.
+        provider_id: Optional. Used for recognition and ingestion pipelines only.
 
     """
     db = initialize_db()
@@ -53,6 +61,7 @@ def store_pipeline_run(provider_id, run_id):
         database_schema.COLLECTION_PIPELINE_RUNS_FIELD_PIPELINE_RUN_ID: run_id,
         database_schema.COLLECTION_PIPELINE_RUNS_FIELD_STATUS: PipelineRunStatus.STARTED.value
     })
+
 
 def update_pipeline_run_when_succeeded(run_id):
     """ Updates information about the pipeline run to the
@@ -80,3 +89,10 @@ def update_pipeline_run_when_failed(run_id):
     doc_ref.update({
         database_schema.COLLECTION_PIPELINE_RUNS_FIELD_STATUS: PipelineRunStatus.FAILED.value
     })
+
+
+def add_id_to_dict(doc):
+    """ Adds the document's id to the document's fields dictionary."""
+    full_dict = doc.to_dict()
+    full_dict['id'] = doc.id
+    return full_dict

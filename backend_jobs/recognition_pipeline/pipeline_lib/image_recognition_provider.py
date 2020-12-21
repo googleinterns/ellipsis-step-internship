@@ -21,7 +21,6 @@ from backend_jobs.ingestion_pipeline.providers.providers import\
 from backend_jobs.pipeline_utils import database_schema
 from backend_jobs.recognition_pipeline.pipeline_lib import constants
 
-
 class ImageRecognitionProvider(ABC, beam.DoFn):
     """ Each recognition provider used in our project
     will have an implementation of this abstract class.
@@ -30,12 +29,13 @@ class ImageRecognitionProvider(ABC, beam.DoFn):
     an Id property and the latest version.
 
     """
-    @abstractmethod
-    def process(self, element):
+
+    #pylint: disable=arguments-differ
+    def process(self, images):
         """Labels a batch of images from dataset using a specific recognition provider.
 
         Args:
-            element: a list of images information dictionaries.
+            images: a list of images information dictionaries.
             Each Python dictionary contains all of the images' fields and their
             values as stored in the database.
 
@@ -44,6 +44,23 @@ class ImageRecognitionProvider(ABC, beam.DoFn):
             and all labels recognized in it by the provider.
             For example: [[({url:string, imageAttributes:map, etc.},
             ['dog', 'fur])], [(another image's dictionary, ['cat', 'fur'])]]
+
+        """
+        images_and_labels = []
+         # The provider supports a batch of max _MAX_IMAGES_IN_BATCH images.
+        for i in range(0, len(images), self._MAX_IMAGES_IN_BATCH):
+            images_and_labels.extend(self._get_labels_of_batch(\
+                images[i: self._MAX_IMAGES_IN_BATCH+i]))
+        return images_and_labels
+
+    @abstractmethod
+    def _get_labels_of_batch(self, image_docs):
+        """ Labels the images in the batch using one call to the Google Vision API.
+            Used to label each batch in the class's process method.
+
+        Args:
+            image_docs: list of up to _MAX_IMAGES_IN_BATCH image docs represented by dictionaries as
+            stored in the database_schema.COLLECTION_IMAGES.
 
         """
 
@@ -109,6 +126,14 @@ class ImageRecognitionProvider(ABC, beam.DoFn):
                 image[database_schema.COLLECTION_IMAGES_FIELD_URL]
             return [image]
         return [self._change_url_by_resolution(image)]
+
+    @property
+    def _MAX_IMAGES_IN_BATCH(self):
+        """ A number which limits the maximum amount of images in one batch.
+        A recognition provier limitation.
+        
+        """
+        raise NotImplementedError
 
     @property
     def _resolution_prerequisites(self):

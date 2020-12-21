@@ -30,14 +30,13 @@ from apache_beam.io import WriteToText
 from apache_beam.options.pipeline_options import PipelineOptions
 from backend_jobs.recognition_pipeline.pipeline_lib.firestore_database import\
     GetBatchedImageDataset, UpdateImageLabelsInDatabase
-from backend_jobs.pipeline_utils.firestore_database import store_pipeline_run,\
-    update_pipeline_run_when_succeeded, update_pipeline_run_when_failed
-from backend_jobs.pipeline_utils.utils import generate_cloud_dataflow_job_name
+from backend_jobs.pipeline_utils.firestore_database import store_pipeline_run
+from backend_jobs.pipeline_utils.utils import generate_cloud_dataflow_job_name, create_query_indices
 from backend_jobs.recognition_pipeline.providers.providers import get_recognition_provider
 
 _PIPELINE_TYPE = 'recognition'
 
-def _validate_args(recognition_provider, ingestion_pipelinerun_id, ingestion_provider ):
+def _validate_args(recognition_provider, ingestion_pipelinerun_id, ingestion_provider):
     """ Checks whether the pipeline's arguments are valid.
     If not - throws an error.
 
@@ -76,6 +75,7 @@ def parse_arguments():
         help='Output file to write results to for testing.')
     return parser.parse_known_args()
 
+
 def run(recognition_provider_name, ingestion_run=None, ingestion_provider=None, output_name=None, run_locally=False):
     """Main entry point, defines and runs the image recognition pipeline.
 
@@ -87,9 +87,9 @@ def run(recognition_provider_name, ingestion_run=None, ingestion_provider=None, 
     recognition_provider = get_recognition_provider(recognition_provider_name)
     job_name = generate_cloud_dataflow_job_name(_PIPELINE_TYPE, recognition_provider)
     if run_locally:
-        recognition_options = PipelineOptions()
+        pipeline_options = PipelineOptions()
     else:
-        recognition_options = PipelineOptions(
+        pipeline_options = PipelineOptions(
             flags=None,
             runner='DataflowRunner',
             project='step-project-ellispis',
@@ -99,7 +99,7 @@ def run(recognition_provider_name, ingestion_run=None, ingestion_provider=None, 
         )
     store_pipeline_run(recognition_provider.provider_id, job_name)
     try:
-        with beam.Pipeline(options=recognition_options) as pipeline:
+        with beam.Pipeline(options=pipeline_options) as pipeline:
             indices_for_batching = pipeline | 'create' >> beam.Create([i for i in range(10)])
             if ingestion_run:
                 dataset = indices_for_batching | 'get images dataset' >> \

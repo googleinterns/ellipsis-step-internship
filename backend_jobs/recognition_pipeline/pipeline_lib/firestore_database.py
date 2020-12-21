@@ -15,10 +15,8 @@
 import apache_beam as beam
 from backend_jobs.pipeline_utils import database_schema
 from backend_jobs.pipeline_utils.data_types import VisibilityType
-from backend_jobs.pipeline_utils.firestore_database import initialize_db
-
-# Defines the range of the random field to query the database by batches.
-_RANGE_OF_BATCH = 0.1
+from backend_jobs.pipeline_utils.firestore_database import initialize_db, RANGE_OF_BATCH
+import random
 
 # pylint: disable=abstract-method
 class GetBatchedImageDataset(beam.DoFn):
@@ -26,7 +24,7 @@ class GetBatchedImageDataset(beam.DoFn):
     the pipeline's input from the project's Firestore database.
 
     Input:
-       integer index between 0 and 9.
+       integer index.
 
     Output:
         generator of image's documents in a Python dictionary form.
@@ -39,12 +37,12 @@ class GetBatchedImageDataset(beam.DoFn):
         self.db = initialize_db()
 
     # pylint: disable=arguments-differ
-    def process(self, element, ingestion_provider = None, ingestion_run = None):
+    def process(self, index, ingestion_provider = None, ingestion_run = None):
         """Queries firestore database for images from
         the ingestion_provider within a random range (by batch).
 
         Args:
-            element: the index used for querying the database by the random field.
+            index: the index used for querying the database by the random field.
             ingestion_provider: the input of the pipeline, determines the images dataset.
             ingestion_run: the input of the pipeline, determines the dataset.
             Only one out of ingestion_provider and ingestion_run is provided.
@@ -56,16 +54,19 @@ class GetBatchedImageDataset(beam.DoFn):
 
         Raises:
             Value error if both ingestion_provider and ingestion_run
-            are provided.
+            are not None or both are None.
 
         """
         if ingestion_provider and ingestion_run:
             raise ValueError('both ingestion provider and run are provided -\
-                there should be only one')
+                one should be provided')
+        if not ingestion_provider and not ingestion_run:
+            raise ValueError('both ingestion provider and run are not provided -\
+                one should be provided')
         # The lower limit for querying the database by the random field.
-        random_min = element * _RANGE_OF_BATCH
+        random_min = index * RANGE_OF_BATCH
         # The higher limit for querying the database by the random field.
-        random_max = random_min + _RANGE_OF_BATCH
+        random_max = random_min + RANGE_OF_BATCH
         if ingestion_run:
             query = self.db.collection(database_schema.COLLECTION_IMAGES).\
                 where(database_schema.COLLECTION_IMAGES_FIELD_INGESTED_RUNS, \
@@ -100,19 +101,20 @@ class UpdateImageLabelsInDatabase(beam.DoFn):
         self.db = initialize_db()
 
     # pylint: disable=arguments-differ
-    def process(self, element, run_id, provider_id):
+    def process(self, image_and_labels, run_id, provider_id):
         """Updates the project's database to contain documents with the currect fields
         for each label in the Labels subcollection of each image.
 
         Args:
-            element: tuple of image document dictionary (Each image is represented by a
+            image_and_labels: tuple of image document dictionary (Each image is represented by a
             Python dictionary containing all the fields of the document in the
             database_schema.COLLECTION_IMAGES and their values)
             and a list of all labels.
+            (image_doc_dict, labels)
 
         """
-        image_doc = element[0]
-        labels = element[1]
+        image_doc = image_and_labels[0]
+        labels = image_and_labels[1]
         doc_id = image_doc['id']
         subcollection_ref = self.db.collection(database_schema.COLLECTION_IMAGES).document(doc_id).\
             collection(database_schema.COLLECTION_IMAGES_SUBCOLLECTION_LABELS)
@@ -135,5 +137,5 @@ class UpdateImageLabelsInDatabase(beam.DoFn):
                     image_doc[database_schema.COLLECTION_IMAGES_FIELD_HASHMAP],
                 # Redundant for query optimisation reasons.
                 database_schema.COLLECTION_IMAGES_SUBCOLLECTION_LABELS_FIELD_RANDOM:\
-                    image_doc[database_schema.COLLECTION_IMAGES_FIELD_RANDOM]
+                    random.random()
             })
