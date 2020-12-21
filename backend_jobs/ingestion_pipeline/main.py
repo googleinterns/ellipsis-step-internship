@@ -22,7 +22,8 @@ from apache_beam.io import WriteToText
 from apache_beam.options.pipeline_options import PipelineOptions
 from backend_jobs.ingestion_pipeline.pipeline_lib import firestore_database
 from backend_jobs.ingestion_pipeline.providers import providers
-from backend_jobs.pipeline_utils.firestore_database import store_pipeline_run
+from backend_jobs.pipeline_utils.firestore_database import store_pipeline_run,\
+    update_pipeline_run_when_failed, update_pipeline_run_when_succeeded
 from backend_jobs.pipeline_utils import utils
 
 
@@ -69,6 +70,7 @@ def parse_arguments():
     parser.add_argument(
         '--input_provider_name',
         dest='input_provider_name',
+        default='FlickrProvider-2020',
         help='Provider name to process.')
     parser.add_argument(
         '--input_provider_args',
@@ -121,30 +123,33 @@ def run(input_provider_name, input_provider_args=None, output_name=None, run_loc
             temp_location='gs://demo-bucket-step/temp',
             region='europe-west2',
         )
+    store_pipeline_run(job_name, image_provider.provider_id)
+    try:
+        # The pipeline will be run on exiting the with block.
+        # pylint: disable=expression-not-assigned
+        with apache_beam.Pipeline(options=pipeline_options) as pipeline:
 
-    # The pipeline will be run on exiting the with block.
-    # pylint: disable=expression-not-assigned
-    with apache_beam.Pipeline(options=pipeline_options) as pipeline:
+            num_of_pages = image_provider.get_num_of_pages()
+            create_batch = pipeline | 'create' >> \
+                apache_beam.Create([i for i in range(1, int(num_of_pages)+1)])
+            images = create_batch | 'call API' >> \
+                apache_beam.ParDo(image_provider.get_images)
+            extracted_elements = images | 'extract attributes' >> \
+                apache_beam.Map(image_provider.get_image_attributes)
+            filtered_elements = extracted_elements | 'filter' >> \
+                apache_beam.Filter(_is_valid_image)
+            generate_image_id = filtered_elements | 'generate image id' >> \
+                apache_beam.Map(_generate_image_id)
 
-        num_of_pages = image_provider.get_num_of_pages()
-        create_batch = pipeline | 'create' >> \
-            apache_beam.Create([i for i in range(1, int(num_of_pages)+1)])
-        images = create_batch | 'call API' >> \
-            apache_beam.ParDo(image_provider.get_images)
-        extracted_elements = images | 'extract attributes' >> \
-            apache_beam.Map(image_provider.get_image_attributes)
-        filtered_elements = extracted_elements | 'filter' >> \
-            apache_beam.Filter(_is_valid_image)
-        generate_image_id = filtered_elements | 'generate image id' >> \
-            apache_beam.Map(_generate_image_id)
+            generate_image_id | 'store_image' >> \
+                apache_beam.ParDo(firestore_database.AddOrUpdateImageDoFn(), image_provider, job_name)
 
-        generate_image_id | 'store_image' >> \
-            apache_beam.ParDo(firestore_database.AddOrUpdateImageDoFn(), image_provider, job_name)
+            if output_name:
+                generate_image_id | 'Write' >> WriteToText(output_name)
 
-        if output_name:
-            generate_image_id | 'Write' >> WriteToText(output_name)
-
-    store_pipeline_run(image_provider.provider_id, job_name)
+        update_pipeline_run_when_succeeded(job_name)
+    except:
+        update_pipeline_run_when_failed(job_name)
 
 
 if __name__ == '__main__':

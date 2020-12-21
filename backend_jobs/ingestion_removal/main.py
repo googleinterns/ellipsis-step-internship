@@ -30,6 +30,8 @@ from backend_jobs.ingestion_removal.pipeline_lib.remove_by_pipeline_run import\
     IngestionRemovalByPipelineRun
 from backend_jobs.ingestion_removal.pipeline_lib.remove_by_provider import\
     IngestionRemovalByProvider
+from backend_jobs.pipeline_utils.firestore_database import store_pipeline_run,\
+    update_pipeline_run_when_failed, update_pipeline_run_when_succeeded
 from backend_jobs.pipeline_utils.utils import generate_cloud_dataflow_job_name
 from backend_jobs.pipeline_utils import constants
 
@@ -95,17 +97,21 @@ def run(input_image_provider=None, input_pipeline_run=None, run_locally=False):
             temp_location='gs://demo-bucket-step/temp',
             region='europe-west2',
         )
-
-    with beam.Pipeline(options=pipeline_options) as pipeline:
-        indices_for_batching = pipeline | 'create' >> beam.Create(constants.LIST_FOR_BATCHES)
-        dataset = indices_for_batching | 'get pipelineruns dataset and delete Firebase docs' >> \
-            beam.ParDo(removal_pipeline.get_batched_dataset_and_delete_from_database, remove_by_arg)
-        dataset_group_by_parent_image = dataset | 'group all by parent image' >>\
-            beam.GroupByKey()
-        updated_images = dataset_group_by_parent_image | 'update database' >>\
-            beam.ParDo(removal_pipeline.update_arrays_in_image_docs, remove_by_arg)
-        updated_images | 'remove doc if necessary' >>\
-            beam.Map(removal_pipeline.remove_image_doc_if_necessary)
+    store_pipeline_run(job_name)
+    try:
+        with beam.Pipeline(options=pipeline_options) as pipeline:
+            indices_for_batching = pipeline | 'create' >> beam.Create(constants.LIST_FOR_BATCHES)
+            dataset = indices_for_batching | 'get pipelineruns dataset and delete Firebase docs' >> \
+                beam.ParDo(removal_pipeline.get_batched_dataset_and_delete_from_database, remove_by_arg)
+            dataset_group_by_parent_image = dataset | 'group all by parent image' >>\
+                beam.GroupByKey()
+            updated_images = dataset_group_by_parent_image | 'update database' >>\
+                beam.ParDo(removal_pipeline.update_arrays_in_image_docs, remove_by_arg)
+            updated_images | 'remove doc if necessary' >>\
+                beam.Map(removal_pipeline.remove_image_doc_if_necessary)
+        update_pipeline_run_when_succeeded(job_name)
+    except:
+        update_pipeline_run_when_failed(job_name)
 
 
 if __name__ == '__main__':

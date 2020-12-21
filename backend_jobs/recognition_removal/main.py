@@ -32,7 +32,8 @@ from apache_beam.io import WriteToText
 from apache_beam.options.pipeline_options import PipelineOptions
 
 from backend_jobs.pipeline_utils.utils import generate_cloud_dataflow_job_name, create_query_indices
-from backend_jobs.pipeline_utils.firestore_database import store_pipeline_run
+from backend_jobs.pipeline_utils.firestore_database import store_pipeline_run,\
+    update_pipeline_run_when_succeeded, update_pipeline_run_when_failed
 from backend_jobs.recognition_removal.pipeline_lib.firestore_database import\
     GetAndDeleteBatchedLabelsDataset, UpdateLabelsInImageDocs, update_pipelinerun_doc_to_invisible
 
@@ -95,24 +96,27 @@ def run(recognition_run=None, recognition_provider=None, output=None, run_locall
             temp_location='gs://demo-bucket-step/temp',
             region='europe-west2',
         )
-
-    with beam.Pipeline(options=pipeline_options) as pipeline:
-        indices_for_batching = pipeline | 'create' >> beam.Create(create_query_indices())
-        dataset = indices_for_batching | 'get labels dataset and delete Firebase docs' >> \
-            beam.ParDo(GetAndDeleteBatchedLabelsDataset(),\
-                recognition_provider=recognition_provider, recognition_run=recognition_run)
-        if recognition_run:
-            update_pipelinerun_doc_to_invisible(recognition_run)
-        dataset_group_by_parent_image = dataset | 'group all labels by parent image' >>\
-            beam.GroupByKey()
-        # pylint: disable=expression-not-assigned
-        dataset_group_by_parent_image | 'update database' >> beam.ParDo(UpdateLabelsInImageDocs())
-
-        if output: # For testing.
-            # pylint: disable=expression-not-assigned
-            dataset_group_by_parent_image | 'Write' >> WriteToText(output)
-
     store_pipeline_run(job_name)
+    try:
+        with beam.Pipeline(options=pipeline_options) as pipeline:
+            indices_for_batching = pipeline | 'create' >> beam.Create(create_query_indices())
+            dataset = indices_for_batching | 'get labels dataset and delete Firebase docs' >> \
+                beam.ParDo(GetAndDeleteBatchedLabelsDataset(),\
+                    recognition_provider=recognition_provider, recognition_run=recognition_run)
+            if recognition_run:
+                update_pipelinerun_doc_to_invisible(recognition_run)
+            dataset_group_by_parent_image = dataset | 'group all labels by parent image' >>\
+                beam.GroupByKey()
+            # pylint: disable=expression-not-assigned
+            dataset_group_by_parent_image | 'update database' >> beam.ParDo(UpdateLabelsInImageDocs())
+
+            if output: # For testing.
+                # pylint: disable=expression-not-assigned
+                dataset_group_by_parent_image | 'Write' >> WriteToText(output)
+            
+        update_pipeline_run_when_succeeded(job_name)
+    except:
+        update_pipeline_run_when_failed(job_name)
 
 if __name__ == '__main__':
     logging.getLogger().setLevel(logging.INFO)

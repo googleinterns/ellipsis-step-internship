@@ -149,6 +149,7 @@ class UpdateLabelsInImageDocs(beam.DoFn):
             database_schema.COLLECTION_IMAGES_FIELD_LABELS: labels_array
         })
 
+
 def union(list_of_lists):
     """ Returns a list which is the union of all lists in
     list_of_lists.
@@ -156,6 +157,7 @@ def union(list_of_lists):
     """
     all_labels = set(chain.from_iterable(list_of_lists))
     return list(all_labels)
+
 
 def update_pipelinerun_doc_to_invisible(pipeline_run_id):
     """ Updates the pipeline run's document in the Pipeline runs Firestore collection
