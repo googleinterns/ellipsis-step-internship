@@ -46,21 +46,24 @@ def initialize_db():
 def store_pipeline_run(run_id, provider_id=None):
     """ Uploads information about the pipeline run to the
     database_schema.COLLECTION_PIPELINE_RUNS collection.
-
     Args:
         run_id: the pipeline run's unique id.
         provider_id: Optional. Used for recognition and ingestion pipelines only.
-
+    
     """
     db = initialize_db()
-    db.collection(database_schema.COLLECTION_PIPELINE_RUNS).document(run_id).set({
-        database_schema.COLLECTION_PIPELINE_RUNS_FIELD_PROVIDER_ID: provider_id,
+    new_doc = db.collection(database_schema.COLLECTION_PIPELINE_RUNS).document(run_id)
+    new_doc.set({
         database_schema.COLLECTION_PIPELINE_RUNS_FIELD_START_DATE: datetime.now(),
-        database_schema.COLLECTION_PIPELINE_RUNS_FIELD_VISIBILITY:
-            VisibilityType.INVISIBLE.value,
         database_schema.COLLECTION_PIPELINE_RUNS_FIELD_PIPELINE_RUN_ID: run_id,
-        database_schema.COLLECTION_PIPELINE_RUNS_FIELD_STATUS: PipelineRunStatus.STARTED.value
+        database_schema.COLLECTION_PIPELINE_RUNS_FIELD_STATUS: PipelineRunStatus.STARTED.value,
     })
+    if provider_id: # For recognition and ingestion main pipelines.
+        new_doc.set({
+            database_schema.COLLECTION_PIPELINE_RUNS_FIELD_PROVIDER_ID: provider_id,
+            database_schema.COLLECTION_PIPELINE_RUNS_FIELD_VISIBILITY:
+            VisibilityType.INVISIBLE.value,
+        }, merge=True)
 
 
 def update_pipeline_run_when_succeeded(run_id):
@@ -86,6 +89,9 @@ def update_pipeline_run_when_failed(run_id):
     """
     db = initialize_db()
     doc_ref = db.collection(database_schema.COLLECTION_PIPELINE_RUNS).document(run_id)
+    doc_ref.set({
+        database_schema.COLLECTION_PIPELINE_RUNS_FIELD_END_DATE: datetime.now()
+    }, merge=True)
     doc_ref.update({
         database_schema.COLLECTION_PIPELINE_RUNS_FIELD_STATUS: PipelineRunStatus.FAILED.value
     })

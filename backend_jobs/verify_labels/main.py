@@ -33,7 +33,8 @@ from backend_jobs.verify_labels.pipeline_lib.redefine_labels import RedefineLabe
 from backend_jobs.verify_labels.pipeline_lib.firestore_database import GetBatchedLabelsDataset,\
     UpdateDatabaseWithVisibleLabels, update_pipelinerun_doc_to_visible, get_provider_id_from_run_id
 from backend_jobs.pipeline_utils.utils import generate_cloud_dataflow_job_name, create_query_indices
-from backend_jobs.pipeline_utils.firestore_database import store_pipeline_run
+from backend_jobs.pipeline_utils.firestore_database import store_pipeline_run,\
+    update_pipeline_run_when_failed, update_pipeline_run_when_succeeded
 
 _PIPELINE_TYPE = 'verify_labels'
 
@@ -82,24 +83,26 @@ def run(recognition_run, output=None, run_locally=False):
             temp_location='gs://demo-bucket-step/temp',
             region='europe-west2',
         )
-
-    with beam.Pipeline(options=pipeline_options) as pipeline:
-        indices_for_batching = pipeline | 'create' >> beam.Create(create_query_indices())
-        dataset = indices_for_batching | 'get labels dataset' >> \
-            beam.ParDo(GetBatchedLabelsDataset(), recognition_run)
-        provider_id = get_provider_id_from_run_id(recognition_run)
-        redefine_map = get_redefine_map(provider_id)
-        redefine_labels = dataset | 'redefine labels' >> \
-            beam.ParDo(RedefineLabels(), redefine_map)
-        # pylint: disable=expression-not-assigned
-        redefine_labels | 'update database' >> beam.ParDo(UpdateDatabaseWithVisibleLabels())
-        update_pipelinerun_doc_to_visible(recognition_run)
-
-        if output: # For testing.
-            # pylint: disable=expression-not-assigned
-            redefine_labels | 'Write' >> WriteToText(output)
-
     store_pipeline_run(job_name)
+    try:
+        with beam.Pipeline(options=pipeline_options) as pipeline:
+            indices_for_batching = pipeline | 'create' >> beam.Create(create_query_indices())
+            dataset = indices_for_batching | 'get labels dataset' >> \
+                beam.ParDo(GetBatchedLabelsDataset(), recognition_run)
+            provider_id = get_provider_id_from_run_id(recognition_run)
+            redefine_map = get_redefine_map(provider_id)
+            redefine_labels = dataset | 'redefine labels' >> \
+                beam.ParDo(RedefineLabels(), redefine_map)
+            # pylint: disable=expression-not-assigned
+            redefine_labels | 'update database' >> beam.ParDo(UpdateDatabaseWithVisibleLabels())
+            update_pipelinerun_doc_to_visible(recognition_run)
+
+            if output: # For testing.
+                # pylint: disable=expression-not-assigned
+                redefine_labels | 'Write' >> WriteToText(output)
+        update_pipeline_run_when_succeeded(job_name)
+    except:
+        update_pipeline_run_when_failed(job_name)
 
 if __name__ == '__main__':
     logging.getLogger().setLevel(logging.INFO)

@@ -30,7 +30,7 @@ from apache_beam.io import WriteToText
 from apache_beam.options.pipeline_options import PipelineOptions
 from backend_jobs.recognition_pipeline.pipeline_lib.firestore_database import\
     GetBatchedImageDataset, UpdateImageLabelsInDatabase
-from backend_jobs.pipeline_utils.firestore_database import store_pipeline_run
+from backend_jobs.pipeline_utils.firestore_database import update_pipeline_run_when_failed, update_pipeline_run_when_succeeded, store_pipeline_run
 from backend_jobs.pipeline_utils.utils import generate_cloud_dataflow_job_name, create_query_indices
 from backend_jobs.recognition_pipeline.providers.providers import get_recognition_provider
 
@@ -85,7 +85,7 @@ def run(recognition_provider_name, ingestion_run=None, ingestion_provider=None, 
     """
     _validate_args(recognition_provider_name, ingestion_run, ingestion_provider)
     recognition_provider = get_recognition_provider(recognition_provider_name)
-    job_name = generate_cloud_dataflow_job_name(_PIPELINE_TYPE, recognition_provider)
+    job_name = generate_cloud_dataflow_job_name(_PIPELINE_TYPE, recognition_provider.provider_id)
     if run_locally:
         pipeline_options = PipelineOptions()
     else:
@@ -97,10 +97,10 @@ def run(recognition_provider_name, ingestion_run=None, ingestion_provider=None, 
             temp_location='gs://demo-bucket-step/temp',
             region='europe-west2',
         )
-    store_pipeline_run(recognition_provider.provider_id, job_name)
+    store_pipeline_run(job_name, recognition_provider.provider_id)
     try:
         with beam.Pipeline(options=pipeline_options) as pipeline:
-            indices_for_batching = pipeline | 'create' >> beam.Create([i for i in range(10)])
+            indices_for_batching = pipeline | 'create' >> beam.Create(create_query_indices())
             if ingestion_run:
                 dataset = indices_for_batching | 'get images dataset' >> \
                     beam.ParDo(GetBatchedImageDataset(), ingestion_run=ingestion_run)
