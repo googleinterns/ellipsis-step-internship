@@ -1,4 +1,17 @@
-""" demo app"""
+"""
+  Copyright 2020 Google LLC
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+    https://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+ """
 from threading import Thread
 from flask import Flask, request, render_template
 from firebase_admin import firestore
@@ -23,6 +36,14 @@ _NUM_OF_LATEST_RUNS = 10
 
 
 def get_latest_runs(status):
+    """ This function given a status returns a limted list of pipeline run documents.
+
+    Args:
+        status- The status of the pipeline runs we want to receive.
+
+    Returns:
+        List of pipeline run documents, each document is presented as a dict.
+    """
     db = initialize_db()
     query = db.collection(database_schema.COLLECTION_PIPELINE_RUNS)\
         .where(database_schema.COLLECTION_PIPELINE_RUNS_FIELD_STATUS, u'==', status)\
@@ -82,6 +103,8 @@ def submit_all_pipelines_page():
 
 @app.route('/submit_recognition', methods=['POST'])
 def submit_recognition():
+    """ This function creates a thread to run the recognition pipeline.
+    """
     input_type = request.form['input_type']
     input_value = request.form['input_value']
     input_recognition_provider = request.form['recognition_provider']
@@ -104,10 +127,10 @@ def submit_recognition():
 
 @app.route('/submit_ingestion', methods=['POST'])
 def submit_ingestion():
+    """ This function creates a thread to run the ingestion pipeline.
+    """
     input_value = request.form['input_value']
-    print(input_value)
     input_provider_args = request.form['arguments']
-    print(input_provider_args)
     thread = Thread(target=run_ingestion_pipeline, kwargs={
         'input_provider_name': input_value,
         'input_provider_args': input_provider_args,
@@ -119,6 +142,8 @@ def submit_ingestion():
 
 @app.route('/submit_recognition_verification', methods=['POST'])
 def submit_recognition_verification():
+    """ This function creates a thread to run the recognition verification pipeline.
+    """
     input_value = request.form['input_value']
     thread = Thread(target=run_recognition_verification, kwargs={
         'recognition_run': input_value,
@@ -130,6 +155,8 @@ def submit_recognition_verification():
 
 @app.route('/submit_ingestion_verification', methods=['POST'])
 def submit_ingestion_verification():
+    """ This function creates a thread to run the ingestion verification pipeline.
+    """
     input_type = request.form['input_type']
     input_value = request.form['input_value']
     input_visibility = request.form['visibility_type']
@@ -150,6 +177,8 @@ def submit_ingestion_verification():
 
 @app.route('/submit_recognition_removal', methods=['POST'])
 def submit_recognition_removal():
+    """ This function creates a thread to run the recognition removal pipeline.
+    """
     input_type = request.form['input_type']
     input_value = request.form['input_value']
     if input_type == _INPUT_TYPE_PROVIDER:
@@ -169,6 +198,8 @@ def submit_recognition_removal():
 
 @app.route('/submit_ingestion_removal', methods=['POST'])
 def submit_ingestion_removal():
+    """ This function creates a thread to run the ingestion removal pipeline.
+    """
     input_type = request.form['input_type']
     input_value = request.form['input_value']
     if input_type == _INPUT_TYPE_PROVIDER:
