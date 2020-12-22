@@ -30,7 +30,7 @@ async function createLabelMap(): Promise<Map<any, any>> {
   return labelMap;
 }
 
-export async function convertLabelLabelIdToName(idArray: Array<string>) {
+export async function convertLabelIdToLabelName(idArray: Array<string>) {
   const labelMap: Map<any, any> = await LABELS_MAP;
   const labelArray: Array<string> = [];
   idArray.forEach((id) => labelArray.push(labelMap.get(id)));

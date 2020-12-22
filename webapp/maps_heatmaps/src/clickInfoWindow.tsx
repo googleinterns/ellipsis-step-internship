@@ -19,7 +19,7 @@ import { map } from "./index";
 import { getDocById } from "./queryDB";
 import { DateTime } from "./interface";
 import { convertLatLngToGeopoint } from "./utils";
-import { convertLabelLabelIdToName} from  "./labelsMap";
+import { convertLabelIdToLabelName} from  "./labelsMap";
 
 import React from "react";
 import ReactDOMServer from "react-dom/server";
@@ -82,7 +82,7 @@ async function openInfoWindow(
       infoWindow.setContent(
         ReactDOMServer.renderToString(
           <InfoWindowContent
-            labels={await convertLabelLabelIdToName(dataref.labels)}
+            labels={await convertLabelIdToLabelName(dataref.labels)}
             url={dataref.url}
             dateTime={
               (dateTime = {
