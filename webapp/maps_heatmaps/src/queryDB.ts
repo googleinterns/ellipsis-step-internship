@@ -24,8 +24,36 @@ const databaseCollection = database.collection("Images");
 const heatmapDatabaseCollection = database.collection("Heatmap");
 
 /* This function gets a document by its id*/
+async function getPrecisionByZoom(zoom: string) {
+  const docId = "zoom" + zoom;
+  const doc = (
+    await database.collection("Zoom2precision").doc(docId).get()
+  ).data();
+  if (doc != undefined) return doc.precision;
+  return undefined;
+}
+
+/* This function gets a document by its id*/
 async function getDocById(id: string) {
   return (await database.collection("Images").doc(id).get()).data();
+}
+
+function getHeatmapQueriedCollection(
+  labels: string[],
+  datetime: DateTime,
+  precision: string,
+  hash?: string
+): firebase.firestore.Query {
+  const docId = "precision" + precision;
+  let dataRef = heatmapDatabaseCollection
+    .doc(docId)
+    .collection("WeightedPoints")
+    .where("labelId", "in", labels);
+  if (hash != undefined) {
+    const hashfield: string = "hashmap.hash" + hash.length;
+    dataRef = dataRef.where(hashfield, "==", hash);
+  }
+  return dataRef;
 }
 
 /* Queries for docs in firebase by given data such as labels, date and hash. 
@@ -93,4 +121,10 @@ function getLatLon(coordinates: firebase.firestore.GeoPoint) {
   return new google.maps.LatLng(lat, lng);
 }
 
-export { updateHeatmapFromQuery, getQueriedCollection, getDocById };
+export {
+  updateHeatmapFromQuery,
+  getQueriedCollection,
+  getHeatmapQueriedCollection,
+  getPrecisionByZoom,
+  getDocById,
+};
