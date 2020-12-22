@@ -37,6 +37,7 @@ import {
   toLatLngLiteral,
   isInVisibleMap,
 } from "./utils";
+import { convertLabelNameToLabelId } from "./labelsMap";
 import { DateTime } from "./interface";
 import { getGeohashBoxes } from "./geoquery";
 import { MinOfLists } from "./minOfLists";
@@ -79,7 +80,6 @@ function initMap() {
     center: { lat: 37.783371, lng: -122.439687 },
   });
   getLabelTags();
-
   heatmap = new google.maps.visualization.HeatmapLayer({
     data: [],
     map: map,
@@ -109,9 +109,10 @@ async function mapChanged() {
     if (timeOfLastRequest === timeOfRequest) {
       queriedCollections = [];
       lastVisibleDocs = [];
+      const labels = await convertLabelNameToLabelId(selectedLabels);
       if (arrayhash.length === 0) {
         const queriedCollection = queryDB.getQueriedCollection(
-          selectedLabels,
+          labels,
           selectedDate
         );
         //Check if it's the last request made. Ignores request otherwise.
@@ -121,7 +122,7 @@ async function mapChanged() {
       } else {
         arrayhash.forEach((hash: string) => {
           const queriedCollection = queryDB.getQueriedCollection(
-            selectedLabels,
+            labels,
             selectedDate,
             hash
           );

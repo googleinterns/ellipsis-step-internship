@@ -21,6 +21,7 @@ import * as firebase from "firebase";
 import { DateTime } from "./interface";
 
 const databaseCollection = database.collection("Images");
+const heatmapDatabaseCollection = database.collection("Heatmap");
 
 /* This function gets a document by its id*/
 async function getDocById(id: string) {
@@ -67,13 +68,20 @@ async function updateHeatmapFromQuery(
   heatmap: google.maps.visualization.HeatmapLayer,
   dataRefs: firebase.firestore.Query[]
 ): Promise<void> {
-  const allPoints: Array<google.maps.LatLng> = [];
+  const allPoints: Array<{
+    location: google.maps.LatLng;
+    weight: number;
+  }> = [];
   for (const dataRef of dataRefs) {
     const docs = (await dataRef.get()).docs;
     for (const doc of docs) {
+      const weight = doc.data().weight;
       const coordinates = doc.data().coordinates;
       const newLatLon = getLatLon(coordinates);
-      allPoints.push(newLatLon);
+      allPoints.push({
+        location: newLatLon,
+        weight: weight,
+      });
     }
   }
   heatmap.setData(allPoints);
