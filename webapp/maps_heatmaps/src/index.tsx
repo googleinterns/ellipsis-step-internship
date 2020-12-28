@@ -136,11 +136,11 @@ async function mapChanged() {
             queriedCollections.push(queriedCollection);
         });
       }
+      //If we use the aggregated Heatmap
       if (USE_AGGREGATED_HEATMAP) {
         if (arrayhash.length === 0) {
           const queriedCollectionHeatmap = queryDB.getHeatmapQueriedCollection(
             labels,
-            selectedDate,
             precision
           );
           //Check if it's the last request made. Ignores request otherwise.
@@ -150,7 +150,6 @@ async function mapChanged() {
           arrayhash.forEach((hash: string) => {
             const queriedCollectionHeatmap = queryDB.getHeatmapQueriedCollection(
               labels,
-              selectedDate,
               precision,
               hash
             );

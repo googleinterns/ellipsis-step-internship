@@ -23,7 +23,7 @@ import { DateTime } from "./interface";
 const databaseCollection = database.collection("Images");
 const heatmapDatabaseCollection = database.collection("Heatmap");
 
-/* This function gets a document by its id*/
+/* This function gets a precision by the maps zoom level*/
 async function getPrecisionByZoom(zoom: string) {
   const docId = "zoom" + zoom;
   const doc = (
@@ -38,9 +38,14 @@ async function getDocById(id: string) {
   return (await database.collection("Images").doc(id).get()).data();
 }
 
+/* Queries for docs in firebase by a given label, precision and hash. 
+   the function returns a reference to the queried data.
+   @param label The label we queries by
+   @param precision The precision of the hash we queries by
+   @param hash The hash of the current map bounderies
+   @return The filtered collection by the different queries*/
 function getHeatmapQueriedCollection(
   labels: string[],
-  datetime: DateTime,
   precision: string,
   hash?: string
 ): firebase.firestore.Query {

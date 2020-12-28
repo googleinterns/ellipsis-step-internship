@@ -18,6 +18,8 @@ import { database } from "./declareDatabase";
 
 const LABELS_MAP: Promise<Map<any, any>> = createLabelMap();
 
+/* Queries the database for the LabelTags collection and creates
+a map containing the key as the label id and the value as the label name*/
 async function createLabelMap(): Promise<Map<any, any>> {
   const labelMap = new Map();
   const docs = (await database.collection("LabelTags").get()).docs;
@@ -30,6 +32,8 @@ async function createLabelMap(): Promise<Map<any, any>> {
   return labelMap;
 }
 
+/* This function converts from an array containing label ides 
+to an array containing the corresponding label names.*/
 export async function convertLabelIdToLabelName(idArray: Array<string>) {
   const labelMap: Map<any, any> = await LABELS_MAP;
   const labelArray: Array<string> = [];
@@ -38,6 +42,8 @@ export async function convertLabelIdToLabelName(idArray: Array<string>) {
   return labelArray;
 }
 
+/* This function converts from an array containing label names 
+to an array containing the corresponding label ides.*/
 export async function convertLabelNameToLabelId(labelArray: Array<string>) {
   const labelMap: Map<any, any> = await LABELS_MAP;
   const idArray: Array<string> = [];
