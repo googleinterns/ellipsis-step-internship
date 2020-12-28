@@ -43,9 +43,9 @@ class InfoWindowContent extends React.Component<{
     return (
       <>
         <b>Labels: </b>
-        {this.props.labels.map((label) =>
-          <li key={label}>{label}</li> 
-        )}
+        {this.props.labels.map((label) => (
+          <li key={label}>{label}</li>
+        ))}
       </>
     );
   }
@@ -68,7 +68,7 @@ class InfoWindowContent extends React.Component<{
     return (
       <>
         <b>Attribution: </b>
-        { this.props.attribution}
+        {this.props.attribution}
       </>
     );
   }

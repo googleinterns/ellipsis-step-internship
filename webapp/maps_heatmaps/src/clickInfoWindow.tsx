@@ -19,7 +19,7 @@ import { map } from "./index";
 import { getDocById } from "./queryDB";
 import { DateTime } from "./interface";
 import { convertLatLngToGeopoint } from "./utils";
-import { convertLabelIdToLabelName} from  "./labelsMap";
+import { convertLabelIdToLabelName } from "./labelsMap";
 
 import React from "react";
 import ReactDOMServer from "react-dom/server";
