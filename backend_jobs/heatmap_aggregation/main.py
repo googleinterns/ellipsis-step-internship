@@ -50,9 +50,8 @@ def run(output=None, run_locally=False):
     """Main entry point, runs the heatmap aggregation pipeline.
 
     """
-    if not output:
-        raise ValueError('hi')
-    job_name = generate_cloud_dataflow_job_name(_PIPELINE_TYPE, 'all images') #TODO: change additional info.
+
+    job_name = generate_cloud_dataflow_job_name(_PIPELINE_TYPE, 'all images')
     
     if run_locally:
         pipeline_options = PipelineOptions()
@@ -75,7 +74,7 @@ def run(output=None, run_locally=False):
             point_keys_and_sum = point_keys | 'combine all point keys' >> \
                 beam.CombinePerKey(sum)
             # pylint: disable=expression-not-assigned
-            point_keys | 'update database' >> beam.ParDo(UpdateHeatmapDatabase())
+            point_keys_and_sum | 'update database' >> beam.ParDo(UpdateHeatmapDatabase())
 
             if output: # For testing.
                 # pylint: disable=expression-not-assigned

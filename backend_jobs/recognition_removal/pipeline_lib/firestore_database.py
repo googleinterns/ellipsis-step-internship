@@ -13,10 +13,12 @@
   limitations under the License.
 
 """
-import apache_beam as beam
 from itertools import chain
+import apache_beam as beam
 from backend_jobs.pipeline_utils.firestore_database import initialize_db, RANGE_OF_BATCH
 from backend_jobs.pipeline_utils import database_schema, data_types
+from backend_jobs.pipeline_utils.utils import get_query_from_heatmap_collection,\
+    get_quantize_coords_from_geohash
 
 
 # pylint: disable=abstract-method
@@ -106,6 +108,9 @@ class UpdateLabelsInImageDocs(beam.DoFn):
        list of all label ids that were deleted in the parent image doc.
        (image_doc, list_of_labels)
 
+       Output: point keys which are used to update database_schema.COLLECTION_HEATMAP
+               according to removed labels.
+
     """
     def setup(self):
         # pylint: disable=attribute-defined-outside-init
@@ -119,9 +124,18 @@ class UpdateLabelsInImageDocs(beam.DoFn):
         that contain the label ids that were deleted.
         If not - deletes the corresponding label id from the 'labels' array field in the
         image document in database_schema.COLLECTION_IMAGES.
+        For each label deleted, the method updates database_schema.COLLECTION_HEATMAP
+        and decreases the weight of the point keys for each precision.
 
         Args:
             image_and_labels: (parent image doc, list of lists of label ids)
+        
+        Yields:
+            (point key, 1).
+            point key: (precision, label id, quantized coordinates).
+            A point key for each label which was removed from the image
+            and for each precision from 4 to 12. The quantized coordinates are
+            calculated from the parent image's hashmap.
 
         """
         parent_image_id = image_and_labels[0]
@@ -129,6 +143,7 @@ class UpdateLabelsInImageDocs(beam.DoFn):
         label_ids = union(label_ids_lists)
         parent_image_ref = self.db.collection(database_schema.COLLECTION_IMAGES).\
             document(parent_image_id)
+        geohash_map = parent_image_ref.get().to_dict()[database_schema.COLLECTION_IMAGES_FIELD_HASHMAP]
         for label_id in label_ids:
             query = self.db.collection_group(database_schema.COLLECTION_IMAGES_SUBCOLLECTION_LABELS\
                 ).where(database_schema.COLLECTION_IMAGES_SUBCOLLECTION_LABELS_FIELD_PARENT_IMAGE_ID\
@@ -139,7 +154,11 @@ class UpdateLabelsInImageDocs(beam.DoFn):
                                     u'==', data_types.VisibilityType.VISIBLE.value)
             if len(query.get()) == 0: # No doc of the label id was found.
                 self._delete_label_id_from_labels_array(parent_image_ref, label_id)
-
+                for precision in range(4, 12): # Get point keys for next pipeline steps.
+                    point_key = (precision, label_id, get_quantize_coords_from_geohash(\
+                        precision, geohash_map))
+                    yield (point_key, 1)
+            
     def _delete_label_id_from_labels_array(self, image_doc_ref, label_id):
         image_doc_dict = image_doc_ref.get().to_dict()
         labels_array = image_doc_dict[database_schema.COLLECTION_IMAGES_FIELD_LABELS]
@@ -149,6 +168,47 @@ class UpdateLabelsInImageDocs(beam.DoFn):
             database_schema.COLLECTION_IMAGES_FIELD_LABELS: labels_array
         })
 
+class UpdateHeatmapDatabase(beam.DoFn):
+    """Updates the database_schema.COLLECTION_HEATMAP to not include
+       the removed labels.
+
+       Input: (point key, count)
+
+    """
+    def setup(self):
+        # pylint: disable=attribute-defined-outside-init
+        self.db = initialize_db()
+
+    # pylint: disable=arguments-differ
+    def process(self, point_key_and_count):
+        """ Queries the Firestore database after combining all point keys
+        and updates accordingly. If count == current weight, the weighted point's
+        doc will be deleted. If not, count will be decreased from weight.
+            
+
+        Args:
+            point_key_and_count: (point_key, count).
+                point_key: (precision, label, quantized_coordinates).
+                count: the weight of each deleted point key.
+
+        """
+        point_key = point_key_and_count[0]
+        count = point_key_and_count[1]
+        label = point_key[1]
+        quantized_coords = point_key[2]
+        query = get_query_from_heatmap_collection(self.db, label, quantized_coords)
+        for doc in query:
+            doc_dict = doc.to_dict()
+            point_weight = doc_dict[\
+                database_schema.COLLECTION_HEATMAP_SUBCOLLECTION_WEIGHTED_POINTS_FIELD_WEIGHT]
+            if point_weight == count:
+                doc.reference.delete()
+            else:
+                point_weight -= count
+                doc.reference.update({
+                    database_schema.COLLECTION_HEATMAP_SUBCOLLECTION_WEIGHTED_POINTS_FIELD_WEIGHT:\
+                        point_weight,
+                    })
 
 def union(list_of_lists):
     """ Returns a list which is the union of all lists in

@@ -15,11 +15,11 @@
 """
 
 import apache_beam as beam
-from google.cloud import firestore
-import geohash2
 from backend_jobs.pipeline_utils.firestore_database import initialize_db, RANGE_OF_BATCH
 from backend_jobs.pipeline_utils import database_schema
-from backend_jobs.pipeline_utils.utils import get_geo_hashes_map
+from backend_jobs.pipeline_utils.data_types import VisibilityType
+from backend_jobs.pipeline_utils.utils import get_quantize_coords_from_geohash,\
+    add_point_key_to_heatmap_collection
 
 # pylint: disable=abstract-method
 class GetPointKeysByBatch(beam.DoFn):
@@ -58,23 +58,17 @@ class GetPointKeysByBatch(beam.DoFn):
         query = self.db.collection(database_schema.COLLECTION_IMAGES)\
             .where(database_schema.COLLECTION_IMAGES_FIELD_RANDOM, u'>=', random_min)\
                         .where(database_schema.COLLECTION_IMAGES_FIELD_RANDOM,\
-                            u'<', random_max).stream()
+                            u'<', random_max).where(database_schema.COLLECTION_IMAGES_FIELD_VISIBILITY,\
+                                u'==', VisibilityType.VISIBLE.value).stream()
         for doc in query:
             doc_dict = doc.to_dict()
             if database_schema.COLLECTION_IMAGES_FIELD_LABELS in doc_dict:
                 for label in doc_dict[database_schema.COLLECTION_IMAGES_FIELD_LABELS]:
-                    for precision in range(4, 11):
-                        point_key = (precision, label, _get_quantize_coords_from_geohash(precision,\
+                    for precision in range(4, 12):
+                        point_key = (precision, label, get_quantize_coords_from_geohash(precision,\
                             doc_dict[database_schema.COLLECTION_IMAGES_FIELD_HASHMAP]))
                         yield (point_key, 1)
 
-def _get_quantize_coords_from_geohash(precision, geohash_map):
-    """ Returns the quantized coordinates for image's coordinates in the requested precision.
-
-    """
-    precision_string = 'hash{precision}'.format(precision=precision)
-    lat, lng = geohash2.decode(geohash_map[precision_string])
-    return (float(lat), float(lng))
 
 # pylint: disable=abstract-method
 class UpdateHeatmapDatabase(beam.DoFn):
@@ -102,20 +96,8 @@ class UpdateHeatmapDatabase(beam.DoFn):
         """
         point_key = point_key_and_count[0]
         count = point_key_and_count[1]
-        precision_string_id = 'precision{precision_number}'.format(precision_number=point_key[0])
+        precision = point_key[0]
         label = point_key[1]
         quantized_coords = point_key[2]
-        quantized_coords_lat = quantized_coords[0]
-        quantized_coords_lng = quantized_coords[1]
-        geo_point_quantized_coords = firestore.GeoPoint(quantized_coords_lat, quantized_coords_lng)
-        self.db.collection(database_schema.COLLECTION_HEATMAP).document(precision_string_id).\
-            collection(database_schema.COLLECTION_HEATMAP_SUBCOLLECTION_WEIGHTED_POINTS).\
-                document().set({
-                    database_schema.COLLECTION_HEATMAP_SUBCOLLECTION_WEIGHTED_POINTS_FIELD_LABEL_ID:\
-                        label,
-                    database_schema.COLLECTION_HEATMAP_SUBCOLLECTION_WEIGHTED_POINTS_FIELD_COORDINATES:\
-                        geo_point_quantized_coords,
-                    database_schema.COLLECTION_HEATMAP_SUBCOLLECTION_WEIGHTED_POINTS_FIELD_WEIGHT: count,
-                    database_schema.COLLECTION_HEATMAP_SUBCOLLECTION_WEIGHTED_POINTS_FIELD_HASHMAP:\
-                        get_geo_hashes_map(quantized_coords_lat, quantized_coords_lng)
-                })
+        add_point_key_to_heatmap_collection(self.db, quantized_coords, precision,\
+            label, count)

@@ -19,6 +19,8 @@ import apache_beam as beam
 from backend_jobs.pipeline_utils.firestore_database import initialize_db, RANGE_OF_BATCH
 from backend_jobs.pipeline_utils import database_schema, data_types
 from backend_jobs.recognition_pipeline.pipeline_lib.firestore_database import add_id_to_dict
+from backend_jobs.pipeline_utils.utils import get_query_from_heatmap_collection,\
+    get_quantize_coords_from_geohash, add_point_key_to_heatmap_collection
 
 # pylint: disable=abstract-method
 class GetBatchedLabelsDataset(beam.DoFn):
@@ -77,6 +79,9 @@ class UpdateDatabaseWithVisibleLabels(beam.DoFn):
         stored in the database_schema.COLLECTION_IMAGES_SUBCOLLECTION_LABELS and
         a list of label ids.
         (label_doc_dict, list_of_label_ids)
+    
+    Output: point keys which are used to update database_schema.COLLECTION_HEATMAP
+        according to the new verified labels.
 
     """
 
@@ -92,6 +97,10 @@ class UpdateDatabaseWithVisibleLabels(beam.DoFn):
 
             Args:
                 label_info: (label doc Python dictionary, list of label ids)
+            
+            Yields:
+                A generator of point keys with weight 1 for each new label that was
+                added to the parent image.
 
         """
         image_doc_dict = label_info[0]
@@ -100,7 +109,7 @@ class UpdateDatabaseWithVisibleLabels(beam.DoFn):
             document(image_doc_dict[database_schema.\
                 COLLECTION_IMAGES_SUBCOLLECTION_LABELS_FIELD_PARENT_IMAGE_ID])
         self._update_label_doc(parent_image_ref, image_doc_dict['id'], image_label_ids)
-        self._update_parent_image_labels_array(parent_image_ref, image_label_ids)
+        yield from self._update_parent_image_labels_array_and_get_new_labels(parent_image_ref, image_label_ids)
 
     def _update_label_doc(self, parent_image_ref, doc_id, label_id_list):
         """ Updates the label doc in the database.
@@ -123,7 +132,7 @@ class UpdateDatabaseWithVisibleLabels(beam.DoFn):
             database_schema.COLLECTION_IMAGES_SUBCOLLECTION_LABELS_FIELD_LABEL_IDS: label_id_list
         }, merge = True)
 
-    def _update_parent_image_labels_array(self, image_doc_ref, label_ids):
+    def _update_parent_image_labels_array_and_get_new_labels(self, image_doc_ref, label_ids):
         """ Adds the label id to the image's document if it is not already there.
 
             Args:
@@ -131,22 +140,76 @@ class UpdateDatabaseWithVisibleLabels(beam.DoFn):
                 label_id: the label id which needs to be added to the labels array
                 of the parent image document in the database
 
+            Yields:
+                (point key, 1).
+                point key: (precision, label id, quantized coordinates).
+                A point key for each label which was verified
+                and for each precision from 4 to 12. The quantized coordinates are
+                calculated from the parent image's hashmap.
+
+
         """
         image_doc_dict = image_doc_ref.get().to_dict()
         labels_array = []
+        parent_image_hashmap = image_doc_ref.get().to_dict()[\
+            database_schema.COLLECTION_IMAGES_FIELD_HASHMAP]
         if database_schema.COLLECTION_IMAGES_FIELD_LABELS in image_doc_dict:
             labels_array = image_doc_dict[database_schema.COLLECTION_IMAGES_FIELD_LABELS]
         for label_id in label_ids:
             if label_id not in labels_array:
-                labels_array.append(label_id) # label name instead for demo
-            image_doc_ref.update({
-                database_schema.COLLECTION_IMAGES_FIELD_LABELS: labels_array
-            })
+                labels_array.append(label_id)
+                for precision in range(4, 12):
+                    point_key = (precision, label_id, \
+                    get_quantize_coords_from_geohash(precision, parent_image_hashmap))
+                    yield (point_key, 1)
+        image_doc_ref.update({
+            database_schema.COLLECTION_IMAGES_FIELD_LABELS: labels_array
+        })
 
-def id_to_name(label_id): # This method is temp - only for the demo
-    labeltag_doc_ref = initialize_db().collection(database_schema.COLLECTION_LABEL_TAGS).\
-        document(label_id)
-    return labeltag_doc_ref.get().to_dict()['name']
+class UpdateHeatmapDatabase(beam.DoFn):
+    """Updates the database_schema.COLLECTION_HEATMAP to include
+       the new verified labels.
+
+       Input: (point key, count)
+
+    """
+    def setup(self):
+        # pylint: disable=attribute-defined-outside-init
+        self.db = initialize_db()
+
+    # pylint: disable=arguments-differ
+    def process(self, point_key_and_count):
+        """ Queries the Firestore database after combining all point keys
+        and updates accordingly. If a similar point key was found, count is added
+        to it's weight. If not, a new weighted point is created in the database.
+            
+
+        Args:
+            point_key_and_count: (point_key, count).
+                point_key: (precision, label, quantized_coordinates).
+                count: the weight of each point key.
+
+        """
+        point_key = point_key_and_count[0]
+        count = point_key_and_count[1]
+        precision = point_key[0]
+        label = point_key[1]
+        quantized_coords = point_key[2]
+        query = get_query_from_heatmap_collection(self.db, label, quantized_coords)
+        query_empty = True
+        for doc in query:
+            query_empty = False
+            doc_dict = doc.to_dict()
+            weight = doc_dict[database_schema.\
+                        COLLECTION_HEATMAP_SUBCOLLECTION_WEIGHTED_POINTS_FIELD_WEIGHT]
+            weight += count
+            doc.reference.update({
+                database_schema.\
+                    COLLECTION_HEATMAP_SUBCOLLECTION_WEIGHTED_POINTS_FIELD_WEIGHT: weight,
+            })
+        if query_empty: # Need to add a new weighted point.
+            add_point_key_to_heatmap_collection(self.db, quantized_coords, precision,\
+                label, count)
 
 def update_pipelinerun_doc_to_visible(pipeline_run_id):
     """ Updates the pipeline run's document in the Pipeline runs Firestore collection

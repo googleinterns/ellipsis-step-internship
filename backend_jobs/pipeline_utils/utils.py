@@ -14,6 +14,8 @@
 """
 from datetime import datetime
 import geohash2
+from google.cloud import firestore
+from backend_jobs.pipeline_utils import database_schema
 from backend_jobs.pipeline_utils.firestore_database import RANGE_OF_BATCH
 
 
@@ -85,3 +87,53 @@ def get_geo_hashes_map(latitude, longitude):
     for i in range(1, 11):
         geo_hashes_map['hash' + str(i)] = geohash[0:i]
     return geo_hashes_map
+
+def get_quantize_coords_from_geohash(precision, geohash_map):
+    """ Returns the quantized coordinates for image's coordinates in the requested precision.
+
+    """
+    precision_string = 'hash{precision}'.format(precision=precision)
+    lat, lng = geohash2.decode(geohash_map[precision_string])
+    return (float(lat), float(lng))
+
+def get_query_from_heatmap_collection(db, label, quantized_coords):
+    """ Returns a query from database_schema.COLLECTION_HEATMAP according to the arguments.
+
+    Args:
+        label: Label id to query by.
+        quantized_coords: the quantized coordinates to query by.
+
+    """
+    quantized_coords_lat = quantized_coords[0]
+    quantized_coords_lng = quantized_coords[1]
+    geopoint_quantized_coords = firestore.GeoPoint(\
+        quantized_coords_lat, quantized_coords_lng)
+    query = db.collection_group(\
+        database_schema.COLLECTION_HEATMAP_SUBCOLLECTION_WEIGHTED_POINTS).\
+            where(database_schema.COLLECTION_HEATMAP_SUBCOLLECTION_WEIGHTED_POINTS_FIELD_COORDINATES,\
+                u'==', geopoint_quantized_coords).\
+                    where(database_schema.COLLECTION_HEATMAP_SUBCOLLECTION_WEIGHTED_POINTS_FIELD_LABEL_ID,\
+                        u'==', label).stream()
+    return query
+
+def add_point_key_to_heatmap_collection(db, quantized_coords, precision, label, count):
+    """ Adds a new point key to database_schema.COLLECTION_HEATMAP_SUBCOLLECTION_WEIGHTED_POINTS.
+    The point key will be added to the relevant precision document.
+
+    """
+    precision_string_id = 'precision{precision_number}'.format(precision_number=precision)
+    quantized_coords_lat = quantized_coords[0]
+    quantized_coords_lng = quantized_coords[1]
+    geopoint_quantized_coords = firestore.GeoPoint(quantized_coords_lat, quantized_coords_lng)
+    db.collection(database_schema.COLLECTION_HEATMAP).document(precision_string_id).\
+        collection(database_schema.COLLECTION_HEATMAP_SUBCOLLECTION_WEIGHTED_POINTS).\
+            document().set({
+                database_schema.COLLECTION_HEATMAP_SUBCOLLECTION_WEIGHTED_POINTS_FIELD_LABEL_ID:\
+                    label,
+                database_schema.COLLECTION_HEATMAP_SUBCOLLECTION_WEIGHTED_POINTS_FIELD_COORDINATES:\
+                    geopoint_quantized_coords,
+                database_schema.COLLECTION_HEATMAP_SUBCOLLECTION_WEIGHTED_POINTS_FIELD_WEIGHT:\
+                    count,
+                database_schema.COLLECTION_HEATMAP_SUBCOLLECTION_WEIGHTED_POINTS_FIELD_HASHMAP:\
+                    get_geo_hashes_map(quantized_coords_lat, quantized_coords_lng)
+            })
