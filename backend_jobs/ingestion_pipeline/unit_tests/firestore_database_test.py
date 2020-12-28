@@ -25,7 +25,7 @@ class TestFirestoreDatabase(unittest.TestCase):
   
     def test_get_geo_hashes_map1(self):
         """ This test, given values of latitude and longitude,
-        expects to receive a map object with all the geohashes.
+        expects to receive a map object with the value 'hash10' and key '9q8yvy60hd'.
 
         Given:
             latitude=37.783371, longitude=-122.439687
@@ -39,7 +39,7 @@ class TestFirestoreDatabase(unittest.TestCase):
  
     def test_get_geo_hashes_map2(self):
         """ This test, given a latitude and longitude,
-        expects to receive a map object with all the geohashes.
+        expects to receive a map object with the value 'hash10' and key '7zzzzzzzzz'.
 
         Given:
             latitude=0.0, longitude=0.0
@@ -53,7 +53,7 @@ class TestFirestoreDatabase(unittest.TestCase):
  
     def test_get_geo_hashes_map3(self):
         """ This test, given a latitude and longitude,
-        expects to receive a map object with all the geohashes.
+        expects to receive a map object with the value 'hash10' and key 'pbpbpbpbpb'.
 
         Given:
             latitude=-90, longitude=180
@@ -73,34 +73,16 @@ class TestFirestoreDatabase(unittest.TestCase):
         date = firestore_database._get_date_fields(datetime.date(2019, 4, 13))
         self.assertEqual(expected_date, date)
 
-    def test_get_max_visibility_visible(self):
-        """ This test, given two visibilities, expects to receive the max visibility.
+    def test_get_max_visibility(
+        self,
+        first_visibility=data_types.VisibilityType.VISIBLE,
+        second_visibility=data_types.VisibilityType.INVISIBLE,
+        expected_visibility=data_types.VisibilityType.VISIBLE):
+        """ This test, given two visibilities and an expected visibility,
+        expects the max visibility to equal the expected visibility.
 
-        Given:
-            first_visibility=VISIBLE, second_visibility=INVISIBLE
-
-        Expects:
-            VISIBLE .
         """
-        expected_visibility = data_types.VisibilityType.VISIBLE
-        visibility = firestore_database._get_max_visibility(
-            data_types.VisibilityType.VISIBLE,
-            data_types.VisibilityType.INVISIBLE)
-        self.assertEqual(expected_visibility, visibility)
-
-    def test_get_max_visibility_invisible(self):
-        """ This test, given two visibilities, expects to receive the max visibility.
-        
-        Given:
-            first_visibility=INVISIBLE, second_visibility=INVISIBLE
-
-        Expects:
-            INVISIBLE .
-        """
-        expected_visibility = data_types.VisibilityType.INVISIBLE
-        visibility = firestore_database._get_max_visibility(
-            data_types.VisibilityType.INVISIBLE,
-            data_types.VisibilityType.INVISIBLE)
+        visibility = firestore_database._get_max_visibility(first_visibility, second_visibility)
         self.assertEqual(expected_visibility, visibility)
 
 
