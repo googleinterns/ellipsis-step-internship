@@ -12,11 +12,12 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 
-A heatmap aggregation pipeline to aggregate coordinates into weighted points.
+A heatmap aggregation pipeline to aggregate images into weighted points.
 
 The pipeline uses Python's Apache beam library to parallelize the different stages.
-The images are taken from COLLECTION_IMAGES in the project's firestore database.
-The pipeline updates COLLECTION_HEATMAP to make sure all vertified images and labels are
+Images are taken from COLLECTION_IMAGES in the project's firestore database and are
+unified by labels and quantized coordinates for heatmap aggregation.
+The pipeline updates COLLECTION_HEATMAP to make sure all verified images and labels are
 counted for the frontend's heatmap.
 """
 
