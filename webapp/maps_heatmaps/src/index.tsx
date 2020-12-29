@@ -37,7 +37,6 @@ import {
   toLatLngLiteral,
   isInVisibleMap,
 } from "./utils";
-import { convertLabelNameToLabelId } from "./labelsMap";
 import { DateTime } from "./interface";
 import { getGeohashBoxes } from "./geoquery";
 import { MinOfLists } from "./minOfLists";
@@ -62,13 +61,14 @@ async function getLabelTags() {
   const labelTags: Array<{ value: string; label: string }> = [];
   labelsRef.forEach((doc) => {
     const name = doc.data().name;
-    labelTags.push({ value: name, label: name });
+    const id = doc.id;
+    labelTags.push({ value: id, label: name });
   });
   ReactDOM.render(
     <SidePanel labels={labelTags} />,
     document.querySelector("#root")
   );
-  selectedLabels = labelTags.map((x: Record<string, string>) => x.label);
+  selectedLabels = labelTags.map((x: Record<string, string>) => x.value);
 }
 
 function initMap() {
@@ -114,11 +114,11 @@ async function mapChanged() {
       queriedCollectionsHeatmap = [];
       lastVisibleDocs = [];
       const zoom = map.getZoom().toString();
-      const labels = await convertLabelNameToLabelId(selectedLabels);
+      // const labels = await convertLabelNameToLabelId(selectedLabels);
       const precision = await queryDB.getPrecisionByZoom(zoom);
       if (arrayhash.length === 0) {
         const queriedCollection = queryDB.getQueriedCollection(
-          labels,
+          selectedLabels,
           selectedDate
         );
         //Check if it's the last request made. Ignores request otherwise.
@@ -127,7 +127,7 @@ async function mapChanged() {
       } else {
         arrayhash.forEach((hash: string) => {
           const queriedCollection = queryDB.getQueriedCollection(
-            labels,
+            selectedLabels,
             selectedDate,
             hash
           );
@@ -140,7 +140,7 @@ async function mapChanged() {
       if (USE_AGGREGATED_HEATMAP) {
         if (arrayhash.length === 0) {
           const queriedCollectionHeatmap = queryDB.getHeatmapQueriedCollection(
-            labels,
+            selectedLabels,
             precision
           );
           //Check if it's the last request made. Ignores request otherwise.
@@ -149,7 +149,7 @@ async function mapChanged() {
         } else {
           arrayhash.forEach((hash: string) => {
             const queriedCollectionHeatmap = queryDB.getHeatmapQueriedCollection(
-              labels,
+              selectedLabels,
               precision,
               hash
             );

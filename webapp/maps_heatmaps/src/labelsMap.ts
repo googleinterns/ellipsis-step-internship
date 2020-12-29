@@ -34,23 +34,11 @@ async function createLabelMap(): Promise<Map<any, any>> {
 
 /* This function converts from an array containing label ides 
 to an array containing the corresponding label names.*/
-export async function convertLabelIdToLabelName(idArray: Array<string>) {
+export async function convertLabelIdToLabelName(
+  idArray: Array<string>
+): Promise<string[]> {
   const labelMap: Map<any, any> = await LABELS_MAP;
   const labelArray: Array<string> = [];
   idArray.forEach((id) => labelArray.push(labelMap.get(id)));
-  console.log(labelArray);
   return labelArray;
-}
-
-/* This function converts from an array containing label names 
-to an array containing the corresponding label ides.*/
-export async function convertLabelNameToLabelId(labelArray: Array<string>) {
-  const labelMap: Map<any, any> = await LABELS_MAP;
-  const idArray: Array<string> = [];
-  labelArray.forEach((label) => {
-    for (const [key, value] of labelMap.entries()) {
-      if (value == label) idArray.push(key);
-    }
-  });
-  return idArray;
 }
