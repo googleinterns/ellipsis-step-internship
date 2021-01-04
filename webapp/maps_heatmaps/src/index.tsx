@@ -73,8 +73,9 @@ async function getLabelTags() {
 
 function initMap() {
   map = new google.maps.Map(document.getElementById("map") as HTMLElement, {
-    zoom: 13,
-    mapTypeId: "satellite",
+    zoom: 7,
+    minZoom: 3,
+    maxZoom: 15,
     mapTypeControlOptions: {
       style: google.maps.MapTypeControlStyle.HORIZONTAL_BAR,
       position: google.maps.ControlPosition.TOP_CENTER,

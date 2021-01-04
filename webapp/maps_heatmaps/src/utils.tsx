@@ -80,9 +80,59 @@ export function isInVisibleMap(
     const maxLng = northEast.lng();
     const minLat = southWest.lat();
     const minLng = southWest.lng();
-    return lat < maxLat && lat > minLat && lng < maxLng && lng > minLng;
+    if (minLat < maxLat && minLng < maxLng) {
+      //Current visible map's borders are valid.
+      return lat < maxLat && lat > minLat && lng < maxLng && lng > minLng;
+    }
+    if (minLng < maxLng) {
+      //Current visible map's top borders are more south then it's buttom borders.
+      //Longtitude is valid.
+      return (
+        lng < maxLng &&
+        lng > minLng &&
+        isInVisibleMapInvalidLatitude(minLat, maxLat, lat)
+      );
+    }
+    if (minLat < maxLat) {
+      //Current visible map's right borders are more west then it's left borders.
+      //Latitude is valid.
+      return (
+        lat < maxLat &&
+        lat > minLat &&
+        isInVisibleMapInvalidLongtitude(minLng, maxLng, lng)
+      );
+    }
+    // Current visible map's borders are invalid in both longtitude and latitude.
+    return (
+      isInVisibleMapInvalidLatitude(minLat, maxLat, lat) &&
+      isInVisibleMapInvalidLongtitude(minLng, maxLng, lng)
+    );
   }
   return true;
+}
+
+/*Checks if the point is in the visible map when the map's latitude borders are invalid. */
+function isInVisibleMapInvalidLatitude(
+  minLat: number,
+  maxLat: number,
+  pointLat: number
+): boolean {
+  return (
+    (pointLat < 90 && pointLat > minLat) ||
+    (pointLat < maxLat && pointLat > -90)
+  );
+}
+
+/*Checks if the point is in the visible map when the map's longtitude borders are invalid. */
+function isInVisibleMapInvalidLongtitude(
+  minLng: number,
+  maxLng: number,
+  pointLng: number
+): boolean {
+  return (
+    (pointLng < 180 && pointLng > minLng) ||
+    (pointLng < maxLng && pointLng > -180)
+  );
 }
 
 /*@return Coordinates of the point that is in the middle of the two given coordinates. */
