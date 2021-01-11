@@ -129,3 +129,17 @@ COLLECTION_REDEFINE_MAPS = 'RedefineMaps'
 # Type: map of String, string which maps label names to label ids
 # for the verifying labels pipeline.
 COLLECTION_REDEFINE_MAPS_FIELD_REDEFINE_MAP = 'redefineMap'
+
+COLLECTION_HEATMAP = 'Heatmap'
+
+COLLECTION_HEATMAP_SUBCOLLECTION_WEIGHTED_POINTS = 'WeightedPoints'
+# Constant field names:
+# Type: string, the unique label id.
+COLLECTION_HEATMAP_SUBCOLLECTION_WEIGHTED_POINTS_FIELD_LABEL_ID = 'labelId'
+# Type: geopoint, quantized coordinates.
+COLLECTION_HEATMAP_SUBCOLLECTION_WEIGHTED_POINTS_FIELD_COORDINATES =\
+  'coordinates'
+# Type: number, counts the number images represented by this point.
+COLLECTION_HEATMAP_SUBCOLLECTION_WEIGHTED_POINTS_FIELD_WEIGHT = 'weight'
+# Type: map of String, a string which is used for geographic query.
+COLLECTION_HEATMAP_SUBCOLLECTION_WEIGHTED_POINTS_FIELD_HASHMAP = 'hashmap'

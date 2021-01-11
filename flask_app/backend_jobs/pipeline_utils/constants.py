@@ -16,3 +16,8 @@
 RANGE_OF_BATCH = 0.1
 NUM_OF_BATCHES = 10
 LIST_FOR_BATCHES = [i for i in range(NUM_OF_BATCHES)]
+
+# The range of precisions that match Google Map's optional zoom levels.
+# Used for point keys for COLLECTION_HEATMAP.
+MIN_PRECISION = 4
+MAX_PRECISION = 11

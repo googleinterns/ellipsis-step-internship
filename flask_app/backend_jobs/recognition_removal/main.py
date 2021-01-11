@@ -35,7 +35,8 @@ from backend_jobs.pipeline_utils.utils import generate_cloud_dataflow_job_name, 
 from backend_jobs.pipeline_utils.firestore_database import store_pipeline_run,\
     update_pipeline_run_when_succeeded, update_pipeline_run_when_failed
 from backend_jobs.recognition_removal.pipeline_lib.firestore_database import\
-    GetAndDeleteBatchedLabelsDataset, UpdateLabelsInImageDocs, update_pipelinerun_doc_to_invisible
+    GetAndDeleteBatchedLabelsDataset, UpdateLabelsInImageDocs, update_pipelinerun_doc_to_invisible,\
+        UpdateHeatmapDatabase
 
 _PIPELINE_TYPE = 'recognition_removal'
 
@@ -107,8 +108,12 @@ def run(recognition_run=None, recognition_provider=None, output=None, run_locall
                 update_pipelinerun_doc_to_invisible(recognition_run)
             dataset_group_by_parent_image = dataset | 'group all labels by parent image' >>\
                 beam.GroupByKey()
+            deleted_point_keys = dataset_group_by_parent_image | 'update database and get point keys' >>\
+                beam.ParDo(UpdateLabelsInImageDocs())
+            deleted_point_keys_and_sum = deleted_point_keys | 'combine all point keys' >> \
+                    beam.CombinePerKey(sum)
             # pylint: disable=expression-not-assigned
-            dataset_group_by_parent_image | 'update database' >> beam.ParDo(UpdateLabelsInImageDocs())
+            deleted_point_keys_and_sum | 'update heatmap database' >> beam.ParDo(UpdateHeatmapDatabase())
 
             if output: # For testing.
                 # pylint: disable=expression-not-assigned
@@ -121,4 +126,5 @@ def run(recognition_run=None, recognition_provider=None, output=None, run_locall
 if __name__ == '__main__':
     logging.getLogger().setLevel(logging.INFO)
     args, pipeline_args = parse_arguments()
-    run(args.input_recognition_run_id, args.input_recognition_provider, args.output, run_locally=True)
+    run(args.input_recognition_run_id, args.input_recognition_provider, args.output,\
+        run_locally=True)
