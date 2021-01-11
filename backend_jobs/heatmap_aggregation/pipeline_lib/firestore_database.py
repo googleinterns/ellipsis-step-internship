@@ -16,10 +16,11 @@
 
 import apache_beam as beam
 from backend_jobs.pipeline_utils.firestore_database import initialize_db, RANGE_OF_BATCH
-from backend_jobs.pipeline_utils import database_schema
+from backend_jobs.pipeline_utils import database_schema, constants
 from backend_jobs.pipeline_utils.data_types import VisibilityType
-from backend_jobs.pipeline_utils.utils import get_quantize_coords_from_geohash,\
+from backend_jobs.pipeline_utils.utils import get_point_key,\
     add_point_key_to_heatmap_collection
+
 
 # pylint: disable=abstract-method
 class GetPointKeysByBatch(beam.DoFn):
@@ -64,9 +65,9 @@ class GetPointKeysByBatch(beam.DoFn):
             doc_dict = doc.to_dict()
             if database_schema.COLLECTION_IMAGES_FIELD_LABELS in doc_dict:
                 for label in doc_dict[database_schema.COLLECTION_IMAGES_FIELD_LABELS]:
-                    for precision in range(4, 12):
-                        point_key = (precision, label, get_quantize_coords_from_geohash(precision,\
-                            doc_dict[database_schema.COLLECTION_IMAGES_FIELD_HASHMAP]))
+                    for precision in range(constants.MIN_PRECISION, constants.MAX_PRECISION+1):
+                        point_key = get_point_key(precision, label,\
+                            doc_dict[database_schema.COLLECTION_IMAGES_FIELD_HASHMAP])
                         yield (point_key, 1)
 
 

@@ -16,9 +16,9 @@
 from itertools import chain
 import apache_beam as beam
 from backend_jobs.pipeline_utils.firestore_database import initialize_db, RANGE_OF_BATCH
-from backend_jobs.pipeline_utils import database_schema, data_types
+from backend_jobs.pipeline_utils import database_schema, data_types, constants
 from backend_jobs.pipeline_utils.utils import get_query_from_heatmap_collection,\
-    get_quantize_coords_from_geohash
+    get_point_key
 
 
 # pylint: disable=abstract-method
@@ -154,9 +154,8 @@ class UpdateLabelsInImageDocs(beam.DoFn):
                                     u'==', data_types.VisibilityType.VISIBLE.value)
             if len(query.get()) == 0: # No doc of the label id was found.
                 self._delete_label_id_from_labels_array(parent_image_ref, label_id)
-                for precision in range(4, 12): # Get point keys for next pipeline steps.
-                    point_key = (precision, label_id, get_quantize_coords_from_geohash(\
-                        precision, geohash_map))
+                for precision in range(constants.MIN_PRECISION, constants.MAX_PRECISION+1): # Get point keys for next pipeline steps.
+                    point_key = get_point_key(precision, label_id, geohash_map)
                     yield (point_key, 1)
             
     def _delete_label_id_from_labels_array(self, image_doc_ref, label_id):

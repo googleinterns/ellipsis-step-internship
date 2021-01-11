@@ -96,6 +96,13 @@ def get_quantize_coords_from_geohash(precision, geohash_map):
     lat, lng = geohash2.decode(geohash_map[precision_string])
     return (float(lat), float(lng))
 
+def get_point_key(precision, label_id, hashmap):
+    """ Returns a point key that matches the provided arguments.
+
+    """
+    return (precision, label_id, get_quantize_coords_from_geohash(\
+                        precision, hashmap))
+
 def get_query_from_heatmap_collection(db, label, quantized_coords):
     """ Returns a query from database_schema.COLLECTION_HEATMAP according to the arguments.
 

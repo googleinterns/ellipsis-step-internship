@@ -17,10 +17,10 @@
 import apache_beam as beam
 
 from backend_jobs.pipeline_utils.firestore_database import initialize_db, RANGE_OF_BATCH
-from backend_jobs.pipeline_utils import database_schema, data_types
+from backend_jobs.pipeline_utils import database_schema, data_types, constants
 from backend_jobs.recognition_pipeline.pipeline_lib.firestore_database import add_id_to_dict
 from backend_jobs.pipeline_utils.utils import get_query_from_heatmap_collection,\
-    get_quantize_coords_from_geohash, add_point_key_to_heatmap_collection
+    get_point_key, add_point_key_to_heatmap_collection
 
 # pylint: disable=abstract-method
 class GetBatchedLabelsDataset(beam.DoFn):
@@ -158,9 +158,8 @@ class UpdateDatabaseWithVisibleLabels(beam.DoFn):
         for label_id in label_ids:
             if label_id not in labels_array:
                 labels_array.append(label_id)
-                for precision in range(4, 12):
-                    point_key = (precision, label_id, \
-                    get_quantize_coords_from_geohash(precision, parent_image_hashmap))
+                for precision in range(constants.MIN_PRECISION, constants.MAX_PRECISION+1):
+                    point_key = get_point_key(precision, label_id, parent_image_hashmap)
                     yield (point_key, 1)
         image_doc_ref.update({
             database_schema.COLLECTION_IMAGES_FIELD_LABELS: labels_array
