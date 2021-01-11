@@ -1,2 +1,8 @@
-runtime: python37
+# Uses a custom runtime to allow to install packages (needed for DataFlow)
+# This is based on this tutorial and code:
+# http://amygdala.github.io/dataflow/app_engine/2017/04/14/gae_dataflow.html
+# also see:
+# https://cloud.google.com/appengine/docs/flexible/python/customizing-the-python-runtime
+runtime: custom
 instance_class: F4
+env: flex
