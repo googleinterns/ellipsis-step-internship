@@ -46,10 +46,13 @@ let selectedLabels: string[] = [];
 let selectedDate: DateTime = {};
 let timeOfLastRequest: number = Date.now();
 let queriedCollections: firebase.firestore.Query[];
+let queriedCollectionsHeatmap: firebase.firestore.Query[];
 let lastVisibleDocs: firebase.firestore.QueryDocumentSnapshot<
   firebase.firestore.DocumentData
 >[];
+
 const NUM_OF_IMAGES_AND_MARKERS = 20;
+const USE_AGGREGATED_HEATMAP = true;
 
 /*Gets all the different labels from the label Collection in firestore data base
  and adds them as options for label querying."*/
@@ -58,19 +61,21 @@ async function getLabelTags() {
   const labelTags: Array<{ value: string; label: string }> = [];
   labelsRef.forEach((doc) => {
     const name = doc.data().name;
-    labelTags.push({ value: name, label: name });
+    const id = doc.id;
+    labelTags.push({ value: id, label: name });
   });
   ReactDOM.render(
     <SidePanel labels={labelTags} />,
     document.querySelector("#root")
   );
-  selectedLabels = labelTags.map((x: Record<string, string>) => x.label);
+  selectedLabels = labelTags.map((x: Record<string, string>) => x.value);
 }
 
 function initMap() {
   map = new google.maps.Map(document.getElementById("map") as HTMLElement, {
-    zoom: 13,
-    mapTypeId: "satellite",
+    zoom: 7,
+    minZoom: 3,
+    maxZoom: 19,
     mapTypeControlOptions: {
       style: google.maps.MapTypeControlStyle.HORIZONTAL_BAR,
       position: google.maps.ControlPosition.TOP_CENTER,
@@ -79,7 +84,6 @@ function initMap() {
     center: { lat: 37.783371, lng: -122.439687 },
   });
   getLabelTags();
-
   heatmap = new google.maps.visualization.HeatmapLayer({
     data: [],
     map: map,
@@ -108,16 +112,18 @@ async function mapChanged() {
     //Check if it's the last request made. Ignores request otherwise.
     if (timeOfLastRequest === timeOfRequest) {
       queriedCollections = [];
+      queriedCollectionsHeatmap = [];
       lastVisibleDocs = [];
+      const zoom = map.getZoom().toString();
+      const precision = await queryDB.getPrecisionByZoom(zoom);
       if (arrayhash.length === 0) {
         const queriedCollection = queryDB.getQueriedCollection(
           selectedLabels,
           selectedDate
         );
         //Check if it's the last request made. Ignores request otherwise.
-        if (timeOfLastRequest === timeOfRequest) {
+        if (timeOfLastRequest === timeOfRequest)
           queriedCollections.push(queriedCollection);
-        }
       } else {
         arrayhash.forEach((hash: string) => {
           const queriedCollection = queryDB.getQueriedCollection(
@@ -126,12 +132,37 @@ async function mapChanged() {
             hash
           );
           //Check if it's the last request made. Ignores request otherwise.
-          if (timeOfLastRequest === timeOfRequest) {
+          if (timeOfLastRequest === timeOfRequest)
             queriedCollections.push(queriedCollection);
-          }
         });
       }
-      await queryDB.updateHeatmapFromQuery(heatmap, queriedCollections);
+      //If we use the aggregated Heatmap
+      if (USE_AGGREGATED_HEATMAP) {
+        if (arrayhash.length === 0) {
+          const queriedCollectionHeatmap = queryDB.getHeatmapQueriedCollection(
+            selectedLabels,
+            precision
+          );
+          //Check if it's the last request made. Ignores request otherwise.
+          if (timeOfLastRequest === timeOfRequest)
+            queriedCollectionsHeatmap.push(queriedCollectionHeatmap);
+        } else {
+          arrayhash.forEach((hash: string) => {
+            const queriedCollectionHeatmap = queryDB.getHeatmapQueriedCollection(
+              selectedLabels,
+              precision,
+              hash
+            );
+
+            if (timeOfLastRequest === timeOfRequest)
+              queriedCollectionsHeatmap.push(queriedCollectionHeatmap);
+          });
+        }
+        await queryDB.updateHeatmapFromQuery(
+          heatmap,
+          queriedCollectionsHeatmap
+        );
+      } else await queryDB.updateHeatmapFromQuery(heatmap, queriedCollections);
       updateImagesAndMarkers(true, timeOfRequest);
     }
   }
