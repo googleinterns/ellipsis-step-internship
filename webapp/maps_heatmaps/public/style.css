@@ -9,7 +9,6 @@
         padding: 5px 10px 6px;
         font-weight: bold;
         cursor: pointer;
-        width: 55px;
       }
       .sidepanel-image {
         max-width: 100%;
@@ -74,14 +73,14 @@
     position: fixed;
   }  
   .rootStyle {
-    width: 255px
+    width: 300px
   }
   .overlayStyle {
-    width: 255px
+    width: 300px
   }
   .sidebarStyle {
     background-color: rgba(255, 255, 255, 0.9);
-    width: 255px;
+    width: 300px;
     z-index: 5;
     position: fixed;
     overflow-y: unset !important;
@@ -108,8 +107,13 @@
 
   .btn {
     align-self: flex-end;
+    width: 55px;
   }
 
   .next-btn {
     margin: 0 5px 5px 0;
+    width: 55px;
   }
+
+  
+  

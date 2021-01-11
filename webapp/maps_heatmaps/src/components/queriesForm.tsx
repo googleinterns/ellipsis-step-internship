@@ -35,7 +35,7 @@ class QueriesForm extends React.Component<
   constructor(props: { data: Array<{ value: string; label: string }> }) {
     super(props);
     this.state = {
-      labels: this.props.data.map((x: Record<string, string>) => x.label),
+      labels: this.props.data.map((x: Record<string, string>) => x.value),
       year: undefined,
       month: undefined,
     };
@@ -45,7 +45,7 @@ class QueriesForm extends React.Component<
     if (selectedOption && selectedOption.length > 0) {
       this.setState(
         {
-          labels: selectedOption.map((x: Record<string, string>) => x.label),
+          labels: selectedOption.map((x: Record<string, string>) => x.value),
         },
         () => {
           queriesChanged(this.state);
@@ -56,7 +56,7 @@ class QueriesForm extends React.Component<
     } else {
       this.setState(
         {
-          labels: this.props.data.map((x: Record<string, string>) => x.label),
+          labels: this.props.data.map((x: Record<string, string>) => x.value),
         },
         () => {
           queriesChanged(this.state);

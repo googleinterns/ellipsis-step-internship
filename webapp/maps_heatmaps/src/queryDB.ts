@@ -21,10 +21,44 @@ import * as firebase from "firebase";
 import { DateTime } from "./interface";
 
 const databaseCollection = database.collection("Images");
+const heatmapDatabaseCollection = database.collection("Heatmap");
+
+/* This function gets a precision by the maps zoom level*/
+async function getPrecisionByZoom(zoom: string) {
+  const docId = "zoom" + zoom;
+  const doc = (
+    await database.collection("Zoom2precision").doc(docId).get()
+  ).data();
+  if (doc != undefined) return doc.precision;
+  return undefined;
+}
 
 /* This function gets a document by its id*/
 async function getDocById(id: string) {
   return (await database.collection("Images").doc(id).get()).data();
+}
+
+/* Queries for docs in firebase by a given label, precision and hash. 
+   the function returns a reference to the queried data.
+   @param label The label we queries by
+   @param precision The precision of the hash we queries by
+   @param hash The hash of the current map bounderies
+   @return The filtered collection by the different queries*/
+function getHeatmapQueriedCollection(
+  labels: string[],
+  precision: string,
+  hash?: string
+): firebase.firestore.Query {
+  const docId = "precision" + precision;
+  let dataRef = heatmapDatabaseCollection
+    .doc(docId)
+    .collection("WeightedPoints")
+    .where("labelId", "in", labels);
+  if (hash != undefined) {
+    const hashfield: string = "hashmap.hash" + hash.length;
+    dataRef = dataRef.where(hashfield, "==", hash);
+  }
+  return dataRef;
 }
 
 /* Queries for docs in firebase by given data such as labels, date and hash. 
@@ -67,13 +101,20 @@ async function updateHeatmapFromQuery(
   heatmap: google.maps.visualization.HeatmapLayer,
   dataRefs: firebase.firestore.Query[]
 ): Promise<void> {
-  const allPoints: Array<google.maps.LatLng> = [];
+  const allPoints: Array<{
+    location: google.maps.LatLng;
+    weight: number;
+  }> = [];
   for (const dataRef of dataRefs) {
     const docs = (await dataRef.get()).docs;
     for (const doc of docs) {
+      const weight = doc.data().weight;
       const coordinates = doc.data().coordinates;
       const newLatLon = getLatLon(coordinates);
-      allPoints.push(newLatLon);
+      allPoints.push({
+        location: newLatLon,
+        weight: weight,
+      });
     }
   }
   heatmap.setData(allPoints);
@@ -85,4 +126,10 @@ function getLatLon(coordinates: firebase.firestore.GeoPoint) {
   return new google.maps.LatLng(lat, lng);
 }
 
-export { updateHeatmapFromQuery, getQueriedCollection, getDocById };
+export {
+  updateHeatmapFromQuery,
+  getQueriedCollection,
+  getHeatmapQueriedCollection,
+  getPrecisionByZoom,
+  getDocById,
+};
