@@ -122,6 +122,7 @@ def run(input_provider_name, input_provider_args=None, output_name=None, run_loc
             job_name=job_name,
             temp_location='gs://demo-bucket-step/temp',
             region='europe-west2',
+            setup_file='./setup.py',
         )
     store_pipeline_run(job_name, image_provider.provider_id)
     try:
