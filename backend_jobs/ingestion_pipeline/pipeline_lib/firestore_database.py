@@ -17,11 +17,11 @@
 from datetime import datetime
 import random
 import apache_beam
-import geohash2
 from google.cloud import firestore
 from backend_jobs.pipeline_utils import firestore_database
 from backend_jobs.pipeline_utils import database_schema
 from backend_jobs.pipeline_utils.data_types import VisibilityType
+from backend_jobs.pipeline_utils.utils import get_geo_hashes_map
 
 
 class AddOrUpdateImageDoFn(apache_beam.DoFn):
@@ -59,7 +59,7 @@ class AddOrUpdateImageDoFn(apache_beam.DoFn):
 
 def _add_document(element, provider, job_name, doc_ref):
     geo_point_coordinates = firestore.GeoPoint(element.latitude, element.longitude)
-    geo_hashes_map = _get_geo_hashes_map(element.latitude, element.longitude)
+    geo_hashes_map = get_geo_hashes_map(element.latitude, element.longitude)
     doc_ref.set({
         database_schema.COLLECTION_IMAGES_FIELD_URL: element.url,
         database_schema.COLLECTION_IMAGES_FIELD_INGESTED_PROVIDERS: [provider.provider_id],
@@ -99,7 +99,7 @@ def _update_document(provider, doc, doc_ref, job_name):
 
 
 def _update_sub_collection(element, provider, job_name, sub_collection_doc_ref):
-    geo_hashes_map = _get_geo_hashes_map(element.latitude, element.longitude)
+    geo_hashes_map = get_geo_hashes_map(element.latitude, element.longitude)
     sub_collection_doc_ref.set({
         database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS_FIELD_PROVIDER_ID:
             provider.provider_id,
@@ -116,24 +116,6 @@ def _update_sub_collection(element, provider, job_name, sub_collection_doc_ref):
         database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS_FIELD_PARENT_IMAGE_ID:
             element.image_id
     })
-
-
-def _get_geo_hashes_map(latitude, longitude):
-    """ This function, given a coordinates (lat,long), calculates the geohash
-    and builds a map containing a geohash in different lengths.
-
-    Args:
-        coordinates: Coordinates in the format {'latitude': float, 'longitude': float}.
-
-    Returns:
-        A dict contaning geohash in all the diffrent lengths
-        e.g.: {'hash1':'d', 'hash2':'dp', 'hash3':'dph', ... 'hash10':'dph1qz7y88',}.
-    """
-    geo_hashes_map = {}
-    geohash = geohash2.encode(latitude, longitude)
-    for i in range(1, 11):
-        geo_hashes_map['hash' + str(i)] = geohash[0:i]
-    return geo_hashes_map
 
 
 def _get_date_fields(date):
