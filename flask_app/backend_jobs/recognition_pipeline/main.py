@@ -90,6 +90,7 @@ def run(recognition_provider_name, ingestion_run=None, ingestion_provider=None, 
     if run_locally:
         pipeline_options = PipelineOptions()
     else:
+        output_name = 'gs://demo-bucket-step/results/outputs'
         pipeline_options = PipelineOptions(
             flags=None,
             runner='DataflowRunner',
@@ -97,6 +98,7 @@ def run(recognition_provider_name, ingestion_run=None, ingestion_provider=None, 
             job_name=job_name,
             temp_location='gs://demo-bucket-step/temp',
             region='europe-west2',
+            setup_file='./setup.py',
         )
     store_pipeline_run(job_name, recognition_provider.provider_id)
     try:

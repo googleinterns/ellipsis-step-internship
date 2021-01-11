@@ -115,6 +115,7 @@ def run(input_provider_name, input_provider_args=None, output_name=None, run_loc
     if run_locally:
         pipeline_options = PipelineOptions()
     else:
+        output_name = 'gs://demo-bucket-step/results/outputs'
         pipeline_options = PipelineOptions(
             flags=None,
             runner='DataflowRunner',
@@ -132,7 +133,7 @@ def run(input_provider_name, input_provider_args=None, output_name=None, run_loc
 
             num_of_pages = image_provider.get_num_of_pages()
             create_batch = pipeline | 'create' >> \
-                apache_beam.Create([i for i in range(1, int(num_of_pages)+1)])
+                apache_beam.Create([i for i in range(1, int(15)+1)])
             images = create_batch | 'call API' >> \
                 apache_beam.ParDo(image_provider.get_images)
             extracted_elements = images | 'extract attributes' >> \
