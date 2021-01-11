@@ -32,7 +32,7 @@ async function createLabelMap(): Promise<Map<any, any>> {
   return labelMap;
 }
 
-/* This function converts from an array containing label ides 
+/* This function converts from an array containing label IDs 
 to an array containing the corresponding label names.*/
 export async function convertLabelIdToLabelName(
   idArray: Array<string>

@@ -75,7 +75,7 @@ function initMap() {
   map = new google.maps.Map(document.getElementById("map") as HTMLElement, {
     zoom: 7,
     minZoom: 3,
-    maxZoom: 15,
+    maxZoom: 19,
     mapTypeControlOptions: {
       style: google.maps.MapTypeControlStyle.HORIZONTAL_BAR,
       position: google.maps.ControlPosition.TOP_CENTER,
@@ -115,7 +115,6 @@ async function mapChanged() {
       queriedCollectionsHeatmap = [];
       lastVisibleDocs = [];
       const zoom = map.getZoom().toString();
-      // const labels = await convertLabelNameToLabelId(selectedLabels);
       const precision = await queryDB.getPrecisionByZoom(zoom);
       if (arrayhash.length === 0) {
         const queriedCollection = queryDB.getQueriedCollection(
