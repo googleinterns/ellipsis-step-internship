@@ -11,6 +11,11 @@
   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
   See the License for the specific language governing permissions and
   limitations under the License.
+
+  A flask app for the project's admins for running all backend pipelines.
+
+  The app includes a page for each pipeline with it's specific arguments and
+  a log of recent pipeline runs of all different pipelines and statuses.
  """
 from threading import Thread
 from flask import Flask, request, render_template
@@ -96,6 +101,9 @@ def recognition_removal_page():
 
 @app.route('/submit_all_pipeline', methods=['POST'])
 def submit_all_pipelines_page():
+    """ Presents all latest pipeline runs logs of the requested status.
+    The status can be either STARTED, SUCCEEDED or FAILED
+    """
     status_type = request.form['status_type']
     my_objects = get_latest_runs(status_type)
     return render_template('all_pipelines.html', my_objects=my_objects)
@@ -122,7 +130,7 @@ def submit_recognition():
             'output_name': _TEST_OUTPUT,
             'run_locally': _RUN_LOCALLY})
         thread.start()
-    return render_template('index.html')
+    return render_template('all_pipelines.html')
 
 
 @app.route('/submit_ingestion', methods=['POST'])
@@ -137,12 +145,7 @@ def submit_ingestion():
         'output_name': _TEST_OUTPUT,
         'run_locally': _RUN_LOCALLY})
     thread.start()
-    # return str(run_ingestion_pipeline(
-    #     input_provider_name=input_value,
-    #     input_provider_args=input_provider_args,
-    #     output_name=_TEST_OUTPUT,
-    #     run_locally=_RUN_LOCALLY))
-    return render_template('index.html')
+    return render_template('all_pipelines.html')
 
 
 @app.route('/submit_recognition_verification', methods=['POST'])
@@ -155,7 +158,7 @@ def submit_recognition_verification():
         'output': _TEST_OUTPUT,
         'run_locally': _RUN_LOCALLY})
     thread.start()
-    return render_template('index.html')
+    return render_template('all_pipelines.html')
 
 
 @app.route('/submit_ingestion_verification', methods=['POST'])
@@ -177,7 +180,7 @@ def submit_ingestion_verification():
             'input_visibility': input_visibility,
             'run_locally': _RUN_LOCALLY})
         thread.start()
-    return render_template('index.html')
+    return render_template('all_pipelines.html')
 
 
 @app.route('/submit_recognition_removal', methods=['POST'])
@@ -198,7 +201,7 @@ def submit_recognition_removal():
             'output': _TEST_OUTPUT,
             'run_locally': _RUN_LOCALLY})
         thread.start()
-    return render_template('index.html')
+    return render_template('all_pipelines.html')
 
 
 @app.route('/submit_ingestion_removal', methods=['POST'])
@@ -217,7 +220,7 @@ def submit_ingestion_removal():
             'input_pipeline_run': input_value,
             'run_locally': _RUN_LOCALLY})
         thread.start()
-    return render_template('index.html')
+    return render_template('all_pipelines.html')
 
 
 if __name__ == '__main__':
