@@ -31,10 +31,10 @@ from backend_jobs.ingestion_removal.pipeline_lib.remove_by_pipeline_run import\
 from backend_jobs.ingestion_removal.pipeline_lib.remove_by_provider import\
     IngestionRemovalByProvider
 from backend_jobs.pipeline_utils.firestore_database import store_pipeline_run,\
-    update_pipeline_run_when_failed, update_pipeline_run_when_succeeded
+    update_pipeline_run_when_failed, update_pipeline_run_when_succeeded,\
+        UpdateHeatmapDatabaseAfterRemoval
 from backend_jobs.pipeline_utils.utils import generate_cloud_dataflow_job_name
 from backend_jobs.pipeline_utils import constants
-
 
 _PIPELINE_TYPE = 'ingestion_removal'
 
@@ -107,8 +107,13 @@ def run(input_image_provider=None, input_pipeline_run=None, run_locally=False):
                 beam.GroupByKey()
             updated_images = dataset_group_by_parent_image | 'update database' >>\
                 beam.ParDo(removal_pipeline.update_arrays_in_image_docs, remove_by_arg)
-            updated_images | 'remove doc if necessary' >>\
+            deleted_point_keys = updated_images | 'remove doc if necessary and get point keys to delete from heatmap' >>\
                 beam.Map(removal_pipeline.remove_image_doc_if_necessary)
+            deleted_point_keys_and_sum = deleted_point_keys | 'combine all point keys' >> \
+                beam.CombinePerKey(sum)
+            # pylint: disable=expression-not-assigned
+            deleted_point_keys_and_sum | 'update heatmap database' >> beam.ParDo(UpdateHeatmapDatabaseAfterRemoval())
+
         update_pipeline_run_when_succeeded(job_name)
     except:
         update_pipeline_run_when_failed(job_name)

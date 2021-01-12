@@ -19,8 +19,7 @@ import apache_beam as beam
 from backend_jobs.pipeline_utils.firestore_database import initialize_db, RANGE_OF_BATCH
 from backend_jobs.pipeline_utils import database_schema, data_types, constants
 from backend_jobs.recognition_pipeline.pipeline_lib.firestore_database import add_id_to_dict
-from backend_jobs.pipeline_utils.utils import get_query_from_heatmap_collection,\
-    get_point_key, add_point_key_to_heatmap_collection
+from backend_jobs.pipeline_utils.utils import get_point_key
 
 # pylint: disable=abstract-method
 class GetBatchedLabelsDataset(beam.DoFn):
@@ -164,51 +163,6 @@ class UpdateDatabaseWithVisibleLabels(beam.DoFn):
         image_doc_ref.update({
             database_schema.COLLECTION_IMAGES_FIELD_LABELS: labels_array
         })
-
-class UpdateHeatmapDatabase(beam.DoFn):
-    """Updates the database_schema.COLLECTION_HEATMAP to include
-       the new verified labels.
-
-       Input: (point key, count)
-
-    """
-    def setup(self):
-        # pylint: disable=attribute-defined-outside-init
-        self.db = initialize_db()
-
-    # pylint: disable=arguments-differ
-    def process(self, point_key_and_count):
-        """ Queries the Firestore database after combining all point keys
-        and updates accordingly. If a similar point key was found, count is added
-        to it's weight. If not, a new weighted point is created in the database.
-            
-
-        Args:
-            point_key_and_count: (point_key, count).
-                point_key: (precision, label, quantized_coordinates).
-                count: the weight of each point key.
-
-        """
-        point_key = point_key_and_count[0]
-        count = point_key_and_count[1]
-        precision = point_key[0]
-        label = point_key[1]
-        quantized_coords = point_key[2]
-        query = get_query_from_heatmap_collection(self.db, label, quantized_coords)
-        query_empty = True
-        for doc in query:
-            query_empty = False
-            doc_dict = doc.to_dict()
-            weight = doc_dict[database_schema.\
-                        COLLECTION_HEATMAP_SUBCOLLECTION_WEIGHTED_POINTS_FIELD_WEIGHT]
-            weight += count
-            doc.reference.update({
-                database_schema.\
-                    COLLECTION_HEATMAP_SUBCOLLECTION_WEIGHTED_POINTS_FIELD_WEIGHT: weight,
-            })
-        if query_empty: # Need to add a new weighted point.
-            add_point_key_to_heatmap_collection(self.db, quantized_coords, precision,\
-                label, count)
 
 def update_pipelinerun_doc_to_visible(pipeline_run_id):
     """ Updates the pipeline run's document in the Pipeline runs Firestore collection

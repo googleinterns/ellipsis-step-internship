@@ -13,11 +13,15 @@
   limitations under the License.
 """
 import firebase_admin
+import apache_beam as beam
 from firebase_admin import credentials
 from firebase_admin import firestore
 from backend_jobs.pipeline_utils import database_schema
 from backend_jobs.pipeline_utils.data_types import VisibilityType, PipelineRunStatus
 from datetime import datetime
+from backend_jobs.pipeline_utils.utils import get_query_from_heatmap_collection,\
+    add_point_key_to_heatmap_collection
+
 
 _PROJECT_ID_NAME = 'step-project-ellispis'
 _PROJECT_ID = 'projectId'
@@ -102,3 +106,90 @@ def add_id_to_dict(doc):
     full_dict = doc.to_dict()
     full_dict['id'] = doc.id
     return full_dict
+
+class UpdateHeatmapDatabaseAfterRemoval(beam.DoFn):
+    """Updates the database_schema.COLLECTION_HEATMAP to not include
+       the removed labels.
+
+       Input: (point key, count)
+
+    """
+    def setup(self):
+        # pylint: disable=attribute-defined-outside-init
+        self.db = initialize_db()
+
+    # pylint: disable=arguments-differ
+    def process(self, point_key_and_count):
+        """ Queries the Firestore database after combining all point keys
+        and updates accordingly. If count == current weight, the weighted point's
+        doc will be deleted. If not, count will be decreased from weight.
+            
+
+        Args:
+            point_key_and_count: (point_key, count).
+                point_key: (precision, label, quantized_coordinates).
+                count: the weight of each deleted point key.
+
+        """
+        point_key = point_key_and_count[0]
+        count = point_key_and_count[1]
+        label = point_key[1]
+        quantized_coords = point_key[2]
+        query = get_query_from_heatmap_collection(self.db, label, quantized_coords)
+        for doc in query:
+            doc_dict = doc.to_dict()
+            point_weight = doc_dict[\
+                database_schema.COLLECTION_HEATMAP_SUBCOLLECTION_WEIGHTED_POINTS_FIELD_WEIGHT]
+            if point_weight == count:
+                doc.reference.delete()
+            else:
+                point_weight -= count
+                doc.reference.update({
+                    database_schema.COLLECTION_HEATMAP_SUBCOLLECTION_WEIGHTED_POINTS_FIELD_WEIGHT:\
+                        point_weight,
+                    })
+
+class UpdateHeatmapDatabaseAfterVerification(beam.DoFn):
+    """Updates the database_schema.COLLECTION_HEATMAP to include
+       the new verified labels.
+
+       Input: (point key, count)
+
+    """
+    def setup(self):
+        # pylint: disable=attribute-defined-outside-init
+        self.db = initialize_db()
+
+    # pylint: disable=arguments-differ
+    def process(self, point_key_and_count):
+        """ Queries the Firestore database after combining all point keys
+        and updates accordingly. If a similar point key was found, count is added
+        to it's weight. If not, a new weighted point is created in the database.
+            
+
+        Args:
+            point_key_and_count: (point_key, count).
+                point_key: (precision, label, quantized_coordinates).
+                count: the weight of each point key.
+
+        """
+        point_key = point_key_and_count[0]
+        count = point_key_and_count[1]
+        precision = point_key[0]
+        label = point_key[1]
+        quantized_coords = point_key[2]
+        query = get_query_from_heatmap_collection(self.db, label, quantized_coords)
+        query_empty = True
+        for doc in query:
+            query_empty = False
+            doc_dict = doc.to_dict()
+            weight = doc_dict[database_schema.\
+                        COLLECTION_HEATMAP_SUBCOLLECTION_WEIGHTED_POINTS_FIELD_WEIGHT]
+            weight += count
+            doc.reference.update({
+                database_schema.\
+                    COLLECTION_HEATMAP_SUBCOLLECTION_WEIGHTED_POINTS_FIELD_WEIGHT: weight,
+            })
+        if query_empty: # Need to add a new weighted point.
+            add_point_key_to_heatmap_collection(self.db, quantized_coords, precision,\
+                label, count)

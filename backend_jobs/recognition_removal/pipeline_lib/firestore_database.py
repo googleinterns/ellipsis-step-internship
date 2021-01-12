@@ -17,8 +17,7 @@ from itertools import chain
 import apache_beam as beam
 from backend_jobs.pipeline_utils.firestore_database import initialize_db, RANGE_OF_BATCH
 from backend_jobs.pipeline_utils import database_schema, data_types, constants
-from backend_jobs.pipeline_utils.utils import get_query_from_heatmap_collection,\
-    get_point_key
+from backend_jobs.pipeline_utils.utils import get_point_key
 
 
 # pylint: disable=abstract-method
@@ -166,48 +165,6 @@ class UpdateLabelsInImageDocs(beam.DoFn):
         image_doc_ref.update({
             database_schema.COLLECTION_IMAGES_FIELD_LABELS: labels_array
         })
-
-class UpdateHeatmapDatabase(beam.DoFn):
-    """Updates the database_schema.COLLECTION_HEATMAP to not include
-       the removed labels.
-
-       Input: (point key, count)
-
-    """
-    def setup(self):
-        # pylint: disable=attribute-defined-outside-init
-        self.db = initialize_db()
-
-    # pylint: disable=arguments-differ
-    def process(self, point_key_and_count):
-        """ Queries the Firestore database after combining all point keys
-        and updates accordingly. If count == current weight, the weighted point's
-        doc will be deleted. If not, count will be decreased from weight.
-            
-
-        Args:
-            point_key_and_count: (point_key, count).
-                point_key: (precision, label, quantized_coordinates).
-                count: the weight of each deleted point key.
-
-        """
-        point_key = point_key_and_count[0]
-        count = point_key_and_count[1]
-        label = point_key[1]
-        quantized_coords = point_key[2]
-        query = get_query_from_heatmap_collection(self.db, label, quantized_coords)
-        for doc in query:
-            doc_dict = doc.to_dict()
-            point_weight = doc_dict[\
-                database_schema.COLLECTION_HEATMAP_SUBCOLLECTION_WEIGHTED_POINTS_FIELD_WEIGHT]
-            if point_weight == count:
-                doc.reference.delete()
-            else:
-                point_weight -= count
-                doc.reference.update({
-                    database_schema.COLLECTION_HEATMAP_SUBCOLLECTION_WEIGHTED_POINTS_FIELD_WEIGHT:\
-                        point_weight,
-                    })
 
 def union(list_of_lists):
     """ Returns a list which is the union of all lists in
