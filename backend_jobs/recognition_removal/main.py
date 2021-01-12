@@ -35,8 +35,8 @@ from backend_jobs.pipeline_utils.utils import generate_cloud_dataflow_job_name, 
 from backend_jobs.pipeline_utils.firestore_database import store_pipeline_run,\
     update_pipeline_run_when_succeeded, update_pipeline_run_when_failed
 from backend_jobs.recognition_removal.pipeline_lib.firestore_database import\
-    GetAndDeleteBatchedLabelsDataset, UpdateLabelsInImageDocs, update_pipelinerun_doc_to_invisible,\
-        UpdateHeatmapDatabase
+    GetAndDeleteBatchedLabelsDataset, UpdateLabelsInImageDocs, update_pipelinerun_doc_to_invisible
+from backend_jobs.pipeline_utils.firestore_database import UpdateHeatmapDatabaseAfterRemoval
 
 _PIPELINE_TYPE = 'recognition_removal'
 
@@ -113,7 +113,7 @@ def run(recognition_run=None, recognition_provider=None, output=None, run_locall
             deleted_point_keys_and_sum = deleted_point_keys | 'combine all point keys' >> \
                     beam.CombinePerKey(sum)
             # pylint: disable=expression-not-assigned
-            deleted_point_keys_and_sum | 'update heatmap database' >> beam.ParDo(UpdateHeatmapDatabase())
+            deleted_point_keys_and_sum | 'update heatmap database' >> beam.ParDo(UpdateHeatmapDatabaseAfterRemoval())
 
             if output: # For testing.
                 # pylint: disable=expression-not-assigned
