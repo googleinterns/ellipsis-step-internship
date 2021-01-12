@@ -96,6 +96,7 @@ def run(input_image_provider=None, input_pipeline_run=None, run_locally=False):
             job_name=job_name,
             temp_location='gs://demo-bucket-step/temp',
             region='europe-west2',
+            setup_file='./setup.py',
         )
     store_pipeline_run(job_name)
     try:

@@ -76,6 +76,7 @@ def run(recognition_run, output=None, run_locally=False):
     if run_locally:
         pipeline_options = PipelineOptions()
     else:
+        output = 'gs://demo-bucket-step/results/outputs'
         pipeline_options = PipelineOptions(
             flags=None,
             runner='DataflowRunner',
@@ -83,6 +84,7 @@ def run(recognition_run, output=None, run_locally=False):
             job_name=job_name,
             temp_location='gs://demo-bucket-step/temp',
             region='europe-west2',
+            setup_file='./setup.py',
         )
     store_pipeline_run(job_name)
     try:
