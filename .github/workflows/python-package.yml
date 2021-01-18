@@ -38,7 +38,7 @@ jobs:
         python-version: [3.7]
     defaults:
       run:
-        working-directory: backend_jobs/ingestion_pipeline
+        working-directory: flask_app/backend_jobs/ingestion_pipeline
     steps:
     - uses: actions/checkout@v2
     - name: Set up Python ${{ matrix.python-version }}
@@ -62,7 +62,7 @@ jobs:
         python-version: [3.7]
     defaults:
       run:
-        working-directory: backend_jobs/recognition_pipeline
+        working-directory: flask_app/backend_jobs/recognition_pipeline
     steps:
     - uses: actions/checkout@v2
     - name: Set up Python ${{ matrix.python-version }}
