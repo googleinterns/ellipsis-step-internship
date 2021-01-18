@@ -45,6 +45,15 @@ class ImageProvider(ABC, apache_beam.DoFn):
             Number of pages.
         """
 
+
+    @abstractmethod
+    def get_num_of_images(self):
+        """ This function is in charge of calculating the amount of images.
+
+        Returns:
+            Number of images.
+        """
+
     @abstractmethod
     def get_image_attributes(self, element):
         """ This function is in charge of extracting the metadata from each image.

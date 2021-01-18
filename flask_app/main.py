@@ -59,6 +59,12 @@ def get_latest_runs(status):
     return [doc.to_dict() for doc in query]
 
 
+def run_pipeline(target, kwargs):
+    thread = Thread(target=target, kwargs=kwargs)
+    thread.start()
+    return all_pipelines_page()
+
+
 @app.route('/')
 def home_page():
     return render_template('index.html')
@@ -116,21 +122,16 @@ def submit_recognition():
     input_type = request.form['input_type']
     input_value = request.form['input_value']
     input_recognition_provider = request.form['recognition_provider']
+    target = run_recognition_pipeline
+    kwargs = {
+        'recognition_provider_name': input_recognition_provider,
+        'output_name': _TEST_OUTPUT,
+        'run_locally': _RUN_LOCALLY}
     if input_type == _INPUT_TYPE_PROVIDER:
-        thread = Thread(target=run_recognition_pipeline, kwargs={
-            'recognition_provider_name': input_recognition_provider,
-            'ingestion_provider': input_value,
-            'output_name': _TEST_OUTPUT,
-            'run_locally': _RUN_LOCALLY})
-        thread.start()
+        kwargs['ingestion_provider'] = input_value
     else:
-        thread = Thread(target=run_recognition_pipeline, kwargs={
-            'recognition_provider_name': input_recognition_provider,
-            'ingestion_run': input_value,
-            'output_name': _TEST_OUTPUT,
-            'run_locally': _RUN_LOCALLY})
-        thread.start()
-    return render_template('all_pipelines.html')
+        kwargs['ingestion_run'] = input_value
+    return run_pipeline(target, kwargs)
 
 
 @app.route('/submit_ingestion', methods=['POST'])
@@ -139,13 +140,13 @@ def submit_ingestion():
     """
     input_value = request.form['input_value']
     input_provider_args = request.form['arguments']
-    thread = Thread(target=run_ingestion_pipeline, kwargs={
+    target = run_ingestion_pipeline
+    kwargs = {
         'input_provider_name': input_value,
         'input_provider_args': input_provider_args,
         'output_name': _TEST_OUTPUT,
-        'run_locally': _RUN_LOCALLY})
-    thread.start()
-    return render_template('all_pipelines.html')
+        'run_locally': _RUN_LOCALLY}
+    return run_pipeline(target, kwargs)
 
 
 @app.route('/submit_recognition_verification', methods=['POST'])
@@ -153,12 +154,12 @@ def submit_recognition_verification():
     """ This function creates a thread to run the recognition verification pipeline.
     """
     input_value = request.form['input_value']
-    thread = Thread(target=run_recognition_verification, kwargs={
+    target = run_recognition_verification
+    kwargs = {
         'recognition_run': input_value,
         'output': _TEST_OUTPUT,
-        'run_locally': _RUN_LOCALLY})
-    thread.start()
-    return render_template('all_pipelines.html')
+        'run_locally': _RUN_LOCALLY}
+    return run_pipeline(target, kwargs)
 
 
 @app.route('/submit_ingestion_verification', methods=['POST'])
@@ -168,19 +169,13 @@ def submit_ingestion_verification():
     input_type = request.form['input_type']
     input_value = request.form['input_value']
     input_visibility = request.form['visibility_type']
+    target = run_ingestion_verification
+    kwargs = {'input_visibility': input_visibility, 'run_locally': _RUN_LOCALLY}
     if input_type == _INPUT_TYPE_PROVIDER:
-        thread = Thread(target=run_ingestion_verification, kwargs={
-            'input_image_provider': input_value,
-            'input_visibility': input_visibility,
-            'run_locally': _RUN_LOCALLY})
-        thread.start()
+        kwargs['input_image_provider'] = input_value
     else:
-        thread = Thread(target=run_ingestion_verification, kwargs={
-            'input_pipeline_run': input_value,
-            'input_visibility': input_visibility,
-            'run_locally': _RUN_LOCALLY})
-        thread.start()
-    return render_template('all_pipelines.html')
+        kwargs['input_pipeline_run'] = input_value
+    return run_pipeline(target, kwargs)
 
 
 @app.route('/submit_recognition_removal', methods=['POST'])
@@ -189,19 +184,13 @@ def submit_recognition_removal():
     """
     input_type = request.form['input_type']
     input_value = request.form['input_value']
+    target = run_recognition_removal
+    kwargs = {'output': _TEST_OUTPUT, 'run_locally': _RUN_LOCALLY}
     if input_type == _INPUT_TYPE_PROVIDER:
-        thread = Thread(target=run_recognition_removal, kwargs={
-            'recognition_provider': input_value,
-            'output': _TEST_OUTPUT,
-            'run_locally': _RUN_LOCALLY})
-        thread.start()
+        kwargs['recognition_provider'] = input_value
     else:
-        thread = Thread(target=run_recognition_removal, kwargs={
-            'recognition_run': input_value,
-            'output': _TEST_OUTPUT,
-            'run_locally': _RUN_LOCALLY})
-        thread.start()
-    return render_template('all_pipelines.html')
+        kwargs['recognition_run'] = input_value
+    return run_pipeline(target, kwargs)
 
 
 @app.route('/submit_ingestion_removal', methods=['POST'])
@@ -210,17 +199,13 @@ def submit_ingestion_removal():
     """
     input_type = request.form['input_type']
     input_value = request.form['input_value']
+    target = run_ingestion_removal
+    kwargs = {'run_locally': _RUN_LOCALLY}
     if input_type == _INPUT_TYPE_PROVIDER:
-        thread = Thread(target=run_ingestion_removal, kwargs={
-            'input_image_provider': input_value,
-            'run_locally': _RUN_LOCALLY})
-        thread.start()
+        kwargs['input_image_provider'] = input_value
     else:
-        thread = Thread(target=run_ingestion_removal, kwargs={
-            'input_pipeline_run': input_value,
-            'run_locally': _RUN_LOCALLY})
-        thread.start()
-    return render_template('all_pipelines.html')
+        kwargs['input_pipeline_run'] = input_value
+    return run_pipeline(target, kwargs)
 
 
 if __name__ == '__main__':
