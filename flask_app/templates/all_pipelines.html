@@ -32,6 +32,8 @@
             <th>endDate</th>
             <th>status</th>
             <th>visibility</th>
+            <th>processedImages</th>
+            <th>uploadedImages</th>
         </tr>
         </thead>
         <tbody>
@@ -43,8 +45,22 @@
             <td>{{ ob['endDate'] }}</td>
             <td>{{ ob['status'] }}</td>
             <td>{{ ob['visibility'] }}</td>
+            <td>{{ ob['processedImages'] }}</td>
+            <td>{{ ob['uploadedImages'] }}</td>
         </tr>
         {% endfor %}
         </tbody>
     </table>
+    <h1> for more information:</h1>
+    <p> Dataflow page- 
+        <a href="https://pantheon.corp.google.com/dataflow/jobs?project=step-project-ellispis">
+            https://pantheon.corp.google.com/dataflow/jobs?project=step-project-ellispis
+        </a>
+    </p>
+    <p> Firestore page-
+        <a href="https://pantheon.corp.google.com/firestore/data/PipelineRuns?project=step-project-ellispis">
+            https://pantheon.corp.google.com/firestore/data/PipelineRuns?project=step-project-ellispis
+        </a> 
+    </p>
+
 </body>

@@ -55,6 +55,10 @@ class FlickrProvider(ImageProvider):
         photos = self.get_images(1)
         return int(photos.attrib['pages'])
 
+    def get_num_of_images(self):
+        photos = self.get_images(1)
+        return int(photos.attrib['total'])
+
     def get_image_attributes(self, element):
         image_attributes = ImageAttributes(
             url=element.get('url_o'),

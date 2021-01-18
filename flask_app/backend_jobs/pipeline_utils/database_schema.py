@@ -76,6 +76,10 @@ COLLECTION_PIPELINE_RUNS_FIELD_STATUS = 'status'
 # Type: number, a VisibilityType which represents whether the
 # pipeline run was verified.
 COLLECTION_PIPELINE_RUNS_FIELD_VISIBILITY = 'visibility'
+# Type: number, amount of images that were processed.
+COLLECTION_PIPELINE_RUNS_FIELD_PROCESSED_IMAGES = 'processedImages'
+# Type: number, amount of images that were uploaded.
+COLLECTION_PIPELINE_RUNS_FIELD_UPLOADED_IMAGES = 'uploadedImages'
 
 COLLECTION_IMAGE_PROVIDERS = 'ImageProviders'
 COLLECTION_IMAGE_PROVIDERS_FIELD_PROVIDER_KEYS = 'providerKeys'

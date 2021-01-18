@@ -66,7 +66,7 @@ def store_pipeline_run(run_id, provider_id=None):
         }, merge=True)
 
 
-def update_pipeline_run_when_succeeded(run_id):
+def update_pipeline_run_when_succeeded(run_id, processed_images=None, uploaded_images=None):
     """ Updates information about the pipeline run to the
     database_schema.COLLECTION_PIPELINE_RUNS collection relevant document
     when pipeline finishes successfully.
@@ -75,7 +75,9 @@ def update_pipeline_run_when_succeeded(run_id):
     db = initialize_db()
     doc_ref = db.collection(database_schema.COLLECTION_PIPELINE_RUNS).document(run_id)
     doc_ref.set({
-        database_schema.COLLECTION_PIPELINE_RUNS_FIELD_END_DATE: datetime.now()
+        database_schema.COLLECTION_PIPELINE_RUNS_FIELD_END_DATE: datetime.now(),
+        database_schema.COLLECTION_PIPELINE_RUNS_FIELD_PROCESSED_IMAGES: processed_images,
+        database_schema.COLLECTION_PIPELINE_RUNS_FIELD_UPLOADED_IMAGES: uploaded_images
     }, merge=True)
     doc_ref.update({
         database_schema.COLLECTION_PIPELINE_RUNS_FIELD_STATUS: PipelineRunStatus.SUCCEEDED.value

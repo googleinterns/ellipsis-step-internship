@@ -112,6 +112,7 @@ def run(input_provider_name, input_provider_args=None, output_name=None, run_loc
         raise ValueError('ingestion provider is not enabled')
 
     job_name = utils.generate_cloud_dataflow_job_name('ingestion', image_provider.provider_id)
+    stored_elements = 0
     if run_locally:
         pipeline_options = PipelineOptions()
     else:
@@ -125,15 +126,14 @@ def run(input_provider_name, input_provider_args=None, output_name=None, run_loc
             region='europe-west2',
             setup_file='./setup.py',
         )
-    store_pipeline_run(job_name, image_provider.provider_id)
     try:
         # The pipeline will be run on exiting the with block.
         # pylint: disable=expression-not-assigned
         with apache_beam.Pipeline(options=pipeline_options) as pipeline:
-
+            store_pipeline_run(job_name, image_provider.provider_id)
             num_of_pages = image_provider.get_num_of_pages()
             create_batch = pipeline | 'create' >> \
-                apache_beam.Create([i for i in range(1, int(15)+1)])
+                apache_beam.Create([i for i in range(1, int(3)+1)])
             images = create_batch | 'call API' >> \
                 apache_beam.ParDo(image_provider.get_images)
             extracted_elements = images | 'extract attributes' >> \
@@ -145,11 +145,16 @@ def run(input_provider_name, input_provider_args=None, output_name=None, run_loc
 
             generate_image_id | 'store_image' >> \
                 apache_beam.ParDo(firestore_database.AddOrUpdateImageDoFn(), image_provider, job_name)
-
             if output_name:
                 generate_image_id | 'Write' >> WriteToText(output_name)
+            
+            count_elements = generate_image_id | 'Count elements' >>\
+                apache_beam.combiners.Count.Globally()
+            
+            count_elements | 'update pipeline_run' >>\
+                apache_beam.Map(lambda element: update_pipeline_run_when_succeeded(
+                    job_name, image_provider.get_num_of_images(), element))
 
-        update_pipeline_run_when_succeeded(job_name)
     except:
         update_pipeline_run_when_failed(job_name)
 
