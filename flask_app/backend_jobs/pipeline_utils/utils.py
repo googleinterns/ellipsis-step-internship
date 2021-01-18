@@ -16,7 +16,7 @@ from datetime import datetime
 import geohash2
 from google.cloud import firestore
 from backend_jobs.pipeline_utils import database_schema
-from backend_jobs.pipeline_utils.firestore_database import RANGE_OF_BATCH
+from backend_jobs.pipeline_utils import firestore_database
 
 
 def get_timestamp_id():
@@ -69,7 +69,7 @@ def create_query_indices():
     """ Creates a list of indices for querying the database.
 
     """
-    return [i for i in range(int(1/RANGE_OF_BATCH))]
+    return [i for i in range(int(1/firestore_database.RANGE_OF_BATCH))]
 
 def get_geo_hashes_map(latitude, longitude):
     """ This function, given a coordinates (lat,long), calculates the geohash

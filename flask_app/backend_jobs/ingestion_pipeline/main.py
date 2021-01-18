@@ -112,7 +112,6 @@ def run(input_provider_name, input_provider_args=None, output_name=None, run_loc
         raise ValueError('ingestion provider is not enabled')
 
     job_name = utils.generate_cloud_dataflow_job_name('ingestion', image_provider.provider_id)
-    stored_elements = 0
     if run_locally:
         pipeline_options = PipelineOptions()
     else:
@@ -133,7 +132,7 @@ def run(input_provider_name, input_provider_args=None, output_name=None, run_loc
             store_pipeline_run(job_name, image_provider.provider_id)
             num_of_pages = image_provider.get_num_of_pages()
             create_batch = pipeline | 'create' >> \
-                apache_beam.Create([i for i in range(1, int(3)+1)])
+                apache_beam.Create([i for i in range(1, int(num_of_pages)+1)])
             images = create_batch | 'call API' >> \
                 apache_beam.ParDo(image_provider.get_images)
             extracted_elements = images | 'extract attributes' >> \

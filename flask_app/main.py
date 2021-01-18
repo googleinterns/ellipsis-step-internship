@@ -36,7 +36,7 @@ app = Flask(__name__)
 _INPUT_TYPE_PROVIDER = 'provider'
 _INPUT_TYPE_RUN_ID = 'run-id'
 _TEST_OUTPUT = 'outputs'
-_RUN_LOCALLY = True
+_RUN_LOCALLY = False
 _NUM_OF_LATEST_RUNS = 10
 
 
