@@ -15,8 +15,9 @@
 
 from abc import ABC, abstractmethod
 import apache_beam
-from backend_jobs.pipeline_utils import database_schema
+from backend_jobs.pipeline_utils import database_schema, constants
 from backend_jobs.pipeline_utils.firestore_database import initialize_db
+from backend_jobs.pipeline_utils.utils import get_point_key
 
 
 class IngestionRemovalPipelineInterface(ABC, apache_beam.DoFn):
@@ -119,4 +120,10 @@ class IngestionRemovalPipelineInterface(ABC, apache_beam.DoFn):
         pipeline_runs_array = image_doc_dict[database_schema.COLLECTION_IMAGES_FIELD_INGESTED_RUNS]
         # If there are no images in the subcollection remove the image.
         if len(pipeline_runs_array) == 0 and len(providers_array) == 0:
+            if database_schema.COLLECTION_IMAGES_FIELD_LABELS in image_doc_dict:
+                # Need to remove all point keys from COLLECTION_HEATMAP.
+                for label in image_doc_dict[database_schema.COLLECTION_IMAGES_FIELD_LABELS]:
+                    for precision in range(constants.MIN_PRECISION, constants.MAX_PRECISION+1):
+                        point_key = get_point_key(precision, label, image_doc_dict[database_schema.COLLECTION_IMAGES_FIELD_HASHMAP])
+                        yield (point_key, 1)
             parent_image_ref.delete()  # Delete label doc from database.

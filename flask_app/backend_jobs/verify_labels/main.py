@@ -31,11 +31,10 @@ from apache_beam.options.pipeline_options import PipelineOptions
 
 from backend_jobs.verify_labels.pipeline_lib.redefine_labels import RedefineLabels, get_redefine_map
 from backend_jobs.verify_labels.pipeline_lib.firestore_database import GetBatchedLabelsDataset,\
-    UpdateDatabaseWithVisibleLabels, update_pipelinerun_doc_to_visible, get_provider_id_from_run_id,\
-        UpdateHeatmapDatabase
+    UpdateDatabaseWithVisibleLabels, update_pipelinerun_doc_to_visible, get_provider_id_from_run_id
 from backend_jobs.pipeline_utils.utils import generate_cloud_dataflow_job_name, create_query_indices
 from backend_jobs.pipeline_utils.firestore_database import store_pipeline_run,\
-    update_pipeline_run_when_failed, update_pipeline_run_when_succeeded
+    update_pipeline_run_when_failed, update_pipeline_run_when_succeeded, UpdateHeatmapDatabaseAfterVerification
 
 _PIPELINE_TYPE = 'verify_labels'
 
@@ -103,7 +102,7 @@ def run(recognition_run, output=None, run_locally=False):
             new_point_keys_and_sum = new_point_keys | 'combine all point keys' >> \
                     beam.CombinePerKey(sum)
             # pylint: disable=expression-not-assigned
-            new_point_keys_and_sum | 'update heatmap database' >> beam.ParDo(UpdateHeatmapDatabase())
+            new_point_keys_and_sum | 'update heatmap database' >> beam.ParDo(UpdateHeatmapDatabaseAfterVerification())
 
             if output: # For testing.
                 # pylint: disable=expression-not-assigned
