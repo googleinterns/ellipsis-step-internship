@@ -84,7 +84,7 @@ def get_geo_hashes_map(latitude, longitude):
     """
     geo_hashes_map = {}
     geohash = geohash2.encode(latitude, longitude)
-    for i in range(1, 11):
+    for i in range(1, 12):
         geo_hashes_map['hash' + str(i)] = geohash[0:i]
     return geo_hashes_map
 

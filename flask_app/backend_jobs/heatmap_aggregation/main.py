@@ -67,10 +67,9 @@ def run(output=None, run_locally=False):
             region='europe-west2',
             setup_file='./setup.py',
         )
-    
-    store_pipeline_run(job_name)
     try:
         with beam.Pipeline(options=pipeline_options) as pipeline:
+            store_pipeline_run(job_name)
             indices_for_batching = pipeline | 'create' >> beam.Create(create_query_indices())
             point_keys = indices_for_batching | 'get point keys' >> \
                 beam.ParDo(GetPointKeysByBatch())

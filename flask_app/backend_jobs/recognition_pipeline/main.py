@@ -100,9 +100,10 @@ def run(recognition_provider_name, ingestion_run=None, ingestion_provider=None, 
             region='europe-west2',
             setup_file='./setup.py',
         )
-    store_pipeline_run(job_name, recognition_provider.provider_id)
+    
     try:
         with beam.Pipeline(options=pipeline_options) as pipeline:
+            store_pipeline_run(job_name, recognition_provider.provider_id)
             indices_for_batching = pipeline | 'create' >> beam.Create(create_query_indices())
             if ingestion_run:
                 dataset = indices_for_batching | 'get images dataset' >> \

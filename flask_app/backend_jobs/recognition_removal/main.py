@@ -100,9 +100,9 @@ def run(recognition_run=None, recognition_provider=None, output=None, run_locall
             setup_file='./setup.py',
         )
     
-    store_pipeline_run(job_name)
     try:
         with beam.Pipeline(options=pipeline_options) as pipeline:
+            store_pipeline_run(job_name)
             indices_for_batching = pipeline | 'create' >> beam.Create(create_query_indices())
             dataset = indices_for_batching | 'get labels dataset and delete Firebase docs' >> \
                 beam.ParDo(GetAndDeleteBatchedLabelsDataset(),\

@@ -98,9 +98,10 @@ def run(input_image_provider=None, input_pipeline_run=None, run_locally=False):
             region='europe-west2',
             setup_file='./setup.py',
         )
-    store_pipeline_run(job_name)
+
     try:
         with beam.Pipeline(options=pipeline_options) as pipeline:
+            store_pipeline_run(job_name)
             indices_for_batching = pipeline | 'create' >> beam.Create(constants.LIST_FOR_BATCHES)
             dataset = indices_for_batching | 'get pipelineruns dataset and delete Firebase docs' >> \
                 beam.ParDo(removal_pipeline.get_batched_dataset_and_delete_from_database, remove_by_arg)
@@ -110,7 +111,7 @@ def run(input_image_provider=None, input_pipeline_run=None, run_locally=False):
                 beam.ParDo(removal_pipeline.update_arrays_in_image_docs, remove_by_arg)
             updated_images | 'remove doc if necessary' >>\
                 beam.Map(removal_pipeline.remove_image_doc_if_necessary)
-        update_pipeline_run_when_succeeded(job_name)
+        update_pipeline_run_when_succeeded(job_name, )
     except:
         update_pipeline_run_when_failed(job_name)
 

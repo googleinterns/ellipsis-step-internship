@@ -47,6 +47,7 @@ class ImageRecognitionProvider(ABC, beam.DoFn):
 
         """
         images_and_labels = []
+        images = list(images)
          # The provider supports a batch of max _MAX_IMAGES_IN_BATCH images.
         for i in range(0, len(images), self._MAX_IMAGES_IN_BATCH):
             images_and_labels.extend(self._get_labels_of_batch(\
