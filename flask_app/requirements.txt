@@ -1,0 +1,7 @@
+apache-beam==2.24.0
+google-apitools==0.5.31
+firebase-admin==4.4.0
+google-cloud-vision==2.0.0
+flickrapi==2.4.0
+geohash2==1.1
+Flask==1.1.2
