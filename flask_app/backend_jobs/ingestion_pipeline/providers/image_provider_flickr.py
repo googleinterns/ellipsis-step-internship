@@ -61,6 +61,8 @@ class FlickrProvider(ImageProvider):
 
     def get_image_attributes(self, element):
         image_attributes = ImageAttributes(
+            additional_url=self.get_url_for_min_resolution(100, 100, {'url': element.get('url_o')}),
+            pass_filter=True,
             url=element.get('url_o'),
             image_id=None,
             image_type=ImageType.CAMERA,
@@ -80,6 +82,8 @@ class FlickrProvider(ImageProvider):
         # in flickr the resolution is represented in the url.
         # See details at https://www.flickr.com/services/api/misc.urls.html
         url = image['url']
+        if url == None:
+            return None
         num_of_underscores = url.count('_')
         max_resolution = max(min_height, min_width)
         # Maping between the char that represents max resolution and the max resolution.

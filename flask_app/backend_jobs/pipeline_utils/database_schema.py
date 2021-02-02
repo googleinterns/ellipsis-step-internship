@@ -52,6 +52,10 @@ COLLECTION_IMAGES_FIELD_URL = 'url'
 COLLECTION_IMAGES_FIELD_HASHMAP = 'hashmap'
 # Type: member, A VisibilityType member which represents whether the image was verified.
 COLLECTION_IMAGES_FIELD_VISIBILITY = 'visibility'
+# Type: string, the url of the image with a low resolution.
+COLLECTION_IMAGES_FIELD_ADDITIONAL_URL = 'additionalUrl'
+# Type: boolean, whether the given image satisfies minimum requirements.
+COLLECTION_IMAGES_FIELD_PASS_FILTER = 'passFilter'
 
 
 COLLECTION_PIPELINE_RUNS = 'PipelineRuns'

@@ -55,13 +55,17 @@ def _is_valid_image(image):
     """ This function returns whether the given image satisfies minimum requirements of the platform
     e.g. url != none
     """
-    return \
-        image.url and \
-        image.latitude and \
-        image.longitude and \
-        image.format and \
-        image.width_pixels > 100 and \
-        image.height_pixels > 100
+    return image.url
+
+
+def _update_pass_filter(image):
+    """ This function updates whether the given image satisfies minimum requirements of the platform
+    e.g. format != none
+    """
+    if (image.latitude and image.longitude and image.format and image.width_pixels > 100 \
+        and image.height_pixels > 100):
+        image.pass_filter = False
+    return image
 
 
 def parse_arguments():
@@ -132,14 +136,16 @@ def run(input_provider_name, input_provider_args=None, output_name=None, run_loc
             store_pipeline_run(job_name, image_provider.provider_id)
             num_of_pages = image_provider.get_num_of_pages()
             create_batch = pipeline | 'create' >> \
-                apache_beam.Create([i for i in range(1, int(num_of_pages)+1)])
+                apache_beam.Create([i for i in range(1, int(3)+1)])
             images = create_batch | 'call API' >> \
                 apache_beam.ParDo(image_provider.get_images)
             extracted_elements = images | 'extract attributes' >> \
                 apache_beam.Map(image_provider.get_image_attributes)
             filtered_elements = extracted_elements | 'filter' >> \
                 apache_beam.Filter(_is_valid_image)
-            generate_image_id = filtered_elements | 'generate image id' >> \
+            pass_filter = filtered_elements | 'update if pass filter' >> \
+                apache_beam.Map(_update_pass_filter)
+            generate_image_id = pass_filter | 'generate image id' >> \
                 apache_beam.Map(_generate_image_id)
 
             generate_image_id | 'store_image' >> \
@@ -152,8 +158,7 @@ def run(input_provider_name, input_provider_args=None, output_name=None, run_loc
             
             count_elements | 'update pipeline_run' >>\
                 apache_beam.Map(lambda element: update_pipeline_run_when_succeeded(
-                    job_name, image_provider.get_num_of_images(), element))
-
+                    job_name, 300, element))  # image_provider.get_num_of_images()
     except:
         update_pipeline_run_when_failed(job_name)
 
