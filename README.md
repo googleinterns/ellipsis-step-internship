@@ -45,9 +45,9 @@ Apache header:
 
 #### Backend run locally-
 1. Go to the right directory- `cd flask_app`
-2. Run:
-    ⋅⋅⋅`export FLASK_APP=main.py`⋅⋅
-    ⋅⋅⋅`flask run --host=0.0.0.0`⋅⋅
+2. Run:  
+    `export FLASK_APP=main.py`  
+    `flask run --host=0.0.0.0`
 
 #### Backend deploy-
 1. Go to the right directory- `cd flask_app`
@@ -57,10 +57,10 @@ Apache header:
 
 #### Frontend run locally-
 1. Go to the right directory- `cd webapp/maps_heatmaps/src`
-2. Set the API Key
-    ⋅⋅⋅ `export GOOGLE_MAPS_API_KEY=SECRET_KEY`⋅⋅
-    ⋅⋅⋅`export FIRESTORE_API_KEY=SECRET_KEY`⋅⋅
-    ⋅⋅⋅To find the SECRET_KEY go to:⋅⋅
+2. Set the API Key  
+    `export GOOGLE_MAPS_API_KEY=SECRET_KEY`  
+    `export FIRESTORE_API_KEY=SECRET_KEY`  
+    To find the SECRET_KEY go to:  
     * Your google cloud account
     * APIs & Services
     * Credentials
