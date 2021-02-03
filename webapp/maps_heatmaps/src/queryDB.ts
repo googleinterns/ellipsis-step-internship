@@ -92,6 +92,7 @@ function getQueriedCollection(
     datetime.day != undefined
   )
     dataRef = dataRef.where("date.day", "==", datetime.day);
+  dataRef = dataRef.where("passedFilter", "==", true);
   return dataRef;
 }
 

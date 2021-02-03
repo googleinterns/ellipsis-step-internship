@@ -22,7 +22,7 @@ export function addImageToSidePanel(
 ): HTMLImageElement {
   const imageElement = document.createElement("img");
   imageElement.className = "sidepanel-image";
-  imageElement.src = docData.url;
+  imageElement.src = docData.additionalUrl;
   elementById.appendChild(imageElement);
   return imageElement;
 }

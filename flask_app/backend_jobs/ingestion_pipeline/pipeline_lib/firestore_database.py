@@ -61,6 +61,8 @@ def _add_document(element, provider, job_name, doc_ref):
     geo_point_coordinates = firestore.GeoPoint(element.latitude, element.longitude)
     geo_hashes_map = get_geo_hashes_map(element.latitude, element.longitude)
     doc_ref.set({
+        database_schema.COLLECTION_IMAGES_FIELD_ADDITIONAL_URL: element.additional_url,
+        database_schema.COLLECTION_IMAGES_FIELD_PASSED_FILTER: element.passed_filter,
         database_schema.COLLECTION_IMAGES_FIELD_URL: element.url,
         database_schema.COLLECTION_IMAGES_FIELD_INGESTED_PROVIDERS: [provider.provider_id],
         database_schema.COLLECTION_IMAGES_FIELD_INGESTED_RUNS: [job_name],

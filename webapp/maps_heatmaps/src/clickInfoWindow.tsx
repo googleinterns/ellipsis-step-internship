@@ -83,7 +83,7 @@ async function openInfoWindow(
         ReactDOMServer.renderToString(
           <InfoWindowContent
             labels={await convertLabelIdToLabelName(dataref.labels)}
-            url={dataref.url}
+            url={dataref.additionalUrl}
             dateTime={
               (dateTime = {
                 year: dataref.date.year,
