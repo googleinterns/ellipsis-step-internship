@@ -49,7 +49,7 @@ class ImageAttributes():
     width_pixels: int  # Image width resolution, e.g. 500.
     latitude: float  # Image latitude coordinate, between -90 and 90.
     longitude: float  # Image longitude coordinate, between -180 and 180.
-    pass_filter: bool  #
+    pass_filter: bool  # Wether the given image satisfies minimum requirements
     additional_url: str  # Url of the image with a low resolution.
 
 
