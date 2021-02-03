@@ -39,8 +39,8 @@ Apache header:
     * Dataflow
     * App engine
     * A storage bucket
-3. Installing the google cloud CLI- [https://cloud.google.com/sdk/docs/install] 
-4. Clone this repo: `git clone [https://github.com/googleinterns/ellipsis-step-internship]`
+3. Installing the google cloud CLI- https://cloud.google.com/sdk/docs/install
+4. Clone this repo: `git clone https://github.com/googleinterns/ellipsis-step-internship`
 5. Go to the right directory- `cd  ellipsis-step-internship`
 
 #### Backend run locally-
@@ -77,8 +77,8 @@ Apache header:
 
 Resources for getting more info:
 
-    https://firebase.google.com/docs/hosting/quickstart
-    https://firebase.google.com/docs/hosting/deploying
+https://firebase.google.com/docs/hosting/quickstart
+https://firebase.google.com/docs/hosting/deploying
 
 
 
