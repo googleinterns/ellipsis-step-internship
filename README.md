@@ -46,8 +46,8 @@ Apache header:
 #### Backend run locally-
 1. Go to the right directory- `cd flask_app`
 2. Run:
-    `export FLASK_APP=main.py`
-    `flask run --host=0.0.0.0`
+    ⋅⋅⋅`export FLASK_APP=main.py`⋅⋅
+    ⋅⋅⋅`flask run --host=0.0.0.0`⋅⋅
 
 #### Backend deploy-
 1. Go to the right directory- `cd flask_app`
@@ -58,9 +58,9 @@ Apache header:
 #### Frontend run locally-
 1. Go to the right directory- `cd webapp/maps_heatmaps/src`
 2. Set the API Key
-    `export GOOGLE_MAPS_API_KEY=SECRET_KEY`
-    `export FIRESTORE_API_KEY=SECRET_KEY`
-    To find the SECRET_KEY go to:
+    ⋅⋅⋅ `export GOOGLE_MAPS_API_KEY=SECRET_KEY`⋅⋅
+    ⋅⋅⋅`export FIRESTORE_API_KEY=SECRET_KEY`⋅⋅
+    ⋅⋅⋅To find the SECRET_KEY go to:⋅⋅
     * Your google cloud account
     * APIs & Services
     * Credentials
@@ -76,9 +76,8 @@ Apache header:
 4. Deploy to your site - `firebase deploy --only hosting`
 
 Resources for getting more info:
-
-https://firebase.google.com/docs/hosting/quickstart
-https://firebase.google.com/docs/hosting/deploying
+* https://firebase.google.com/docs/hosting/quickstart
+* https://firebase.google.com/docs/hosting/deploying
 
 
 
