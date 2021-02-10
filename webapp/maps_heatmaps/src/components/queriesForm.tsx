@@ -52,7 +52,6 @@ class QueriesForm extends React.Component<
         }
       );
       //No labels chosen. Show all labels.
-      //TODO: fill label-select field with all labels.
     } else {
       this.setState(
         {
@@ -90,7 +89,7 @@ class QueriesForm extends React.Component<
     const years: Array<Record<string, number | undefined | string>> = [
       { value: undefined, label: "Select all" },
     ];
-    for (let i = 1990; i <= 2020; i++) {
+    for (let i = 2021; i >= 1990; i--) {
       years.push({ value: i, label: i });
     }
     return years;
