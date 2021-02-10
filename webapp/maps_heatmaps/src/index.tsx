@@ -80,7 +80,6 @@ function initMap() {
       style: google.maps.MapTypeControlStyle.HORIZONTAL_BAR,
       position: google.maps.ControlPosition.TOP_CENTER,
     },
-    // TODO: decide where to set default center.
     center: { lat: 37.783371, lng: -122.439687 },
   });
   getLabelTags();
@@ -171,7 +170,6 @@ async function mapChanged() {
 /*@param index The index of the geohash box that we need the next docs from.
   @param first Determines whether this is a new collection and the next docs should be from the beginning,
   or should start after the last visible doc.*/
-//TODO: Check if its is better to get less than 20 docs each time.
 async function getNextDocs(index: number, first: boolean) {
   let docsArray: firebase.firestore.QueryDocumentSnapshot<
     firebase.firestore.DocumentData
@@ -198,7 +196,6 @@ async function getNextDocs(index: number, first: boolean) {
 /*Queries for random dataPoints in the database in order to place markers and images of it. 
   @param first Determines whether this is a new collection and the next docs should be from the beginning,
   or should start after the last visible doc.*/
-//TODO: store all previous shown images and markers and add a 'previous' button.
 async function updateImagesAndMarkers(
   first: boolean,
   timeOfRequest?: number

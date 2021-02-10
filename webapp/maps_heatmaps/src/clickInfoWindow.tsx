@@ -25,7 +25,6 @@ import React from "react";
 import ReactDOMServer from "react-dom/server";
 import InfoWindowContent from "./components/infoWindowContent";
 
-//TODO: run mocha tests on the browser.
 let markers: Array<google.maps.Marker> = [];
 let infoWindow: google.maps.InfoWindow | null = null;
 

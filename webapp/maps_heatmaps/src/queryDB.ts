@@ -82,16 +82,19 @@ function getQueriedCollection(
     const hashfield: string = "hashmap.hash" + hash.length;
     dataRef = dataRef.where(hashfield, "==", hash);
   }
-  if (datetime.year != undefined)
+  if (datetime.year != undefined) {
     dataRef = dataRef.where("date.year", "==", datetime.year);
-  if (datetime.year != undefined && datetime.month != undefined)
+  }
+  else if (datetime.year != undefined && datetime.month != undefined){
     dataRef = dataRef.where("date.month", "==", datetime.month);
-  if (
+  }
+  else if (
     datetime.year != undefined &&
     datetime.month != undefined &&
     datetime.day != undefined
-  )
+  ) {
     dataRef = dataRef.where("date.day", "==", datetime.day);
+  }
   dataRef = dataRef.where("passedFilter", "==", true);
   return dataRef;
 }
