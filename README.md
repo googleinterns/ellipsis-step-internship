@@ -73,7 +73,8 @@ Apache header:
 1. Install the Firebase CLI- https://firebase.google.com/docs/cli#install_the_firebase_cli
 2. Go to the right directory- `cd webapp/maps_heatmaps/src`
 3. Initialize your project - `firebase init hosting`
-4. Deploy to your site - `firebase deploy --only hosting`
+4. Build the site - `npm run build`
+5. Deploy to your site - `firebase deploy --only hosting`
 
 Resources for getting more info:
 * https://firebase.google.com/docs/hosting/quickstart

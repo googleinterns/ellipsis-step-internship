@@ -53,6 +53,7 @@ class GetDataset(apache_beam.DoFn):
                     self.image_provider)\
                 .where(database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS_FIELD_RANDOM, u'>=', random_min)\
                 .where(database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS_FIELD_RANDOM, u'<', random_max)\
+                .where(database_schema.COLLECTION_IMAGES_FIELD_PASSED_FILTER, u'==', True)\
                 .stream()
         else:
             query = self.db.collection_group(database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS)\
@@ -61,7 +62,8 @@ class GetDataset(apache_beam.DoFn):
                     u'==',
                     self.pipeline_run)\
                 .where(database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS_FIELD_RANDOM, u'>=', random_min)\
-                .where(database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS_FIELD_RANDOM, u'<', random_max)\
+                .where(database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS_FIELD_RANDOM, u'<', random_max) \
+                .where(database_schema.COLLECTION_IMAGES_FIELD_PASSED_FILTER, u'==', True) \
                 .stream()
         for doc in query:
             doc_dict = doc.to_dict()
