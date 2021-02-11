@@ -110,6 +110,7 @@ def run(recognition_run, output=None, run_locally=False):
         update_pipeline_run_when_succeeded(job_name)
     except:
         update_pipeline_run_when_failed(job_name)
+        raise
 
 if __name__ == '__main__':
     logging.getLogger().setLevel(logging.INFO)

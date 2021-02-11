@@ -160,6 +160,7 @@ def run(input_provider_name, input_provider_args=None, output_name=None, run_loc
                     job_name, image_provider.get_num_of_images(), element))
     except:
         update_pipeline_run_when_failed(job_name)
+        raise
 
 
 if __name__ == '__main__':
