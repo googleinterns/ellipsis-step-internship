@@ -135,6 +135,7 @@ def run(recognition_provider_name, ingestion_run=None, ingestion_provider=None, 
         update_pipeline_run_when_succeeded(job_name)
     except:
         update_pipeline_run_when_failed(job_name)
+        raise
 
 
 if __name__ == '__main__':

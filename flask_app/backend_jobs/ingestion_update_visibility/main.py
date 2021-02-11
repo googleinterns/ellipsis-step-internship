@@ -128,11 +128,13 @@ def run(input_image_provider=None, input_pipeline_run=None, input_visibility=Non
                 beam.ParDo(firestore_database.UpdateVisibilityInDatabaseCollection(
                     image_provider=image_provider, pipeline_run=pipeline_run))
         update_pipeline_run_when_succeeded(job_name)
-    except:
+    except Exception as e:
         update_pipeline_run_when_failed(job_name)
+        logging.getLogger().exception(e)
+        raise
 
 
 if __name__ == '__main__':
     logging.getLogger().setLevel(logging.INFO)
     args, pipeline_args = parse_arguments()
-    run(args.input_image_provider, args.input_pipeline_run, args.input_visibility, run_locally=True)
+    run(args.input_image_provider, args.input_pipeline_run, args.input_visibility, run_locally=False)

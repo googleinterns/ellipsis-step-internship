@@ -53,7 +53,6 @@ class GetDataset(apache_beam.DoFn):
                     self.image_provider)\
                 .where(database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS_FIELD_RANDOM, u'>=', random_min)\
                 .where(database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS_FIELD_RANDOM, u'<', random_max)\
-                .where(database_schema.COLLECTION_IMAGES_FIELD_PASSED_FILTER, u'==', True)\
                 .stream()
         else:
             query = self.db.collection_group(database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS)\
@@ -63,7 +62,6 @@ class GetDataset(apache_beam.DoFn):
                     self.pipeline_run)\
                 .where(database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS_FIELD_RANDOM, u'>=', random_min)\
                 .where(database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS_FIELD_RANDOM, u'<', random_max) \
-                .where(database_schema.COLLECTION_IMAGES_FIELD_PASSED_FILTER, u'==', True) \
                 .stream()
         for doc in query:
             doc_dict = doc.to_dict()
@@ -94,6 +92,11 @@ class UpdateVisibilityInDatabaseSubcollection(apache_beam.DoFn):
         parent_image_id = element[0]
         parent_image_ref = self.db.collection(database_schema.COLLECTION_IMAGES)\
             .document(parent_image_id)
+
+        # Only process the image if it passed the ingestion filters.
+        if not parent_image_ref.get().to_dict()[database_schema.COLLECTION_IMAGES_FIELD_PASSED_FILTER]:
+            return []
+
         subcollection_ids = element[1]
         for subcollection_id in subcollection_ids:
             doc_ref = parent_image_ref.collection(database_schema.COLLECTION_IMAGES_SUBCOLLECTION_PIPELINE_RUNS)\
@@ -125,10 +128,12 @@ class UpdateVisibilityInDatabaseCollection(apache_beam.DoFn):
         """
         parent_image_ref = self.db.collection(database_schema.COLLECTION_IMAGES)\
             .document(parent_image_id)
-        parent_image_ref.update({
-            database_schema.COLLECTION_IMAGES_FIELD_VISIBILITY:
-                self._max_visibility(parent_image_id).value
-        })
+        # Only process the image if it passed the ingestion filters.
+        if parent_image_ref.get().to_dict()[database_schema.COLLECTION_IMAGES_FIELD_PASSED_FILTER]:
+            parent_image_ref.update({
+                database_schema.COLLECTION_IMAGES_FIELD_VISIBILITY:
+                    self._max_visibility(parent_image_id).value
+            })
 
     def _max_visibility(self, parent_image_id):
         """This function finds the max visibility in the PipelineRun subcollection.

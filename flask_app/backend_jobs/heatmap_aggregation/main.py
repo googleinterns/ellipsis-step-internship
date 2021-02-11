@@ -52,7 +52,7 @@ def run(output=None, run_locally=False):
 
     """
 
-    job_name = generate_cloud_dataflow_job_name(_PIPELINE_TYPE, 'all images')
+    job_name = generate_cloud_dataflow_job_name(_PIPELINE_TYPE, 'all_images')
     
     if run_locally:
         pipeline_options = PipelineOptions()
@@ -83,10 +83,12 @@ def run(output=None, run_locally=False):
                 point_keys_and_sum | 'Write' >> WriteToText(output)
 
         update_pipeline_run_when_succeeded(job_name)
-    except:
+    except Exception as e:
         update_pipeline_run_when_failed(job_name)
+        logging.getLogger().exception(e)
+        raise
 
 if __name__ == '__main__':
     logging.getLogger().setLevel(logging.INFO)
     args, pipeline_args = parse_arguments()
-    run(args.output, run_locally=True)
+    run(args.output, run_locally=False)
